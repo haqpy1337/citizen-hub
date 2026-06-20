@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 
-export type Design = "mole" | "cockpit" | "origin" | "gatac" | "hornet";
+export type Design = "mole" | "cockpit" | "origin" | "gatac" | "hornet" | "odin";
 
-const ALL_THEMES: Design[] = ["mole", "cockpit", "origin", "gatac", "hornet"];
+const ALL_THEMES: Design[] = ["mole", "cockpit", "origin", "gatac", "hornet", "odin"];
 const DEFAULT: Design = "mole";
 
 function applyDesign(design: Design) {

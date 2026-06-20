@@ -110,6 +110,37 @@ html.theme-gatac {
   --panel-left:          1px solid var(--color-edge);
 }
 
+/* ── Odin Trooper ─────────────────────────────────────────────────────── */
+/*    Armored carrier: military olive over near-black, Odin orange-red     */
+html.theme-odin {
+  color-scheme: dark;
+  --color-void:          #090b07;
+  --color-hull:          #111510;
+  --color-panel:         #191e15;
+  --color-edge:          #2c3424;
+  --color-steel:         #404e32;
+  --color-ink:           #cfd8bc;
+  --color-muted:         #5e6850;
+  --color-quant:         #e04808;
+  --color-quant-dim:     #882804;
+  --color-amber:         #c84008;
+  --color-toxic:         #6a9020;
+  --color-danger:        #e02010;
+  --grid-color:          rgba(224,72,8,0.05);
+  --shadow-panel:        0 0 0 1px rgba(224,72,8,0.08) inset, 0 8px 32px rgba(0,0,0,0.8);
+  --shadow-glow:         0 0 0 1px rgba(224,72,8,0.4), 0 0 20px rgba(224,72,8,0.15);
+  --panel-accent-top:    transparent;
+  /* Armor plate: bottom-right bevel — echoes the angled stern of the Odin */
+  --panel-clip:          polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  --panel-radius:        0;
+  --panel-left:          3px solid rgba(224,72,8,0.75);
+}
+html.theme-odin .field  { border-radius: 0; border-left: 2px solid rgba(224,72,8,0.35); }
+html.theme-odin .tag    { border-radius: 0; }
+html.theme-odin .btn    { border-radius: 0; letter-spacing: 0.12em; }
+html.theme-odin .label  { letter-spacing: 0.18em; }
+html.theme-odin body    { background-size: 40px 40px; }
+
 /* ── Hornet (Anvil Aerospace F7C) ─────────────────────────────────────── */
 /*    Steel-blue fighter: swept-wing panels, opposing diagonal cuts       */
 html.theme-hornet {

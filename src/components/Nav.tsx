@@ -20,6 +20,7 @@ const designs: { id: Design; label: string }[] = [
   { id: "origin",  label: "Origin" },
   { id: "gatac",   label: "Gatac" },
   { id: "hornet",  label: "Hornet" },
+  { id: "odin",    label: "Odin Trooper" },
 ];
 
 export default function Nav({ username }: { username: string }) {
