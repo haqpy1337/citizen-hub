@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { RefineryStation } from "@/lib/clientTypes";
+import { getClientRefineryStations, isUexConfigured } from "@/lib/clientUex";
 
 type SortKey = "name" | "queueSec" | "bestYield";
 
@@ -15,7 +16,7 @@ function formatQueueTime(sec: number): string {
 
 export default function RefineriesView() {
   const [stations, setStations] = useState<RefineryStation[] | null>(null);
-  const [configured, setConfigured] = useState(true);
+  const configured = isUexConfigured();
   const [error, setError] = useState<string | null>(null);
 
   const [q, setQ] = useState("");
@@ -24,16 +25,9 @@ export default function RefineriesView() {
   const [asc, setAsc] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/refineries", { cache: "no-store" });
-        const data = await res.json();
-        setStations(data.stations ?? []);
-        setConfigured(Boolean(data.configured));
-      } catch {
-        setError("Failed to load live data.");
-      }
-    })();
+    getClientRefineryStations()
+      .then(setStations)
+      .catch(() => setError("Failed to load live data."));
   }, []);
 
   const systems = useMemo(() => {

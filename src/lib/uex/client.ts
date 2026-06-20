@@ -38,7 +38,6 @@ export async function uexFetch<T>(
   }
 
   try {
-    console.log(`[UEX] fetching: ${url.replace(/secret_key=[^&]+/, "secret_key=***")}`);
     const res = await fetch(url, {
       headers: {
         Accept: "application/json",

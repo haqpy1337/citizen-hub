@@ -20,7 +20,6 @@ export async function getRefineryStations(): Promise<RefineryStation[]> {
     uexFetch<UexRefineryCapacity>("refineries_capacities"),
     uexFetch<UexRefineryYield>("refineries_yields"),
   ]);
-  console.log(`[UEX] getRefineryStations: terminals=${terminals.length} capacities=${capacities.length} yields=${yields.length}`);
 
   // Index: queue time (seconds) per terminal ID
   const queueByTerminal = new Map<number, number>();

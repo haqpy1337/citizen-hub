@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import OreCombobox from "./OreCombobox";
 import { parseDurationInput, formatDuration } from "@/lib/format";
 import type { OreCommodity, RefineryMethod, RefineryStation } from "@/lib/clientTypes";
+import { getClientRefineryStations, getClientRefineryMethods, getClientOreCommodities } from "@/lib/clientUex";
 
 interface MaterialRow {
   name: string;
@@ -51,20 +52,18 @@ export default function JobForm() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const [r, c] = await Promise.all([
-          fetch("/api/refineries").then((x) => x.json()),
-          fetch("/api/commodities").then((x) => x.json()),
-        ]);
-        setStations(r.stations ?? []);
-        setMethods(r.methods ?? []);
-        setOres(c.ores ?? []);
-        if ((r.stations ?? []).length === 0) setLiveOk(false);
-      } catch {
-        setLiveOk(false);
-      }
-    })();
+    Promise.all([
+      getClientRefineryStations(),
+      getClientRefineryMethods(),
+      getClientOreCommodities(),
+    ])
+      .then(([stations, methods, ores]) => {
+        setStations(stations);
+        setMethods(methods);
+        setOres(ores);
+        if (stations.length === 0) setLiveOk(false);
+      })
+      .catch(() => setLiveOk(false));
   }, []);
 
   /** Look up the live yield modifier for an ore at the currently selected station. */

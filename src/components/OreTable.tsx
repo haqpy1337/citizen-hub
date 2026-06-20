@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { FullOre } from "@/app/api/ores/route";
 import type { SellLocation } from "@/app/api/ore-prices/[id]/route";
+import { getClientOres, getClientSellLocations } from "@/lib/clientUex";
 
 type SortKey = "name" | "code" | "kind" | "type" | "priceSell" | "priceBuy" | "weightScu" | "flags";
 
@@ -21,9 +22,8 @@ export default function OreTable() {
   const [sellLoading, setSellLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/ores")
-      .then((r) => r.json())
-      .then((d) => setOres(d.ores ?? []))
+    getClientOres()
+      .then(setOres)
       .catch(() => setError("Failed to load ore data."));
   }, []);
 
@@ -69,9 +69,8 @@ export default function OreTable() {
     setSellLocations(null);
     setSellLoading(true);
     try {
-      const res = await fetch(`/api/ore-prices/${ore.id}`);
-      const data = await res.json();
-      setSellLocations(data.locations ?? []);
+      const locations = await getClientSellLocations(ore.id);
+      setSellLocations(locations);
     } catch {
       setSellLocations([]);
     } finally {

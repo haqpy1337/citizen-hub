@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { TradeRoute } from "@/app/api/trade-routes/route";
+import { getClientTradeRoutes } from "@/lib/clientUex";
 
 export default function TradeRoutes() {
   const [routes, setRoutes] = useState<TradeRoute[] | null>(null);
@@ -16,11 +17,10 @@ export default function TradeRoutes() {
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/trade-routes")
-      .then((r) => r.json())
+    getClientTradeRoutes()
       .then((d) => {
-        setRoutes(d.routes ?? []);
-        setUpdatedAt(d.updatedAt ?? null);
+        setRoutes(d.routes);
+        setUpdatedAt(d.updatedAt);
       })
       .catch(() => setError("Failed to load trade routes."))
       .finally(() => setLoading(false));
