@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Mole (ARGO Astronautics) — default ──────────────────────────────── */
+/*    ARGO safety orange over near-black structural panels                */
+:root {
+  color-scheme: dark;
+  --color-void:          #111110;
+  --color-hull:          #1a1918;
+  --color-panel:         #201f1d;
+  --color-edge:          #2e2c28;
+  --color-steel:         #484440;
+  --color-ink:           #e8e0d0;
+  --color-muted:         #686460;
+  --color-quant:         #d94a0a;
+  --color-quant-dim:     #8a2e06;
+  --color-amber:         #e07800;
+  --color-toxic:         #5aaa30;
+  --color-danger:        #e02010;
+  --grid-color:          rgba(217,74,10,0.06);
+  --shadow-panel:        0 0 0 1px rgba(217,74,10,0.08) inset, 0 4px 20px rgba(0,0,0,0.7);
+  --shadow-glow:         0 0 0 1px rgba(217,74,10,0.5), 0 0 18px rgba(217,74,10,0.2);
+  --panel-accent-top:    transparent;
+  /* Mole hull-plate panel shape */
+  --panel-clip:          polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  --panel-radius:        0;
+  --panel-left:          3px solid rgba(217,74,10,0.7);
+}
+
+/* ── Cockpit / HUD ────────────────────────────────────────────────────── */
+html.theme-cockpit {
+  color-scheme: dark;
+  --color-void:          #070b10;
+  --color-hull:          #0d1520;
+  --color-panel:         #0f1a26;
+  --color-edge:          #1c3850;
+  --color-steel:         #284d68;
+  --color-ink:           #c8d6e5;
+  --color-muted:         #5d7d96;
+  --color-quant:         #4fc3f7;
+  --color-quant-dim:     #1a6080;
+  --color-amber:         #f5a623;
+  --color-toxic:         #4caf50;
+  --color-danger:        #ef5350;
+  --grid-color:          rgba(28,56,80,0.5);
+  --shadow-panel:        0 0 0 1px rgba(79,195,247,0.04) inset, 0 16px 40px -20px rgba(0,0,0,0.9);
+  --shadow-glow:         0 0 0 1px rgba(79,195,247,0.3), 0 0 20px -4px rgba(79,195,247,0.3);
+  --panel-accent-top:    transparent;
+  --panel-clip:          none;
+  --panel-radius:        0.5rem;
+  --panel-left:          1px solid var(--color-edge);
+}
+html.theme-cockpit body { font-family: 'Courier New', 'Consolas', monospace; }
+
+/* ── Cream ────────────────────────────────────────────────────────────── */
+html.theme-cream {
+  color-scheme: light;
+  --color-void:          #f7f4ef;
+  --color-hull:          #ede6da;
+  --color-panel:         #ede6da;
+  --color-edge:          #d4c9b6;
+  --color-steel:         #b09a80;
+  --color-ink:           #2c2416;
+  --color-muted:         #7c5f3a;
+  --color-quant:         #9a6e30;
+  --color-quant-dim:     #6a4a18;
+  --color-amber:         #c07020;
+  --color-toxic:         #5a7820;
+  --color-danger:        #c03010;
+  --grid-color:          rgba(44,36,22,0.05);
+  --shadow-panel:        0 1px 3px rgba(44,36,22,0.08), 0 1px 0 rgba(44,36,22,0.04);
+  --shadow-glow:         0 0 0 1px rgba(154,110,48,0.3), 0 0 12px rgba(154,110,48,0.15);
+  --panel-accent-top:    transparent;
+  --panel-clip:          none;
+  --panel-radius:        0.5rem;
+  --panel-left:          1px solid var(--color-edge);
+}
+
+/* ── Purple ───────────────────────────────────────────────────────────── */
+html.theme-purple {
+  color-scheme: dark;
+  --color-void:          #0d0d12;
+  --color-hull:          #13101e;
+  --color-panel:         #13101e;
+  --color-edge:          #2d1f4e;
+  --color-steel:         #3d2f5e;
+  --color-ink:           #e0d8f0;
+  --color-muted:         #6b6880;
+  --color-quant:         #a78bfa;
+  --color-quant-dim:     #5b3fa8;
+  --color-amber:         #f59e0b;
+  --color-toxic:         #84cc16;
+  --color-danger:        #ef4444;
+  --grid-color:          rgba(45,31,78,0.35);
+  --shadow-panel:        0 0 0 1px rgba(167,139,250,0.05) inset, 0 18px 40px -24px rgba(0,0,0,0.8);
+  --shadow-glow:         0 0 0 1px rgba(167,139,250,0.25), 0 0 24px -6px rgba(167,139,250,0.35);
+  --panel-accent-top:    transparent;
+  --panel-clip:          none;
+  --panel-radius:        0.5rem;
+  --panel-left:          1px solid var(--color-edge);
+}
+
+/* ── Hornet (Anvil Aerospace F7C) ─────────────────────────────────────── */
+/*    Steel-blue fighter: swept-wing panels, opposing diagonal cuts       */
+html.theme-hornet {
+  color-scheme: dark;
+  --color-void:          #0c0e12;
+  --color-hull:          #14181e;
+  --color-panel:         #1a1f28;
+  --color-edge:          #2a3040;
+  --color-steel:         #3c4858;
+  --color-ink:           #d8e8f4;
+  --color-muted:         #5a7080;
+  --color-quant:         #5ab0d8;
+  --color-quant-dim:     #2a6080;
+  --color-amber:         #7cd4f0;
+  --color-toxic:         #50b878;
+  --color-danger:        #e04040;
+  --grid-color:          rgba(90,176,216,0.06);
+  --shadow-panel:        0 0 0 1px rgba(90,176,216,0.08) inset, 0 8px 32px rgba(0,0,0,0.8);
+  --shadow-glow:         0 0 0 1px rgba(90,176,216,0.4), 0 0 20px rgba(90,176,216,0.2);
+  --panel-accent-top:    var(--color-quant);
+  /* Swept-wing cut: top-right + bottom-left corners — like the Hornet's cross-section */
+  --panel-clip:          polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  --panel-radius:        0;
+  --panel-left:          1px solid var(--color-edge);
+}
+html.theme-hornet .btn        { border-radius: 0; letter-spacing: 0.1em; }
+html.theme-hornet .btn-primary { border-top: 2px solid var(--color-amber); }
+html.theme-hornet .field      { border-radius: 0; }
+html.theme-hornet .tag        { border-radius: 0; clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px)); }
+html.theme-hornet body        { background-size: 36px 36px; }
+html.theme-hornet .label      { letter-spacing: 0.14em; }
+
+/* ── Mole-specific shape overrides ───────────────────────────────────── */
+/* html has no theme-* class when Mole is active (it's the default)      */
+html:not([class*="theme-"]) .field  { border-radius: 0; border-left: 2px solid rgba(217,74,10,0.4); }
+html:not([class*="theme-"]) .tag    { border-radius: 0; }
+html:not([class*="theme-"]) .btn    { border-radius: 0; }
+html:not([class*="theme-"]) .label  { letter-spacing: 0.16em; }
+html:not([class*="theme-"]) body    { background-size: 40px 40px; }
+
+/* ── Base styles ──────────────────────────────────────────────────────── */
+html, body {
+  background-color: var(--color-void);
+  color: var(--color-ink);
+  transition: background-color 0.25s, color 0.25s;
+}
+body {
+  font-family: theme("fontFamily.body");
+  background-image: linear-gradient(var(--grid-color) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+@layer components {
+  .panel {
+    @apply border border-edge bg-panel;
+    border-radius: var(--panel-radius, 0.5rem);
+    border-left: var(--panel-left);
+    border-top: 2px solid var(--panel-accent-top);
+    clip-path: var(--panel-clip, none);
+    box-shadow: var(--shadow-panel);
+  }
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.25em] text-muted;
+  }
+  .field {
+    @apply w-full rounded-md border border-edge bg-hull px-3 py-2 text-sm text-ink
+      outline-none transition;
+  }
+  .field::placeholder { color: var(--color-muted); opacity: 0.6; }
+  .field:focus {
+    border-color: var(--color-quant);
+    box-shadow: var(--shadow-glow);
+  }
+  .label {
+    @apply mb-1 block font-mono text-[11px] uppercase tracking-widest text-muted;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2
+      font-display text-sm font-semibold uppercase tracking-wider transition
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary  { @apply btn bg-quant text-void hover:opacity-85; }
+  .btn-ghost    { @apply btn border border-edge text-ink hover:border-quant hover:text-quant; }
+  .btn-danger   { @apply btn border text-danger; border-color: rgba(239,68,68,0.4); }
+  .btn-danger:hover { background-color: rgba(239,68,68,0.1); }
+  .tag {
+    @apply inline-flex items-center rounded-full border border-edge px-2 py-0.5
+      font-mono text-[11px] uppercase tracking-wider text-muted;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  username     String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  jobs         RefineryJob[]
+}
+
+model RefineryJob {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  stationId   Int?
+  stationName String
+  systemName  String?
+  method      String?
+
+  startedAt   DateTime @default(now())
+  durationSec Int
+  finishesAt  DateTime
+
+  status    String  @default("running")
+  note      String?
+
+  materials JobMaterial[]
+  createdAt DateTime      @default(now())
+}
+
+model JobMaterial {
+  id          String      @id @default(cuid())
+  jobId       String
+  job         RefineryJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  commodityId  Int?
+  name         String
+  quantity     Float
+  unit         String @default("SCU")
+  yieldPercent Float?
+}
