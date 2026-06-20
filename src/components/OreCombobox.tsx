@@ -99,11 +99,6 @@ export default function OreCombobox({ value, ores, onChange, placeholder }: Prop
             onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
           >
             <span>{ore.name}</span>
-            {ore.code && (
-              <span style={{ fontFamily: "monospace", fontSize: "10px", color: "var(--color-muted)" }}>
-                {ore.code}
-              </span>
-            )}
           </button>
         </li>
       ))}
