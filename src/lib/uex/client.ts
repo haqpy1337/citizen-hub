@@ -27,6 +27,7 @@ export async function uexFetch<T>(
   for (const [k, v] of Object.entries(opts.query ?? {})) {
     if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
   }
+  if (TOKEN) params.set("secret_key", TOKEN);
   const qs = params.toString();
   const url = `${BASE}/${endpoint}${qs ? `?${qs}` : ""}`;
   const ttl = opts.ttlMs ?? DEFAULT_TTL_MS;
@@ -40,7 +41,6 @@ export async function uexFetch<T>(
     const res = await fetch(url, {
       headers: {
         Accept: "application/json",
-        ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
       },
       // Next.js eigenes Caching deaktivieren, wir cachen selbst.
       cache: "no-store",
