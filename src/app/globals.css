@@ -2,190 +2,355 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Mole (ARGO Astronautics) — default ──────────────────────────────── */
-/*    ARGO safety orange over near-black structural panels                */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MOLE  —  ARGO Astronautics industrial workhorse
+   Warmth: burnt orange / rust over near-black carbon
+   Shape:  top-right bevel (heavy hull plate)
+   Grid:   coarse orange square grid (40 px)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 :root {
   color-scheme: dark;
-  --color-void:          #111110;
-  --color-hull:          #1a1918;
-  --color-panel:         #201f1d;
-  --color-edge:          #2e2c28;
-  --color-steel:         #484440;
-  --color-ink:           #e8e0d0;
-  --color-muted:         #686460;
+  --color-void:          #0e0d0b;
+  --color-hull:          #181614;
+  --color-panel:         #1f1d1a;
+  --color-edge:          #302c27;
+  --color-steel:         #4a4440;
+  --color-ink:           #ede4d4;
+  --color-muted:         #6a6058;
   --color-quant:         #d94a0a;
-  --color-quant-dim:     #8a2e06;
+  --color-quant-dim:     #7a2806;
   --color-amber:         #e07800;
   --color-toxic:         #5aaa30;
   --color-danger:        #e02010;
-  --grid-color:          rgba(217,74,10,0.06);
-  --shadow-panel:        0 0 0 1px rgba(217,74,10,0.08) inset, 0 4px 20px rgba(0,0,0,0.7);
-  --shadow-glow:         0 0 0 1px rgba(217,74,10,0.5), 0 0 18px rgba(217,74,10,0.2);
+  --grid-color:          rgba(217,74,10,0.07);
+  --shadow-panel:        3px 0 0 0 rgba(217,74,10,0.6) inset,
+                         0 0 0 1px rgba(217,74,10,0.1) inset,
+                         0 6px 24px rgba(0,0,0,0.8),
+                         4px 4px 0 rgba(0,0,0,0.4);
+  --shadow-glow:         0 0 0 1px rgba(217,74,10,0.6), 0 0 20px rgba(217,74,10,0.25);
   --panel-accent-top:    transparent;
-  /* Mole hull-plate panel shape */
-  --panel-clip:          polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  --panel-clip:          polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
   --panel-radius:        0;
   --panel-left:          3px solid rgba(217,74,10,0.7);
 }
+html:not([class*="theme-"]) .field  {
+  border-radius: 0;
+  border-left: 3px solid rgba(217,74,10,0.45);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+html:not([class*="theme-"]) .tag    {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+}
+html:not([class*="theme-"]) .btn    { border-radius: 0; letter-spacing: 0.14em; }
+html:not([class*="theme-"]) .btn-primary { border-right: 2px solid rgba(217,74,10,0.9); }
+html:not([class*="theme-"]) .label  { letter-spacing: 0.2em; }
+html:not([class*="theme-"]) body    {
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
 
-/* ── Cockpit / HUD ────────────────────────────────────────────────────── */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   COCKPIT  —  RSI Aurora retro-HUD / terminal
+   Warmth: amber-green phosphor on near-black
+   Shape:  perfect rectangle + inner scan-line border, no clip
+   Grid:   horizontal scanlines (2 px bands, 4 px gap)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-cockpit {
   color-scheme: dark;
-  --color-void:          #070b10;
-  --color-hull:          #0d1520;
-  --color-panel:         #0f1a26;
-  --color-edge:          #1c3850;
-  --color-steel:         #284d68;
-  --color-ink:           #c8d6e5;
-  --color-muted:         #5d7d96;
-  --color-quant:         #4fc3f7;
-  --color-quant-dim:     #1a6080;
-  --color-amber:         #f5a623;
-  --color-toxic:         #4caf50;
-  --color-danger:        #ef5350;
-  --grid-color:          rgba(28,56,80,0.5);
-  --shadow-panel:        0 0 0 1px rgba(79,195,247,0.04) inset, 0 16px 40px -20px rgba(0,0,0,0.9);
-  --shadow-glow:         0 0 0 1px rgba(79,195,247,0.3), 0 0 20px -4px rgba(79,195,247,0.3);
-  --panel-accent-top:    transparent;
+  --color-void:          #040805;
+  --color-hull:          #080f09;
+  --color-panel:         #0b160c;
+  --color-edge:          #163018;
+  --color-steel:         #1e4820;
+  --color-ink:           #a8e890;
+  --color-muted:         #4a7840;
+  --color-quant:         #60e840;
+  --color-quant-dim:     #247010;
+  --color-amber:         #c8e040;
+  --color-toxic:         #40e880;
+  --color-danger:        #e84040;
+  --grid-color:          rgba(96,232,64,0.06);
+  --shadow-panel:        0 0 0 1px rgba(96,232,64,0.15) inset,
+                         0 0 0 3px rgba(96,232,64,0.05) inset,
+                         0 4px 32px rgba(0,0,0,0.9),
+                         0 0 60px rgba(96,232,64,0.03);
+  --shadow-glow:         0 0 0 1px rgba(96,232,64,0.5), 0 0 16px rgba(96,232,64,0.3);
+  --panel-accent-top:    rgba(96,232,64,0.4);
   --panel-clip:          none;
-  --panel-radius:        0.5rem;
-  --panel-left:          1px solid var(--color-edge);
+  --panel-radius:        0;
+  --panel-left:          1px solid rgba(96,232,64,0.25);
 }
-html.theme-cockpit body { font-family: 'Courier New', 'Consolas', monospace; }
+html.theme-cockpit body {
+  font-family: 'Courier New', 'Consolas', monospace;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(96,232,64,0.025) 3px,
+    rgba(96,232,64,0.025) 4px
+  );
+  background-size: 100% 4px;
+}
+html.theme-cockpit .field  {
+  border-radius: 0;
+  border: 1px solid rgba(96,232,64,0.25);
+  border-left: 1px solid rgba(96,232,64,0.25);
+  font-family: 'Courier New', monospace;
+}
+html.theme-cockpit .tag    {
+  border-radius: 0;
+  border: 1px solid rgba(96,232,64,0.3);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.15em;
+}
+html.theme-cockpit .btn    { border-radius: 0; font-family: 'Courier New', monospace; letter-spacing: 0.15em; }
+html.theme-cockpit .btn-primary { border: 1px solid rgba(96,232,64,0.8); box-shadow: 0 0 12px rgba(96,232,64,0.2); }
+html.theme-cockpit .label  { letter-spacing: 0.3em; font-family: 'Courier New', monospace; }
+html.theme-cockpit .eyebrow { font-family: 'Courier New', monospace; }
 
-/* ── Origin (Origin Jumpworks 890 Jump) ───────────────────────────────── */
-/*    Navy-charcoal hull, ice-blue thruster glow, gold accent trim        */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ORIGIN  —  Origin Jumpworks 890 Jump luxury yacht
+   Warmth: deep navy / charcoal with ice-blue glow + gold trim
+   Shape:  all 8 corners chamfered — gemstone precision
+   Grid:   very fine diamond grid (18 px, rotated 45°)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-origin {
   color-scheme: dark;
-  --color-void:          #0a0d14;
-  --color-hull:          #111520;
-  --color-panel:         #161c2c;
-  --color-edge:          #263048;
-  --color-steel:         #384d6a;
-  --color-ink:           #dde8f4;
-  --color-muted:         #5878a0;
-  --color-quant:         #50b8e8;
-  --color-quant-dim:     #1a5878;
-  --color-amber:         #c8a040;
-  --color-toxic:         #48b870;
-  --color-danger:        #e04848;
-  --grid-color:          rgba(80,184,232,0.04);
-  --shadow-panel:        0 0 0 1px rgba(80,184,232,0.06) inset,
-                         0 1px 0 rgba(200,160,64,0.15),
-                         0 8px 32px rgba(0,0,0,0.7),
-                         0 2px 8px rgba(0,0,0,0.5);
-  --shadow-glow:         0 0 0 1px rgba(80,184,232,0.4), 0 0 24px rgba(80,184,232,0.2);
-  /* Gold top accent line — the signature Origin trim stripe */
-  --panel-accent-top:    rgba(200,160,64,0.6);
-  /* 890J silhouette: all four corners beveled — complex gemstone-like paneling */
-  --panel-clip:          polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 10px), 0 10px);
+  --color-void:          #090c12;
+  --color-hull:          #0f1422;
+  --color-panel:         #141a2e;
+  --color-edge:          #223050;
+  --color-steel:         #344d72;
+  --color-ink:           #e4eff8;
+  --color-muted:         #5070a0;
+  --color-quant:         #48c0f0;
+  --color-quant-dim:     #184870;
+  --color-amber:         #d0a830;
+  --color-toxic:         #40c070;
+  --color-danger:        #e04040;
+  --grid-color:          rgba(72,192,240,0.045);
+  --shadow-panel:        0 0 0 1px rgba(72,192,240,0.08) inset,
+                         0 1px 0 rgba(208,168,48,0.4),
+                         0 -1px 0 rgba(72,192,240,0.1) inset,
+                         0 12px 40px rgba(0,0,0,0.8),
+                         0 2px 12px rgba(0,0,0,0.6);
+  --shadow-glow:         0 0 0 1px rgba(72,192,240,0.5), 0 0 28px rgba(72,192,240,0.18);
+  --panel-accent-top:    rgba(208,168,48,0.7);
+  --panel-clip:          polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 12px), 0 12px);
   --panel-radius:        0;
-  --panel-left:          2px solid rgba(80,184,232,0.35);
+  --panel-left:          1px solid rgba(72,192,240,0.3);
 }
-html.theme-origin .field  { border-radius: 0; border-left: 2px solid rgba(80,184,232,0.2); }
-html.theme-origin .tag    { clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px); border-radius: 0; }
-html.theme-origin .btn    { border-radius: 0; letter-spacing: 0.1em; }
-html.theme-origin .btn-primary { border-top: 2px solid rgba(200,160,64,0.6); }
-html.theme-origin .label  { letter-spacing: 0.2em; }
-html.theme-origin body    { background-size: 30px 30px; }
+html.theme-origin body {
+  background-image:
+    linear-gradient(45deg, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(-45deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+html.theme-origin .field  {
+  border-radius: 0;
+  border-left: 1px solid rgba(72,192,240,0.2);
+  border-bottom: 1px solid rgba(208,168,48,0.15);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 8px);
+}
+html.theme-origin .tag    {
+  clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px);
+  border-radius: 0;
+  border-color: rgba(72,192,240,0.25);
+}
+html.theme-origin .btn    { border-radius: 0; letter-spacing: 0.12em; }
+html.theme-origin .btn-primary {
+  border-top: 1px solid rgba(208,168,48,0.8);
+  border-bottom: 1px solid rgba(208,168,48,0.3);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 10px);
+}
+html.theme-origin .btn-ghost {
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 10px);
+}
+html.theme-origin .label  { letter-spacing: 0.25em; }
 
-/* ── Gatac (Gatac Manufacture) ────────────────────────────────────────── */
-/*    Deep violet with lavender highlights — sleek alien aesthetic         */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GATAC  —  Gatac Manufacture alien/organic aesthetic
+   Warmth: deep void-black with violet-magenta bioluminescence
+   Shape:  parallelogram — left side slanted (truly alien geometry)
+   Grid:   diagonal 45° grid (30 px)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-gatac {
   color-scheme: dark;
-  --color-void:          #0d0d12;
-  --color-hull:          #13101e;
-  --color-panel:         #13101e;
-  --color-edge:          #2d1f4e;
-  --color-steel:         #3d2f5e;
-  --color-ink:           #e0d8f0;
-  --color-muted:         #6b6880;
-  --color-quant:         #a78bfa;
-  --color-quant-dim:     #5b3fa8;
-  --color-amber:         #f59e0b;
-  --color-toxic:         #84cc16;
-  --color-danger:        #ef4444;
-  --grid-color:          rgba(45,31,78,0.35);
-  --shadow-panel:        0 0 0 1px rgba(167,139,250,0.05) inset, 0 18px 40px -24px rgba(0,0,0,0.8);
-  --shadow-glow:         0 0 0 1px rgba(167,139,250,0.25), 0 0 24px -6px rgba(167,139,250,0.35);
+  --color-void:          #09070f;
+  --color-hull:          #100d1c;
+  --color-panel:         #140f22;
+  --color-edge:          #2a1850;
+  --color-steel:         #3a2268;
+  --color-ink:           #e8d8ff;
+  --color-muted:         #6850a0;
+  --color-quant:         #c060ff;
+  --color-quant-dim:     #601888;
+  --color-amber:         #f0a000;
+  --color-toxic:         #80e060;
+  --color-danger:        #ff4060;
+  --grid-color:          rgba(192,96,255,0.06);
+  --shadow-panel:        0 0 0 1px rgba(192,96,255,0.08) inset,
+                         -3px 0 0 rgba(192,96,255,0.35) inset,
+                         0 20px 50px rgba(0,0,0,0.9),
+                         0 0 80px rgba(192,96,255,0.04);
+  --shadow-glow:         0 0 0 1px rgba(192,96,255,0.4), 0 0 30px rgba(192,96,255,0.2);
   --panel-accent-top:    transparent;
-  --panel-clip:          none;
-  --panel-radius:        0.5rem;
-  --panel-left:          1px solid var(--color-edge);
-}
-
-/* ── Odin Trooper ─────────────────────────────────────────────────────── */
-/*    Armored carrier: military olive over near-black, Odin orange-red     */
-html.theme-odin {
-  color-scheme: dark;
-  --color-void:          #090b07;
-  --color-hull:          #111510;
-  --color-panel:         #191e15;
-  --color-edge:          #2c3424;
-  --color-steel:         #404e32;
-  --color-ink:           #cfd8bc;
-  --color-muted:         #5e6850;
-  --color-quant:         #e04808;
-  --color-quant-dim:     #882804;
-  --color-amber:         #c84008;
-  --color-toxic:         #6a9020;
-  --color-danger:        #e02010;
-  --grid-color:          rgba(224,72,8,0.05);
-  --shadow-panel:        0 0 0 1px rgba(224,72,8,0.08) inset, 0 8px 32px rgba(0,0,0,0.8);
-  --shadow-glow:         0 0 0 1px rgba(224,72,8,0.4), 0 0 20px rgba(224,72,8,0.15);
-  --panel-accent-top:    transparent;
-  /* Armor plate: bottom-right bevel — echoes the angled stern of the Odin */
-  --panel-clip:          polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  --panel-clip:          polygon(18px 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
   --panel-radius:        0;
-  --panel-left:          3px solid rgba(224,72,8,0.75);
+  --panel-left:          none;
 }
-html.theme-odin .field  { border-radius: 0; border-left: 2px solid rgba(224,72,8,0.35); }
-html.theme-odin .tag    { border-radius: 0; }
-html.theme-odin .btn    { border-radius: 0; letter-spacing: 0.12em; }
-html.theme-odin .label  { letter-spacing: 0.18em; }
-html.theme-odin body    { background-size: 40px 40px; }
+html.theme-gatac body {
+  background-image:
+    linear-gradient(45deg, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(-45deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+html.theme-gatac .field  {
+  border-radius: 0;
+  border-left: none;
+  border-right: 2px solid rgba(192,96,255,0.3);
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+}
+html.theme-gatac .tag    {
+  border-radius: 0;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  border-color: rgba(192,96,255,0.3);
+  padding-left: 14px;
+  padding-right: 14px;
+}
+html.theme-gatac .btn    {
+  border-radius: 0;
+  letter-spacing: 0.08em;
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  padding-left: 24px;
+  padding-right: 24px;
+}
+html.theme-gatac .btn-primary { border-right: 2px solid rgba(192,96,255,0.8); }
+html.theme-gatac .label  { letter-spacing: 0.15em; color: rgba(192,96,255,0.7); }
 
-/* ── Hornet (Anvil Aerospace F7C) ─────────────────────────────────────── */
-/*    Steel-blue fighter: swept-wing panels, opposing diagonal cuts       */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HORNET  —  Anvil Aerospace F7C military fighter
+   Warmth: gunmetal grey with electric-blue highlights
+   Shape:  opposite diagonal cuts (top-right + bottom-left — swept wing)
+   Grid:   diagonal hatch lines (-45°, tight 10 px)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-hornet {
   color-scheme: dark;
-  --color-void:          #0c0e12;
-  --color-hull:          #14181e;
-  --color-panel:         #1a1f28;
-  --color-edge:          #2a3040;
-  --color-steel:         #3c4858;
-  --color-ink:           #d8e8f4;
-  --color-muted:         #5a7080;
-  --color-quant:         #5ab0d8;
-  --color-quant-dim:     #2a6080;
-  --color-amber:         #7cd4f0;
-  --color-toxic:         #50b878;
+  --color-void:          #0a0c10;
+  --color-hull:          #121620;
+  --color-panel:         #181d28;
+  --color-edge:          #262e40;
+  --color-steel:         #364456;
+  --color-ink:           #d0e4f4;
+  --color-muted:         #506480;
+  --color-quant:         #40a8e0;
+  --color-quant-dim:     #185880;
+  --color-amber:         #58c8f8;
+  --color-toxic:         #48c878;
   --color-danger:        #e04040;
-  --grid-color:          rgba(90,176,216,0.06);
-  --shadow-panel:        0 0 0 1px rgba(90,176,216,0.08) inset, 0 8px 32px rgba(0,0,0,0.8);
-  --shadow-glow:         0 0 0 1px rgba(90,176,216,0.4), 0 0 20px rgba(90,176,216,0.2);
-  --panel-accent-top:    var(--color-quant);
-  /* Swept-wing cut: top-right + bottom-left corners — like the Hornet's cross-section */
-  --panel-clip:          polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  --grid-color:          rgba(64,168,224,0.07);
+  --shadow-panel:        0 2px 0 rgba(64,168,224,0.35) inset,
+                         0 0 0 1px rgba(64,168,224,0.07) inset,
+                         0 8px 32px rgba(0,0,0,0.85),
+                         -2px 2px 8px rgba(0,0,0,0.5);
+  --shadow-glow:         0 0 0 1px rgba(64,168,224,0.5), 0 0 22px rgba(64,168,224,0.22);
+  --panel-accent-top:    rgba(64,168,224,0.7);
+  --panel-clip:          polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
   --panel-radius:        0;
-  --panel-left:          1px solid var(--color-edge);
+  --panel-left:          none;
 }
-html.theme-hornet .btn        { border-radius: 0; letter-spacing: 0.1em; }
-html.theme-hornet .btn-primary { border-top: 2px solid var(--color-amber); }
-html.theme-hornet .field      { border-radius: 0; }
-html.theme-hornet .tag        { border-radius: 0; clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px)); }
-html.theme-hornet body        { background-size: 36px 36px; }
-html.theme-hornet .label      { letter-spacing: 0.14em; }
+html.theme-hornet body {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(64,168,224,0.035) 8px,
+    rgba(64,168,224,0.035) 9px
+  );
+  background-size: auto;
+}
+html.theme-hornet .field  {
+  border-radius: 0;
+  border-top: 1px solid rgba(64,168,224,0.2);
+  border-left: none;
+  border-bottom: 2px solid rgba(64,168,224,0.15);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+html.theme-hornet .tag    {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  border-color: rgba(64,168,224,0.3);
+}
+html.theme-hornet .btn    {
+  border-radius: 0;
+  letter-spacing: 0.1em;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+html.theme-hornet .btn-primary { border-top: 2px solid rgba(64,168,224,0.9); }
+html.theme-hornet .label  { letter-spacing: 0.18em; }
 
-/* ── Mole-specific shape overrides ───────────────────────────────────── */
-/* html has no theme-* class when Mole is active (it's the default)      */
-html:not([class*="theme-"]) .field  { border-radius: 0; border-left: 2px solid rgba(217,74,10,0.4); }
-html:not([class*="theme-"]) .tag    { border-radius: 0; }
-html:not([class*="theme-"]) .btn    { border-radius: 0; }
-html:not([class*="theme-"]) .label  { letter-spacing: 0.16em; }
-html:not([class*="theme-"]) body    { background-size: 40px 40px; }
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ODIN TROOPER  —  Aegis Odin armored carrier
+   Warmth: military olive-black + Odin orange-red warning
+   Shape:  bottom-right bevel (armour plate, angled stern)
+   Grid:   radar dot-matrix (radial-gradient circles, 22 px)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html.theme-odin {
+  color-scheme: dark;
+  --color-void:          #080a06;
+  --color-hull:          #0f1209;
+  --color-panel:         #161a10;
+  --color-edge:          #2a3018;
+  --color-steel:         #3c4828;
+  --color-ink:           #d0d8a8;
+  --color-muted:         #586040;
+  --color-quant:         #d84000;
+  --color-quant-dim:     #802000;
+  --color-amber:         #c04000;
+  --color-toxic:         #68a010;
+  --color-danger:        #e01010;
+  --grid-color:          rgba(216,64,0,0.08);
+  --shadow-panel:        0 0 0 1px rgba(216,64,0,0.12) inset,
+                         0 -3px 0 rgba(216,64,0,0.5) inset,
+                         0 10px 36px rgba(0,0,0,0.9),
+                         2px 4px 0 rgba(0,0,0,0.5);
+  --shadow-glow:         0 0 0 1px rgba(216,64,0,0.5), 0 0 22px rgba(216,64,0,0.18);
+  --panel-accent-top:    transparent;
+  --panel-clip:          polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+  --panel-radius:        0;
+  --panel-left:          4px solid rgba(216,64,0,0.8);
+}
+html.theme-odin body {
+  background-image: radial-gradient(circle, rgba(216,64,0,0.12) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+html.theme-odin .field  {
+  border-radius: 0;
+  border-left: 3px solid rgba(216,64,0,0.4);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+}
+html.theme-odin .tag    {
+  border-radius: 0;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
+  border-color: rgba(216,64,0,0.4);
+}
+html.theme-odin .btn    { border-radius: 0; letter-spacing: 0.16em; }
+html.theme-odin .btn-primary {
+  border-bottom: 2px solid rgba(216,64,0,0.9);
+  border-right: 2px solid rgba(216,64,0,0.6);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+html.theme-odin .btn-ghost {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+html.theme-odin .label  { letter-spacing: 0.22em; }
 
-/* ── Base styles ──────────────────────────────────────────────────────── */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BASE STYLES
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html, body {
   background-color: var(--color-void);
   color: var(--color-ink);
