@@ -198,7 +198,7 @@ html.theme-gatac {
                          0 0 80px rgba(192,96,255,0.04);
   --shadow-glow:         0 0 0 1px rgba(192,96,255,0.4), 0 0 30px rgba(192,96,255,0.2);
   --panel-accent-top:    transparent;
-  --panel-clip:          polygon(18px 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
+  --panel-clip:          polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
   --panel-radius:        0;
   --panel-left:          none;
 }
@@ -208,25 +208,28 @@ html.theme-gatac body {
     linear-gradient(-45deg, var(--grid-color) 1px, transparent 1px);
   background-size: 30px 30px;
 }
+html.theme-gatac .panel { padding-left: 1.25rem; padding-right: 1.25rem; }
 html.theme-gatac .field  {
   border-radius: 0;
   border-left: none;
   border-right: 2px solid rgba(192,96,255,0.3);
-  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  padding-left: 14px;
+  padding-right: 14px;
 }
 html.theme-gatac .tag    {
   border-radius: 0;
-  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
   border-color: rgba(192,96,255,0.3);
-  padding-left: 14px;
-  padding-right: 14px;
+  padding-left: 12px;
+  padding-right: 12px;
 }
 html.theme-gatac .btn    {
   border-radius: 0;
   letter-spacing: 0.08em;
-  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
-  padding-left: 24px;
-  padding-right: 24px;
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  padding-left: 22px;
+  padding-right: 22px;
 }
 html.theme-gatac .btn-primary { border-right: 2px solid rgba(192,96,255,0.8); }
 html.theme-gatac .label  { letter-spacing: 0.15em; color: rgba(192,96,255,0.7); }
