@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 
-export type Design = "mole" | "cockpit" | "cream" | "purple" | "hornet";
+export type Design = "mole" | "cockpit" | "origin" | "gatac" | "hornet";
 
-const ALL_THEMES: Design[] = ["mole", "cockpit", "cream", "purple", "hornet"];
+const ALL_THEMES: Design[] = ["mole", "cockpit", "origin", "gatac", "hornet"];
 const DEFAULT: Design = "mole";
 
 function applyDesign(design: Design) {
@@ -20,7 +20,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const raw = localStorage.getItem("hma-design");
     // Migrate old keys from previous sessions
     const migrated: Record<string, Design> = {
-      swiss: "mole", mineral: "cream", noir: "purple", dark: "mole", light: "mole",
+      swiss: "mole", mineral: "origin", noir: "gatac", dark: "mole", light: "mole",
+      cream: "origin", purple: "gatac",
     };
     const stored = (raw ? (migrated[raw] ?? raw) : DEFAULT) as Design;
     applyDesign(stored);

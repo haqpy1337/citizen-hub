@@ -17,8 +17,8 @@ const links = [
 const designs: { id: Design; label: string }[] = [
   { id: "mole",    label: "Mole" },
   { id: "cockpit", label: "Cockpit" },
-  { id: "cream",   label: "Cream" },
-  { id: "purple",  label: "Purple" },
+  { id: "origin",  label: "Origin" },
+  { id: "gatac",   label: "Gatac" },
   { id: "hornet",  label: "Hornet" },
 ];
 

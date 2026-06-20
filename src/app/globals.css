@@ -53,32 +53,41 @@ html.theme-cockpit {
 }
 html.theme-cockpit body { font-family: 'Courier New', 'Consolas', monospace; }
 
-/* ── Cream ────────────────────────────────────────────────────────────── */
-html.theme-cream {
+/* ── Origin (Origin Jumpworks) ────────────────────────────────────────── */
+/*    Luxury white hull, charcoal sweep accents, Origin gold               */
+html.theme-origin {
   color-scheme: light;
-  --color-void:          #f7f4ef;
-  --color-hull:          #ede6da;
-  --color-panel:         #ede6da;
-  --color-edge:          #d4c9b6;
-  --color-steel:         #b09a80;
-  --color-ink:           #2c2416;
-  --color-muted:         #7c5f3a;
-  --color-quant:         #9a6e30;
-  --color-quant-dim:     #6a4a18;
-  --color-amber:         #c07020;
-  --color-toxic:         #5a7820;
-  --color-danger:        #c03010;
-  --grid-color:          rgba(44,36,22,0.05);
-  --shadow-panel:        0 1px 3px rgba(44,36,22,0.08), 0 1px 0 rgba(44,36,22,0.04);
-  --shadow-glow:         0 0 0 1px rgba(154,110,48,0.3), 0 0 12px rgba(154,110,48,0.15);
+  --color-void:          #f3f4f8;
+  --color-hull:          #eaecf2;
+  --color-panel:         #ffffff;
+  --color-edge:          #ced2e0;
+  --color-steel:         #9ea4ba;
+  --color-ink:           #1a1c28;
+  --color-muted:         #64697e;
+  --color-quant:         #b8882a;
+  --color-quant-dim:     #7a5a18;
+  --color-amber:         #a06820;
+  --color-toxic:         #3a7840;
+  --color-danger:        #c02828;
+  --grid-color:          rgba(26,28,40,0.03);
+  --shadow-panel:        0 2px 12px rgba(26,28,40,0.07), 0 1px 3px rgba(26,28,40,0.04);
+  --shadow-glow:         0 0 0 2px rgba(184,136,42,0.28), 0 0 20px rgba(184,136,42,0.1);
   --panel-accent-top:    transparent;
-  --panel-clip:          none;
-  --panel-radius:        0.5rem;
+  /* Swept-nose chamfer: top-left corner — echoes the Origin ship's cockpit sweep */
+  --panel-clip:          polygon(12px 0, 100% 0, 100% 100%, 0 100%, 0 12px);
+  --panel-radius:        0;
   --panel-left:          1px solid var(--color-edge);
 }
+html.theme-origin .panel    { border-right: 3px solid rgba(184,136,42,0.5); }
+html.theme-origin .field    { border-radius: 0.125rem; }
+html.theme-origin .btn      { border-radius: 0.125rem; letter-spacing: 0.1em; }
+html.theme-origin .tag      { border-radius: 0.125rem; }
+html.theme-origin .label    { letter-spacing: 0.2em; }
+html.theme-origin body      { background-size: 28px 28px; }
 
-/* ── Purple ───────────────────────────────────────────────────────────── */
-html.theme-purple {
+/* ── Gatac (Gatac Manufacture) ────────────────────────────────────────── */
+/*    Deep violet with lavender highlights — sleek alien aesthetic         */
+html.theme-gatac {
   color-scheme: dark;
   --color-void:          #0d0d12;
   --color-hull:          #13101e;
