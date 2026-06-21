@@ -55,30 +55,31 @@ export default function GroupDetailClient({
   // Member search
   const [searchQ, setSearchQ] = useState("");
   const [searchResults, setSearchResults] = useState<UserResult[]>([]);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
   const isCreator = group.myRole === "creator";
 
   useEffect(() => {
-    if (!searchOpen) return;
     function onOutside(e: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchFocused(false);
+      }
     }
     document.addEventListener("mousedown", onOutside);
     return () => document.removeEventListener("mousedown", onOutside);
-  }, [searchOpen]);
+  }, []);
 
   useEffect(() => {
     if (searchQ.trim().length < 2) { setSearchResults([]); return; }
     const delay = setTimeout(async () => {
       const res = await fetch(`/api/users/search?q=${encodeURIComponent(searchQ.trim())}`);
       if (!res.ok) return;
-      const data: UserResult[] = await res.json();
+      const data = await res.json();
+      if (!Array.isArray(data)) return;
       const memberIds = new Set(group.members.map((m) => m.userId));
-      setSearchResults(data.filter((u) => !memberIds.has(u.id)));
-      setSearchOpen(true);
+      setSearchResults(data.filter((u: UserResult) => !memberIds.has(u.id)));
     }, 200);
     return () => clearTimeout(delay);
   }, [searchQ, group.members]);
@@ -96,7 +97,7 @@ export default function GroupDetailClient({
     setGroup((g) => ({ ...g, members: [...g.members, newMember] }));
     setSearchQ("");
     setSearchResults([]);
-    setSearchOpen(false);
+    setSearchFocused(false);
   }
 
   async function removeMember(userId: string) {
@@ -165,10 +166,10 @@ export default function GroupDetailClient({
                   className="field"
                   placeholder="Username suchen…"
                   value={searchQ}
-                  onChange={(e) => { setSearchQ(e.target.value); setSearchOpen(true); }}
-                  onFocus={() => setSearchOpen(true)}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
                 />
-                {searchOpen && searchResults.length > 0 && (
+                {searchFocused && searchResults.length > 0 && (
                   <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-md border border-edge bg-panel overflow-hidden shadow-lg">
                     {searchResults.map((u) => (
                       <button
@@ -186,7 +187,7 @@ export default function GroupDetailClient({
                     ))}
                   </div>
                 )}
-                {searchOpen && searchQ.trim().length >= 2 && searchResults.length === 0 && (
+                {searchFocused && searchQ.trim().length >= 2 && searchResults.length === 0 && (
                   <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-md border border-edge bg-panel px-4 py-3 text-sm text-muted">
                     Kein Nutzer gefunden.
                   </div>
