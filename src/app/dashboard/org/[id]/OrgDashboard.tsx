@@ -2,6 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import OreCombobox from "@/components/OreCombobox";
+import { parseDurationInput, formatDuration } from "@/lib/format";
+import type { OreCommodity, RefineryMethod, RefineryStation } from "@/lib/clientTypes";
+import { getClientRefineryStations, getClientRefineryMethods, getClientOreCommodities } from "@/lib/clientUex";
+
+interface MaterialRow {
+  name: string; commodityId: number | null; quantity: string;
+  unit: "SCU" | "cSCU"; yieldPercent: string; liveYieldMod: number | null;
+}
+const emptyRow: MaterialRow = { name: "", commodityId: null, quantity: "", unit: "SCU", yieldPercent: "", liveYieldMod: null };
 
 type User = { id: string; username: string };
 type Member = { userId: string; role: string; user: User };
@@ -38,6 +48,96 @@ export default function OrgDashboard({
   const [splitDraft, setSplitDraft] = useState<Record<string, number>>({});
   const [savingSplit, setSavingSplit] = useState(false);
   const isAdmin = ["owner", "admin"].includes(myRole);
+
+  // Job creation form state
+  const [showNewJob, setShowNewJob] = useState(false);
+  const [jStations, setJStations] = useState<RefineryStation[]>([]);
+  const [jMethods, setJMethods] = useState<RefineryMethod[]>([]);
+  const [jOres, setJOres] = useState<OreCommodity[]>([]);
+  const [jStationId, setJStationId] = useState("");
+  const [jStationName, setJStationName] = useState("");
+  const [jSystemName, setJSystemName] = useState("");
+  const [jMethod, setJMethod] = useState("");
+  const [jDuration, setJDuration] = useState("");
+  const [jNote, setJNote] = useState("");
+  const [jGroupId, setJGroupId] = useState("");
+  const [jMaterials, setJMaterials] = useState<MaterialRow[]>([{ ...emptyRow }]);
+  const [jError, setJError] = useState<string | null>(null);
+  const [jSaving, setJSaving] = useState(false);
+
+  useEffect(() => {
+    if (!showNewJob || jStations.length > 0) return;
+    Promise.all([getClientRefineryStations(), getClientRefineryMethods(), getClientOreCommodities()])
+      .then(([s, m, o]) => { setJStations(s); setJMethods(m); setJOres(o); });
+  }, [showNewJob, jStations.length]);
+
+  function jPickStation(value: string) {
+    setJStationId(value);
+    const st = jStations.find((s) => String(s.id) === value);
+    if (st) {
+      setJStationName(st.name);
+      setJSystemName(st.system ?? "");
+      setJMaterials((rows) => rows.map((r) => {
+        if (!r.name) return r;
+        const entry = st.yields.find((y) => y.name.toLowerCase() === r.name.toLowerCase());
+        const mod = entry?.yieldPercent ?? null;
+        return { ...r, liveYieldMod: mod, yieldPercent: mod !== null ? String(mod) : r.yieldPercent };
+      }));
+    }
+  }
+
+  function jUpdateRow(i: number, patch: Partial<MaterialRow>) {
+    setJMaterials((rows) => rows.map((r, idx) => {
+      if (idx !== i) return r;
+      const updated = { ...r, ...patch };
+      if ("name" in patch && jStationId) {
+        const st = jStations.find((s) => String(s.id) === jStationId);
+        const entry = st?.yields.find((y) => y.name.toLowerCase() === (patch.name ?? "").toLowerCase());
+        const mod = entry?.yieldPercent ?? null;
+        updated.liveYieldMod = mod;
+        if (mod !== null) updated.yieldPercent = String(mod);
+      }
+      return updated;
+    }));
+  }
+
+  const jDurationSec = parseDurationInput(jDuration);
+
+  async function submitNewJob(e: React.FormEvent) {
+    e.preventDefault();
+    setJError(null);
+    if (!jStationName.trim()) return setJError("Station erforderlich.");
+    if (!jDurationSec || jDurationSec <= 0) return setJError("Gültige Dauer eingeben, z.B. '1h 30m'.");
+    const parsedMaterials = jMaterials.filter((m) => m.name.trim() && m.quantity.trim()).map((m) => ({
+      name: m.name.trim(), commodityId: m.commodityId ?? undefined,
+      quantity: Number(m.quantity), unit: m.unit,
+      yieldPercent: m.yieldPercent ? Number(m.yieldPercent) : undefined,
+    }));
+    if (parsedMaterials.length === 0) return setJError("Mindestens ein Material erforderlich.");
+    setJSaving(true);
+    try {
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stationId: jStationId ? Number(jStationId) : undefined,
+          stationName: jStationName.trim(), systemName: jSystemName.trim() || undefined,
+          method: jMethod.trim() || undefined, durationSec: jDurationSec,
+          note: jNote.trim() || undefined, groupId: jGroupId || undefined,
+          materials: parsedMaterials,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setJError(data.error ?? "Fehler."); return; }
+      // Reset form
+      setShowNewJob(false);
+      setJStationId(""); setJStationName(""); setJSystemName("");
+      setJMethod(""); setJDuration(""); setJNote(""); setJGroupId("");
+      setJMaterials([{ ...emptyRow }]);
+      loadJobs();
+    } catch { setJError("Verbindungsfehler."); }
+    finally { setJSaving(false); }
+  }
 
   const loadJobs = useCallback(async () => {
     setLoadingJobs(true);
@@ -250,8 +350,90 @@ export default function OrgDashboard({
       {/* ── Jobs Tab ── */}
       {tab === "jobs" && (
         <div className="space-y-3">
+          <div className="flex justify-end">
+            <button onClick={() => setShowNewJob((v) => !v)} className="btn-primary text-sm">
+              {showNewJob ? "Abbrechen" : "+ Job erstellen"}
+            </button>
+          </div>
+
+          {showNewJob && (
+            <form onSubmit={submitNewJob} className="panel p-5 space-y-5">
+              <h3 className="font-display text-lg font-semibold">Neuer Org-Job</h3>
+
+              {/* Station */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="label">Station (Live-Liste)</label>
+                  <select className="field" value={jStationId} onChange={(e) => jPickStation(e.target.value)}>
+                    <option value="">— manuell eingeben —</option>
+                    {jStations.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}{s.system ? ` · ${s.system}` : ""}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Stationsname</label>
+                  <input className="field" value={jStationName} onChange={(e) => setJStationName(e.target.value)} placeholder="z.B. ARC-L1 Wide Forest Station" required />
+                </div>
+                <div>
+                  <label className="label">System (optional)</label>
+                  <input className="field" value={jSystemName} onChange={(e) => setJSystemName(e.target.value)} placeholder="Stanton" />
+                </div>
+                <div>
+                  <label className="label">Methode (optional)</label>
+                  <input className="field" list="jmethods" value={jMethod} onChange={(e) => setJMethod(e.target.value)} placeholder="z.B. Dinyx Solventation" />
+                  <datalist id="jmethods">{jMethods.map((m) => <option key={m.name} value={m.name} />)}</datalist>
+                </div>
+                <div>
+                  <label className="label">Dauer</label>
+                  <input className="field" value={jDuration} onChange={(e) => setJDuration(e.target.value)} placeholder="z.B. 1h 30m" required />
+                  <p className="mt-1 font-mono text-xs text-muted">{jDurationSec ? `= ${formatDuration(jDurationSec)}` : "Format: 1h 30m / 90m"}</p>
+                </div>
+                <div>
+                  <label className="label">Gruppe (optional)</label>
+                  <select className="field" value={jGroupId} onChange={(e) => setJGroupId(e.target.value)}>
+                    <option value="">— keine Gruppe —</option>
+                    {org.groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Materials */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="label mb-0">Materialien</label>
+                  <button type="button" onClick={() => setJMaterials((r) => [...r, { ...emptyRow }])} className="btn-ghost text-xs py-1">+ Material</button>
+                </div>
+                <div className="space-y-2">
+                  {jMaterials.map((row, i) => (
+                    <div key={i} className="grid gap-2 sm:grid-cols-[1fr_90px_90px_110px_36px]">
+                      <OreCombobox
+                        value={row.name} ores={jOres} placeholder="Erz, z.B. Quantanium (Raw)"
+                        onChange={(name, ore) => jUpdateRow(i, { name, commodityId: ore?.id ?? null })}
+                      />
+                      <input className="field" type="number" min="0" step="any" placeholder="Menge" value={row.quantity} onChange={(e) => jUpdateRow(i, { quantity: e.target.value })} />
+                      <select className="field" value={row.unit} onChange={(e) => jUpdateRow(i, { unit: e.target.value as "SCU" | "cSCU" })}>
+                        <option value="SCU">SCU</option>
+                        <option value="cSCU">cSCU</option>
+                      </select>
+                      <input className={`field ${row.liveYieldMod !== null ? "border-quant/50" : ""}`} type="number" min="-100" max="100" step="any" placeholder="% Yield" value={row.yieldPercent} onChange={(e) => jUpdateRow(i, { yieldPercent: e.target.value, liveYieldMod: null })} />
+                      <button type="button" onClick={() => setJMaterials((r) => r.length > 1 ? r.filter((_, idx) => idx !== i) : r)} className="rounded-md border border-edge text-muted hover:border-danger hover:text-danger">✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {jError && <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">{jError}</p>}
+
+              <div className="flex gap-3">
+                <button type="submit" disabled={jSaving} className="btn-primary">{jSaving ? "Speichern…" : "Job starten"}</button>
+                <button type="button" onClick={() => setShowNewJob(false)} className="btn-ghost">Abbrechen</button>
+              </div>
+            </form>
+          )}
+
           {loadingJobs && <p className="text-muted text-sm">Lade Jobs…</p>}
-          {!loadingJobs && jobs.length === 0 && <p className="text-muted text-sm">Keine Jobs in dieser Org.</p>}
+          {!loadingJobs && jobs.length === 0 && !showNewJob && <p className="text-muted text-sm">Keine Jobs in dieser Org.</p>}
           {jobs.map((job) => {
             const done = job.status === "done" || new Date(job.finishesAt) <= new Date();
             const isExpanded = expandedJob === job.id;

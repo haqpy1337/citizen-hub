@@ -44,6 +44,7 @@ export async function POST(req: Request) {
       durationSec: d.durationSec,
       finishesAt,
       note: d.note,
+      groupId: d.groupId,
       status: "running",
       materials: {
         create: d.materials.map((m) => ({
