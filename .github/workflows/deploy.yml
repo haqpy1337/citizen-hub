@@ -19,5 +19,6 @@ jobs:
             git pull origin main
             npm ci --production=false
             npx prisma generate
+            npx prisma db push
             npm run build
             pm2 restart hma
