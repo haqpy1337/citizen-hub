@@ -293,8 +293,7 @@ export default function OrgDashboard({
       {/* Groups Tab */}
       {tab === "groups" && (
         <div className="space-y-4">
-          {isAdmin && (
-            <form onSubmit={createGroup} className="panel p-4 flex gap-3 items-end">
+          <form onSubmit={createGroup} className="panel p-4 flex gap-3 items-end">
               <div className="flex-1">
                 <label className="label">Neue Gruppe</label>
                 <input
@@ -310,7 +309,6 @@ export default function OrgDashboard({
                 Erstellen
               </button>
             </form>
-          )}
 
           {org.groups.length === 0 && (
             <p className="text-muted text-sm">Noch keine Gruppen.</p>
@@ -349,7 +347,7 @@ export default function OrgDashboard({
                   ))}
                   {members.length === 0 && <span className="text-xs text-muted">Keine Mitglieder</span>}
                 </div>
-                {isAdmin && notInGroup.length > 0 && (
+                {notInGroup.length > 0 && (
                   <div>
                     <p className="label mb-1">Mitglied hinzufügen</p>
                     <div className="flex flex-wrap gap-2">

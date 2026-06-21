@@ -32,7 +32,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const membership = await prisma.orgMembership.findUnique({
     where: { orgId_userId: { orgId: params.id, userId: session.userId } },
   });
-  if (!membership || !["owner", "admin"].includes(membership.role))
+  if (!membership)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = schema.safeParse(await req.json());
