@@ -32,12 +32,15 @@ function formatQueueShort(sec: number): string {
   return m === 0 ? `${h}h queue` : `${h}h ${m}m queue`;
 }
 
+type Group = { id: string; name: string };
+
 export default function JobForm() {
   const router = useRouter();
 
   const [stations, setStations] = useState<RefineryStation[]>([]);
   const [methods, setMethods] = useState<RefineryMethod[]>([]);
   const [ores, setOres] = useState<OreCommodity[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [liveOk, setLiveOk] = useState(true);
 
   const [stationId, setStationId] = useState<string>("");
@@ -46,6 +49,7 @@ export default function JobForm() {
   const [method, setMethod] = useState("");
   const [duration, setDuration] = useState("");
   const [note, setNote] = useState("");
+  const [groupId, setGroupId] = useState("");
   const [materials, setMaterials] = useState<MaterialRow[]>([{ ...emptyRow }]);
 
   const [error, setError] = useState<string | null>(null);
@@ -56,11 +60,13 @@ export default function JobForm() {
       getClientRefineryStations(),
       getClientRefineryMethods(),
       getClientOreCommodities(),
+      fetch("/api/groups").then((r) => r.ok ? r.json() : []),
     ])
-      .then(([stations, methods, ores]) => {
+      .then(([stations, methods, ores, groups]) => {
         setStations(stations);
         setMethods(methods);
         setOres(ores);
+        setGroups(Array.isArray(groups) ? groups : []);
         if (stations.length === 0) setLiveOk(false);
       })
       .catch(() => setLiveOk(false));
@@ -161,6 +167,7 @@ export default function JobForm() {
           method: method.trim() || undefined,
           durationSec,
           note: note.trim() || undefined,
+          groupId: groupId || undefined,
           materials: parsedMaterials,
         }),
       });
@@ -244,6 +251,22 @@ export default function JobForm() {
         </div>
       </section>
 
+      {/* Group */}
+      {groups.length > 0 && (
+        <section className="panel p-5">
+          <h2 className="font-display text-lg font-semibold">Gruppe (optional)</h2>
+          <div className="mt-4">
+            <label className="label">Dieser Job gehört zu</label>
+            <select className="field" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+              <option value="">— Kein Gruppe —</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+        </section>
+      )}
+
       {/* Materials */}
       <section className="panel p-5">
         <div className="flex items-center justify-between">
@@ -324,6 +347,61 @@ export default function JobForm() {
           ))}
         </div>
       </section>
+
+      {/* Outcome estimate */}
+      {(() => {
+        const rows = materials.filter((m) => m.name.trim() && m.quantity.trim() && Number(m.quantity) > 0);
+        if (rows.length === 0) return null;
+        let totalValue = 0;
+        const lines = rows.map((m) => {
+          const qtyScu = m.unit === "cSCU" ? Number(m.quantity) / 100 : Number(m.quantity);
+          const yieldMod = m.yieldPercent ? Number(m.yieldPercent) : 0;
+          const refined = qtyScu * (100 + yieldMod) / 100;
+          const ore = ores.find((o) => o.id === m.commodityId || o.name.toLowerCase() === m.name.toLowerCase());
+          const price = ore?.pricePerScu ?? null;
+          const value = price != null ? refined * price : null;
+          if (value != null) totalValue += value;
+          return { name: m.name, qtyScu, yieldMod, refined, price, value };
+        });
+        const hasAnyPrice = lines.some((l) => l.price != null);
+        return (
+          <section className="panel p-5 border-quant/30">
+            <h2 className="font-display text-lg font-semibold text-quant">Geschätzter Ertrag</h2>
+            <p className="text-xs text-muted mt-0.5">Yield-Mod × Menge × aktueller Verkaufspreis</p>
+            <div className="mt-4 space-y-2">
+              {lines.map((l, i) => (
+                <div key={i} className="flex items-center gap-3 text-sm border-b border-edge/40 pb-2 last:border-0">
+                  <span className="flex-1 text-ink">{l.name}</span>
+                  <span className="font-mono text-muted text-xs">
+                    {l.qtyScu.toFixed(2)} SCU
+                    {l.yieldMod !== 0 && (
+                      <span className={l.yieldMod > 0 ? " text-toxic" : " text-danger"}>
+                        {" "}{l.yieldMod > 0 ? "+" : ""}{l.yieldMod}%
+                      </span>
+                    )}
+                    {" → "}<span className="text-ink">{l.refined.toFixed(2)} SCU</span>
+                  </span>
+                  {l.price != null ? (
+                    <span className="font-mono text-quant tabular-nums w-32 text-right">
+                      ~{Math.round(l.value!).toLocaleString()} aUEC
+                    </span>
+                  ) : (
+                    <span className="text-muted text-xs w-32 text-right">kein Preis</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {hasAnyPrice && (
+              <div className="mt-3 flex justify-between items-center border-t border-edge pt-3">
+                <span className="font-mono text-xs text-muted uppercase tracking-wider">Gesamt</span>
+                <span className="font-display font-bold text-quant tabular-nums">
+                  ~{Math.round(totalValue).toLocaleString()} aUEC
+                </span>
+              </div>
+            )}
+          </section>
+        );
+      })()}
 
       {/* Duration + Note */}
       <section className="panel p-5">
