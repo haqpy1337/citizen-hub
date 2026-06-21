@@ -55,7 +55,6 @@ export default function GroupDetailClient({
   // Member search
   const [searchQ, setSearchQ] = useState("");
   const [searchResults, setSearchResults] = useState<UserResult[]>([]);
-  const [searchFocused, setSearchFocused] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -64,7 +63,7 @@ export default function GroupDetailClient({
   useEffect(() => {
     function onOutside(e: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setSearchFocused(false);
+        setSearchResults([]);
       }
     }
     document.addEventListener("mousedown", onOutside);
@@ -97,7 +96,6 @@ export default function GroupDetailClient({
     setGroup((g) => ({ ...g, members: [...g.members, newMember] }));
     setSearchQ("");
     setSearchResults([]);
-    setSearchFocused(false);
   }
 
   async function removeMember(userId: string) {
@@ -167,9 +165,8 @@ export default function GroupDetailClient({
                   placeholder="Username suchen…"
                   value={searchQ}
                   onChange={(e) => setSearchQ(e.target.value)}
-                  onFocus={() => setSearchFocused(true)}
                 />
-                {searchFocused && searchResults.length > 0 && (
+                {searchResults.length > 0 && (
                   <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-md border border-edge bg-panel overflow-hidden shadow-lg">
                     {searchResults.map((u) => (
                       <button
@@ -187,7 +184,7 @@ export default function GroupDetailClient({
                     ))}
                   </div>
                 )}
-                {searchFocused && searchQ.trim().length >= 2 && searchResults.length === 0 && (
+                {searchQ.trim().length >= 2 && searchResults.length === 0 && (
                   <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-md border border-edge bg-panel px-4 py-3 text-sm text-muted">
                     Kein Nutzer gefunden.
                   </div>
