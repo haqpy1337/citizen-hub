@@ -8,11 +8,15 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  username     String        @unique
+  id           String   @id @default(cuid())
+  username     String   @unique
   passwordHash String
-  createdAt    DateTime      @default(now())
-  jobs         RefineryJob[]
+  createdAt    DateTime @default(now())
+
+  jobs            RefineryJob[]
+  orgMemberships  OrgMembership[]
+  groupMemberships GroupMembership[]
+  createdOrgs     Org[]
 }
 
 model RefineryJob {
@@ -32,8 +36,12 @@ model RefineryJob {
   status    String  @default("running")
   note      String?
 
-  materials JobMaterial[]
-  createdAt DateTime      @default(now())
+  groupId   String?
+  group     Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  materials     JobMaterial[]
+  earningsSplits EarningsSplit[]
+  createdAt     DateTime @default(now())
 }
 
 model JobMaterial {
@@ -46,4 +54,74 @@ model JobMaterial {
   quantity     Float
   unit         String @default("SCU")
   yieldPercent Float?
+}
+
+model Org {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  members OrgMembership[]
+  groups  Group[]
+  invites OrgInvite[]
+}
+
+model OrgMembership {
+  id     String @id @default(cuid())
+  orgId  String
+  org    Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   String @default("member") // owner | admin | member
+
+  joinedAt DateTime @default(now())
+
+  @@unique([orgId, userId])
+}
+
+model Group {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+
+  members GroupMembership[]
+  jobs    RefineryJob[]
+}
+
+model GroupMembership {
+  id      String @id @default(cuid())
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model OrgInvite {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  token     String   @unique @default(cuid())
+  expiresAt DateTime
+  usedBy    String?  // userId of who used it (null = unused)
+  createdAt DateTime @default(now())
+}
+
+model EarningsSplit {
+  id           String      @id @default(cuid())
+  jobId        String
+  job          RefineryJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId       String
+  sharePercent Float
+  paidOut      Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+
+  @@unique([jobId, userId])
 }
