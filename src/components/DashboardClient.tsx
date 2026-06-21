@@ -3,13 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-export type ActiveJob = {
-  id: string; stationName: string; durationSec: number;
-  finishesAt: string; materials: { name: string }[];
-};
-
 type ItemId =
   | "tile-jobs" | "tile-history" | "tile-ores"
   | "tile-trade" | "tile-refineries" | "tile-org" | "tile-new-job";
@@ -20,8 +13,6 @@ type Config = ConfigEntry[];
 type ItemMeta = {
   id: ItemId; label: string; sub: string; href: string; icon: string; colorVar: string; dimVar: string;
 };
-
-// ── Metadata ──────────────────────────────────────────────────────────────────
 
 const META: Record<ItemId, ItemMeta> = {
   "tile-jobs":       { id: "tile-jobs",       label: "My Jobs",      sub: "Manage your refinery orders",          href: "/dashboard/jobs",       icon: "⛏", colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)" },
@@ -51,82 +42,17 @@ function loadConfig(): Config {
 }
 function saveConfig(c: Config) { localStorage.setItem(STORAGE_KEY, JSON.stringify(c)); }
 
-// ── Active Jobs Panel (right sidebar) ─────────────────────────────────────────
-
-function ActiveJobsPanel({ jobs }: { jobs: ActiveJob[] }) {
-  const [, tick] = useState(0);
-  useEffect(() => { const id = setInterval(() => tick((n) => n + 1), 15000); return () => clearInterval(id); }, []);
-
+function DragHandle() {
   return (
-    <aside className="w-72 shrink-0 space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-base font-semibold text-ink flex items-center gap-2">
-          {jobs.length > 0 && <span className="inline-block w-2 h-2 rounded-full bg-toxic animate-pulse" />}
-          Currently Running
-        </h2>
-        <Link href="/dashboard/jobs" className="font-mono text-xs text-quant hover:underline">All →</Link>
-      </div>
-
-      {jobs.length === 0 ? (
-        <div className="panel p-5 flex flex-col items-center justify-center gap-3 text-center min-h-32">
-          <span className="text-3xl text-muted/30">⛏</span>
-          <p className="text-xs text-muted">No active jobs.<br />Start one to see it here.</p>
-          <Link href="/dashboard/jobs/new" className="btn-ghost text-xs py-1 px-3">+ New Job</Link>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {jobs.map((job) => {
-            const now = Date.now();
-            const finishes = new Date(job.finishesAt).getTime();
-            const leftSec = Math.max(0, Math.floor((finishes - now) / 1000));
-            const pct = Math.min(100, ((job.durationSec - leftSec) / job.durationSec) * 100);
-            const ready = leftSec === 0;
-            const h = Math.floor(leftSec / 3600);
-            const m = Math.floor((leftSec % 3600) / 60);
-            const s = leftSec % 60;
-            const timeLeft = leftSec < 60 ? `${s}s` : h > 0 ? `${h}h ${m}m` : `${m}m`;
-
-            return (
-              <div key={job.id} className="panel p-4 relative overflow-hidden" style={ready ? { borderColor: "rgba(90,170,48,0.5)" } : undefined}>
-                {ready && (
-                  <div className="absolute inset-0 pointer-events-none"
-                    style={{ background: "radial-gradient(ellipse at top right,rgba(90,170,48,0.08) 0%,transparent 65%)" }} />
-                )}
-                <div className="relative flex items-start justify-between gap-2 mb-3">
-                  <div className="min-w-0">
-                    <div className="font-display font-bold text-ink text-base leading-tight truncate">{job.stationName}</div>
-                    <div className="text-xs text-muted mt-0.5 truncate">{job.materials.map((m) => m.name).join(", ")}</div>
-                  </div>
-                  <span className={`font-mono font-bold text-sm tabular-nums shrink-0 ${ready ? "text-toxic" : "text-quant"}`}>
-                    {ready ? "✓ Ready" : timeLeft}
-                  </span>
-                </div>
-
-                <div className="h-2 overflow-hidden rounded-full border border-edge bg-hull">
-                  <div
-                    className={`h-full rounded-full transition-[width] duration-1000 ${ready ? "bg-toxic" : "bg-quant"}`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <div className="mt-1.5 flex justify-between items-center">
-                  <span className="text-[10px] text-muted font-mono">{Math.round(pct)}%</span>
-                  {!ready && (
-                    <span className="text-[10px] text-muted font-mono">
-                      fertig {new Date(job.finishesAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  )}
-                  {ready && <span className="text-[10px] text-toxic font-mono">zum Abholen bereit</span>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </aside>
+    <div className="absolute top-2 left-2 z-20 text-muted/50 hover:text-muted/90 transition-colors select-none" style={{ cursor: "grab" }} aria-hidden>
+      <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+        <circle cx="5" cy="4" r="1.2"/><circle cx="11" cy="4" r="1.2"/>
+        <circle cx="5" cy="8" r="1.2"/><circle cx="11" cy="8" r="1.2"/>
+        <circle cx="5" cy="12" r="1.2"/><circle cx="11" cy="12" r="1.2"/>
+      </svg>
+    </div>
   );
 }
-
-// ── Tile ──────────────────────────────────────────────────────────────────────
 
 function Tile({ meta, editing, onRemove }: { meta: ItemMeta; editing: boolean; onRemove: () => void }) {
   const isNew = meta.id === "tile-new-job";
@@ -170,21 +96,7 @@ function Tile({ meta, editing, onRemove }: { meta: ItemMeta; editing: boolean; o
   );
 }
 
-function DragHandle() {
-  return (
-    <div className="absolute top-2 left-2 z-20 text-muted/50 hover:text-muted/90 transition-colors select-none" style={{ cursor: "grab" }} aria-hidden>
-      <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-        <circle cx="5" cy="4" r="1.2"/><circle cx="11" cy="4" r="1.2"/>
-        <circle cx="5" cy="8" r="1.2"/><circle cx="11" cy="8" r="1.2"/>
-        <circle cx="5" cy="12" r="1.2"/><circle cx="11" cy="12" r="1.2"/>
-      </svg>
-    </div>
-  );
-}
-
-// ── Main ───────────────────────────────────────────────────────────────────────
-
-export default function DashboardClient({ username, activeJobs }: { username: string; activeJobs: ActiveJob[] }) {
+export default function DashboardClient({ username }: { username: string }) {
   const [config, setConfig] = useState<Config>(() => DEFAULT_ORDER.map((id) => ({ id, visible: true })));
   const [hydrated, setHydrated] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -216,15 +128,13 @@ export default function DashboardClient({ username, activeJobs }: { username: st
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     const sourceId = e.dataTransfer.getData("text/plain") as ItemId;
-    if (!sourceId) { resetDrag(); return; }
-    if (insertBefore && insertBefore !== sourceId) {
-      const next = [...config];
-      const from = next.findIndex((x) => x.id === sourceId);
-      const [item] = next.splice(from, 1);
-      const to = next.findIndex((x) => x.id === insertBefore);
-      next.splice(to, 0, item);
-      update(next);
-    }
+    if (!sourceId || !insertBefore || insertBefore === sourceId) { resetDrag(); return; }
+    const next = [...config];
+    const from = next.findIndex((x) => x.id === sourceId);
+    const [item] = next.splice(from, 1);
+    const to = next.findIndex((x) => x.id === insertBefore);
+    next.splice(to, 0, item);
+    update(next);
     resetDrag();
   }
 
@@ -247,7 +157,6 @@ export default function DashboardClient({ username, activeJobs }: { username: st
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="eyebrow">{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
@@ -266,65 +175,57 @@ export default function DashboardClient({ username, activeJobs }: { username: st
         </button>
       </div>
 
-      {/* Main layout: tiles left, currently running right */}
-      <div className="flex gap-6 items-start">
-        {/* Tile grid */}
-        <div className={`flex-1 min-w-0 ${editing ? "select-none" : ""}`} onDragEnd={resetDrag}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {visible.map((entry) => (
-              <div
-                key={entry.id}
-                draggable={editing}
-                onDragStart={(e) => handleDragStart(e, entry.id)}
-                onDragOver={(e) => handleDragOver(e, entry.id)}
-                onDrop={handleDrop}
-                onDragEnd={resetDrag}
-                className={[
-                  "relative",
-                  editing && insertBefore === entry.id
-                    ? "before:absolute before:-left-3 before:top-0 before:bottom-0 before:w-0.5 before:rounded-full before:bg-quant before:shadow-[0_0_8px_var(--color-quant)] before:z-10"
-                    : "",
-                ].join(" ")}
-                style={{
-                  transform: getTileTransform(entry.id),
-                  transition: "transform 180ms ease, opacity 150ms ease",
-                  opacity: dragId === entry.id ? 0.25 : 1,
-                  cursor: editing ? "grab" : undefined,
-                }}
-              >
-                {editing && <DragHandle />}
-                <Tile meta={META[entry.id]} editing={editing} onRemove={() => hide(entry.id)} />
-              </div>
-            ))}
-
-            {visible.length === 0 && (
-              <div className="col-span-2 flex flex-col items-center justify-center py-16 text-muted space-y-3">
-                <p className="text-sm">Keine Kacheln sichtbar.</p>
-                <button onClick={() => setEditing(true)} className="btn-ghost text-xs">Dashboard anpassen</button>
-              </div>
-            )}
-          </div>
-
-          {/* Hidden items */}
-          {editing && hidden.length > 0 && (
-            <div className="mt-6 rounded-lg border border-dashed border-edge p-4 space-y-3">
-              <p className="font-mono text-xs uppercase tracking-widest text-muted">Ausgeblendet</p>
-              <div className="flex flex-wrap gap-2">
-                {hidden.map((entry) => (
-                  <button key={entry.id} onClick={() => show(entry.id)}
-                    className="flex items-center gap-2 rounded-md border border-edge bg-hull px-3 py-2 text-muted hover:border-quant hover:text-quant transition">
-                    <span>{META[entry.id].icon}</span>
-                    <span className="font-mono text-xs">{META[entry.id].label}</span>
-                    <span className="text-quant text-xs">+ Hinzufügen</span>
-                  </button>
-                ))}
-              </div>
+      <div className={`${editing ? "select-none" : ""}`} onDragEnd={resetDrag}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {visible.map((entry) => (
+            <div
+              key={entry.id}
+              draggable={editing}
+              onDragStart={(e) => handleDragStart(e, entry.id)}
+              onDragOver={(e) => handleDragOver(e, entry.id)}
+              onDrop={handleDrop}
+              onDragEnd={resetDrag}
+              className={[
+                "relative",
+                editing && insertBefore === entry.id
+                  ? "before:absolute before:-left-3 before:top-0 before:bottom-0 before:w-0.5 before:rounded-full before:bg-quant before:shadow-[0_0_8px_var(--color-quant)] before:z-10"
+                  : "",
+              ].join(" ")}
+              style={{
+                transform: getTileTransform(entry.id),
+                transition: "transform 180ms ease, opacity 150ms ease",
+                opacity: dragId === entry.id ? 0.25 : 1,
+                cursor: editing ? "grab" : undefined,
+              }}
+            >
+              {editing && <DragHandle />}
+              <Tile meta={META[entry.id]} editing={editing} onRemove={() => hide(entry.id)} />
             </div>
-          )}
+          ))}
         </div>
 
-        {/* Currently Running — always right */}
-        <ActiveJobsPanel jobs={activeJobs} />
+        {visible.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-muted space-y-3">
+            <p className="text-sm">Keine Kacheln sichtbar.</p>
+            <button onClick={() => setEditing(true)} className="btn-ghost text-xs">Dashboard anpassen</button>
+          </div>
+        )}
+
+        {editing && hidden.length > 0 && (
+          <div className="mt-6 rounded-lg border border-dashed border-edge p-4 space-y-3">
+            <p className="font-mono text-xs uppercase tracking-widest text-muted">Ausgeblendet</p>
+            <div className="flex flex-wrap gap-2">
+              {hidden.map((entry) => (
+                <button key={entry.id} onClick={() => show(entry.id)}
+                  className="flex items-center gap-2 rounded-md border border-edge bg-hull px-3 py-2 text-muted hover:border-quant hover:text-quant transition">
+                  <span>{META[entry.id].icon}</span>
+                  <span className="font-mono text-xs">{META[entry.id].label}</span>
+                  <span className="text-quant text-xs">+ Hinzufügen</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
