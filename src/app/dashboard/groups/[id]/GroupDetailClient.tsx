@@ -71,15 +71,15 @@ export default function GroupDetailClient({
   }, [searchOpen]);
 
   useEffect(() => {
+    if (searchQ.trim().length < 2) { setSearchResults([]); return; }
     const delay = setTimeout(async () => {
-      if (searchQ.trim().length < 2) { setSearchResults([]); return; }
-      const res = await fetch(`/api/users/search?q=${encodeURIComponent(searchQ)}`);
-      if (res.ok) {
-        const data: UserResult[] = await res.json();
-        const memberIds = new Set(group.members.map((m) => m.userId));
-        setSearchResults(data.filter((u) => !memberIds.has(u.id)));
-      }
-    }, 250);
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(searchQ.trim())}`);
+      if (!res.ok) return;
+      const data: UserResult[] = await res.json();
+      const memberIds = new Set(group.members.map((m) => m.userId));
+      setSearchResults(data.filter((u) => !memberIds.has(u.id)));
+      setSearchOpen(true);
+    }, 200);
     return () => clearTimeout(delay);
   }, [searchQ, group.members]);
 

@@ -10,12 +10,16 @@ export async function GET(req: Request) {
   const q = searchParams.get("q")?.trim() ?? "";
   if (q.length < 2) return NextResponse.json([]);
 
-  const users = await prisma.$queryRaw<{ id: string; username: string }[]>`
-    SELECT id, username FROM "User"
-    WHERE LOWER(username) LIKE LOWER(${"%" + q + "%"})
-    AND id != ${session.userId}
-    LIMIT 10
-  `;
-
-  return NextResponse.json(users);
+  try {
+    const pattern = `%${q}%`;
+    const users = await prisma.$queryRawUnsafe<{ id: string; username: string }[]>(
+      `SELECT id, username FROM User WHERE LOWER(username) LIKE LOWER(?) AND id != ? LIMIT 10`,
+      pattern,
+      session.userId
+    );
+    return NextResponse.json(users);
+  } catch (e) {
+    console.error("user search error", e);
+    return NextResponse.json({ error: "Search failed" }, { status: 500 });
+  }
 }
