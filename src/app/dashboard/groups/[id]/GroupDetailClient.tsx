@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { getClientOres } from "@/lib/clientUex";
+import type { FullOre } from "@/app/api/ores/route";
 
 type Member = {
   id: string;
@@ -14,6 +16,14 @@ type Member = {
 
 type Split = { userId: string; sharePercent: number; paidOut: boolean };
 
+type JobMaterial = {
+  name: string;
+  quantity: number;
+  commodityId: number | null;
+  yieldPercent: number | null;
+  unit: string;
+};
+
 type Job = {
   id: string;
   stationName: string;
@@ -21,7 +31,7 @@ type Job = {
   startedAt: string;
   finishesAt: string;
   durationSec: number;
-  materials: { name: string; quantity: number }[];
+  materials: JobMaterial[];
   user: { id: string; username: string };
   earningsSplits: Split[];
 };
@@ -54,6 +64,11 @@ export default function GroupDetailClient({
   const [editingSplits, setEditingSplits] = useState<Record<string, Record<string, string>>>({});
   const [splitsError, setSplitsError] = useState<Record<string, string>>({});
   const [splitsLoading, setSplitsLoading] = useState<Record<string, boolean>>({});
+  const [allOres, setAllOres] = useState<FullOre[]>([]);
+
+  useEffect(() => {
+    getClientOres().then(setAllOres).catch(() => {});
+  }, []);
 
   // Member search
   const [searchQ, setSearchQ] = useState("");
@@ -107,12 +122,46 @@ export default function GroupDetailClient({
     setGroup((g) => ({ ...g, members: g.members.filter((m) => m.userId !== userId) }));
   }
 
+  function calcJobValue(job: Job): number | null {
+    if (allOres.length === 0) return null;
+    const refinedPriceMap = new Map<number, number>();
+    for (const o of allOres) {
+      if (o.isRefined && o.parentId && o.priceSell) {
+        const existing = refinedPriceMap.get(o.parentId);
+        if (!existing || o.priceSell > existing) refinedPriceMap.set(o.parentId, o.priceSell);
+      }
+    }
+    let total = 0;
+    let anyPrice = false;
+    for (const mat of job.materials) {
+      const yieldMod = mat.yieldPercent ?? 0;
+      const refined = mat.quantity * (100 + yieldMod) / 100;
+      let price: number | null = null;
+      if (mat.commodityId != null) price = refinedPriceMap.get(mat.commodityId) ?? null;
+      if (price == null) {
+        const needle = mat.name.toLowerCase().replace("(raw)", "(refined)").trim();
+        price = allOres.find((o) => o.name.toLowerCase() === needle)?.priceSell ?? null;
+      }
+      if (price != null) { total += refined * price; anyPrice = true; }
+    }
+    return anyPrice ? total : null;
+  }
+
   function openSplitEditor(job: Job) {
-    const memberIds = group.members.map((m) => m.userId);
     const existing: Record<string, string> = {};
-    for (const m of group.members) {
-      const split = job.earningsSplits.find((s) => s.userId === m.userId);
-      existing[m.userId] = split ? String(split.sharePercent) : "";
+    const hasExisting = job.earningsSplits.length > 0;
+    const n = group.members.length;
+    if (hasExisting) {
+      for (const m of group.members) {
+        const split = job.earningsSplits.find((s) => s.userId === m.userId);
+        existing[m.userId] = split ? String(split.sharePercent) : "";
+      }
+    } else {
+      const base = Math.floor(100 / n);
+      const remainder = 100 - base * n;
+      group.members.forEach((m, i) => {
+        existing[m.userId] = String(base + (i === 0 ? remainder : 0));
+      });
     }
     setEditingSplits((prev) => ({ ...prev, [job.id]: existing }));
   }
@@ -279,6 +328,7 @@ export default function GroupDetailClient({
               const isEditing = !!editingSplits[j.id];
               const inputs = editingSplits[j.id] ?? {};
               const total = Object.values(inputs).reduce((s, v) => s + (Number(v) || 0), 0);
+              const jobValue = calcJobValue(j);
               return (
                 <div key={j.id} className="panel p-4 space-y-3">
                   {/* Header */}
@@ -309,10 +359,14 @@ export default function GroupDetailClient({
                       <p className="font-mono text-[10px] uppercase tracking-wider text-muted">Aufteilung</p>
                       {j.earningsSplits.map((s) => {
                         const member = group.members.find((m) => m.userId === s.userId);
+                        const share = jobValue != null ? Math.round(s.sharePercent / 100 * jobValue) : null;
                         return (
                           <div key={s.userId} className="flex items-center gap-2 text-sm">
                             <span className="flex-1 text-ink">{member?.user.username ?? s.userId}</span>
                             <span className="font-mono text-quant tabular-nums">{s.sharePercent}%</span>
+                            {share != null && (
+                              <span className="font-mono text-xs text-muted tabular-nums">~{share.toLocaleString()} aUEC</span>
+                            )}
                             <button
                               onClick={() => togglePaidOut(j.id, s.userId)}
                               className={`text-xs px-2 py-0.5 rounded border transition ${s.paidOut ? "border-toxic/40 text-toxic" : "border-edge text-muted hover:border-amber hover:text-amber"}`}
@@ -329,26 +383,33 @@ export default function GroupDetailClient({
                   {isEditing && (
                     <div className="border-t border-edge pt-3 space-y-2">
                       <p className="font-mono text-[10px] uppercase tracking-wider text-muted">Aufteilung setzen (Summe: <span className={Math.round(total) === 100 ? "text-toxic" : "text-amber"}>{total}%</span>)</p>
-                      {group.members.map((m) => (
-                        <div key={m.userId} className="flex items-center gap-2">
-                          <span className="flex-1 text-sm text-ink">{m.user.username}</span>
-                          <div className="relative w-24">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="1"
-                              className="field pr-6 text-right"
-                              value={inputs[m.userId] ?? ""}
-                              onChange={(e) => setEditingSplits((prev) => ({
-                                ...prev,
-                                [j.id]: { ...prev[j.id], [m.userId]: e.target.value }
-                              }))}
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted">%</span>
+                      {group.members.map((m) => {
+                        const pct = Number(inputs[m.userId] ?? 0) || 0;
+                        const share = jobValue != null && pct > 0 ? Math.round(pct / 100 * jobValue) : null;
+                        return (
+                          <div key={m.userId} className="flex items-center gap-2">
+                            <span className="flex-1 text-sm text-ink">{m.user.username}</span>
+                            {share != null && (
+                              <span className="font-mono text-xs text-muted tabular-nums">~{share.toLocaleString()} aUEC</span>
+                            )}
+                            <div className="relative w-24">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="1"
+                                className="field pr-6 text-right"
+                                value={inputs[m.userId] ?? ""}
+                                onChange={(e) => setEditingSplits((prev) => ({
+                                  ...prev,
+                                  [j.id]: { ...prev[j.id], [m.userId]: e.target.value }
+                                }))}
+                              />
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted">%</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {splitsError[j.id] && <p className="text-xs text-danger">{splitsError[j.id]}</p>}
                       <div className="flex gap-2 pt-1">
                         <button
