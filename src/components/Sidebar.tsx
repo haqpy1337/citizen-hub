@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDesign, type Design } from "./ThemeProvider";
+import Avatar from "./Avatar";
 
 const links = [
   {
@@ -89,7 +90,7 @@ const designs: { id: Design; label: string; desc: string }[] = [
   { id: "odin",    label: "Odin Trooper", desc: "Vanduul heavy" },
 ];
 
-export default function Sidebar({ username }: { username: string }) {
+export default function Sidebar({ username, avatarUrl }: { username: string; avatarUrl: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const setDesign = useDesign();
@@ -225,9 +226,7 @@ export default function Sidebar({ username }: { username: string }) {
             onClick={() => setUserOpen((v) => !v)}
             className="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-muted hover:text-ink hover:bg-hull/60 transition"
           >
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-hull border border-edge text-[10px] font-bold text-ink uppercase shrink-0">
-              {username[0]}
-            </div>
+            <Avatar username={username} avatarUrl={avatarUrl} size={24} />
             <span className="font-mono text-xs uppercase tracking-wider flex-1 text-left text-ink">{username}</span>
             <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3 h-3 shrink-0">
               <path d="M2 4l4 4 4-4" />
@@ -237,9 +236,16 @@ export default function Sidebar({ username }: { username: string }) {
           {userOpen && (
             <div className="absolute bottom-full left-0 right-0 mb-1 rounded-md border border-edge bg-panel overflow-hidden z-50"
               style={{ boxShadow: "var(--shadow-panel)" }}>
+              <Link
+                href="/dashboard/profile"
+                onClick={() => setUserOpen(false)}
+                className="block px-4 py-2.5 text-sm text-muted hover:bg-hull hover:text-ink transition"
+              >
+                Profil
+              </Link>
               <button
                 onClick={logout}
-                className="w-full px-4 py-2.5 text-left text-sm text-muted hover:bg-hull hover:text-danger transition"
+                className="w-full px-4 py-2.5 text-left text-sm text-muted hover:bg-hull hover:text-danger transition border-t border-edge"
               >
                 Logout
               </button>

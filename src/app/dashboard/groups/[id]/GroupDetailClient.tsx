@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getClientOres } from "@/lib/clientUex";
 import type { FullOre } from "@/app/api/ores/route";
+import Avatar from "@/components/Avatar";
 
 type Member = {
   id: string;
@@ -11,7 +12,7 @@ type Member = {
   userId: string;
   role: string;
   joinedAt: string;
-  user: { id: string; username: string };
+  user: { id: string; username: string; avatarUrl: string | null };
 };
 
 type Split = { userId: string; sharePercent: number; paidOut: boolean };
@@ -293,9 +294,7 @@ export default function GroupDetailClient({
           <div className="space-y-1">
             {group.members.map((m) => (
               <div key={m.userId} className="panel flex items-center gap-3 p-3">
-                <div className="h-8 w-8 rounded-full bg-hull border border-edge flex items-center justify-center text-xs font-bold text-ink uppercase shrink-0">
-                  {m.user.username[0]}
-                </div>
+                <Avatar username={m.user.username} avatarUrl={m.user.avatarUrl} size={32} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-ink">{m.user.username}</div>
                   {m.userId === currentUserId && <div className="text-[10px] text-muted">Du</div>}
