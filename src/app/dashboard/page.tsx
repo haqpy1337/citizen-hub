@@ -1,15 +1,27 @@
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import DashboardClient from "@/components/DashboardClient";
-import ActiveJobsSidebar from "@/components/ActiveJobsSidebar";
 
 export default async function DashboardOverview() {
   const session = await getSession();
+
+  const activeJobs = await prisma.refineryJob.findMany({
+    where: { userId: session!.userId, status: "running" },
+    include: { materials: { select: { name: true } } },
+    orderBy: { finishesAt: "asc" },
+    take: 6,
+  });
+
   return (
-    <div className="flex gap-8 items-start">
-      <div className="flex-1 min-w-0">
-        <DashboardClient username={session!.username} />
-      </div>
-      <ActiveJobsSidebar userId={session!.userId} />
-    </div>
+    <DashboardClient
+      username={session!.username}
+      activeJobs={activeJobs.map((j) => ({
+        id: j.id,
+        stationName: j.stationName,
+        durationSec: j.durationSec,
+        finishesAt: j.finishesAt.toISOString(),
+        materials: j.materials,
+      }))}
+    />
   );
 }
