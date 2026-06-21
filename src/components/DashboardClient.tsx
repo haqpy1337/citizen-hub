@@ -318,8 +318,8 @@ export default function DashboardClient({ username, activeJobs }: { username: st
           if (group.kind === "sidebar-row") {
             return (
               <div key={`sr-${gi}`} className="flex gap-4 items-start">
-                <div className="w-64 shrink-0"
-                  {...makeDraggable(group.section, editing ? "rounded-lg outline-dashed outline-2 outline-offset-2 p-3 " + (insertBeforeId === group.section.id ? "outline-quant bg-hull/20" : "outline-edge/30") : "")}
+                <div
+                  {...makeDraggable(group.section, "w-64 shrink-0 " + (editing ? "rounded-lg outline-dashed outline-2 outline-offset-2 p-3 " + (insertBeforeId === group.section.id ? "outline-quant bg-hull/20" : "outline-edge/30") : ""))}
                 >
                   {editing && (
                     <>
