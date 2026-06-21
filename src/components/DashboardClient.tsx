@@ -1,16 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type ActiveJob = {
-  id: string;
-  stationName: string;
-  durationSec: number;
-  finishesAt: string;
-  materials: { name: string }[];
+  id: string; stationName: string; durationSec: number;
+  finishesAt: string; materials: { name: string }[];
 };
 
 type ItemId =
@@ -18,8 +15,8 @@ type ItemId =
   | "tile-jobs" | "tile-history" | "tile-ores"
   | "tile-trade" | "tile-refineries" | "tile-org" | "tile-new-job";
 
-type SectionLayout = "full" | "sidebar";
-type ConfigEntry = { id: ItemId; visible: boolean; sidebarLayout?: SectionLayout };
+type SidebarSide = "left" | "right";
+type ConfigEntry = { id: ItemId; visible: boolean; sidebar?: SidebarSide };
 type Config = ConfigEntry[];
 
 type ItemMeta = {
@@ -30,18 +27,18 @@ type ItemMeta = {
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
 const META: Record<ItemId, ItemMeta> = {
-  "active-jobs":     { id: "active-jobs",     type: "section", label: "Active Jobs",    colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)" },
-  "tile-jobs":       { id: "tile-jobs",        type: "tile", label: "My Jobs",       sub: "Manage your refinery orders",          href: "/dashboard/jobs",        icon: "⛏", colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)" },
-  "tile-history":    { id: "tile-history",     type: "tile", label: "Job History",    sub: "Past runs with profit estimates",      href: "/dashboard/history",     icon: "▤", colorVar: "var(--color-amber)", dimVar: "rgba(224,120,0,0.12)" },
-  "tile-ores":       { id: "tile-ores",        type: "tile", label: "Ore Prices",     sub: "Live prices for all ores",             href: "/dashboard/ores",        icon: "◇", colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)" },
-  "tile-trade":      { id: "tile-trade",       type: "tile", label: "Trade Routes",   sub: "Best buy → sell routes by profit/SCU", href: "/dashboard/trade",       icon: "⇄", colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)" },
-  "tile-refineries": { id: "tile-refineries",  type: "tile", label: "Refineries",     sub: "Live overview of all stations",        href: "/dashboard/refineries",  icon: "◈", colorVar: "var(--color-amber)", dimVar: "rgba(224,120,0,0.12)" },
-  "tile-org":        { id: "tile-org",         type: "tile", label: "Org",            sub: "Shared jobs, groups & earnings",       href: "/dashboard/org",         icon: "◉", colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)" },
-  "tile-new-job":    { id: "tile-new-job",     type: "tile", label: "New Job",        sub: "Log a new refinery drop-off",          href: "/dashboard/jobs/new",    icon: "+", colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)" },
+  "active-jobs":     { id: "active-jobs",     type: "section", label: "Active Jobs",   colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)" },
+  "tile-jobs":       { id: "tile-jobs",        type: "tile", label: "My Jobs",      sub: "Manage your refinery orders",          href: "/dashboard/jobs",       icon: "⛏", colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)" },
+  "tile-history":    { id: "tile-history",     type: "tile", label: "Job History",   sub: "Past runs with profit estimates",      href: "/dashboard/history",    icon: "▤", colorVar: "var(--color-amber)", dimVar: "rgba(224,120,0,0.12)" },
+  "tile-ores":       { id: "tile-ores",        type: "tile", label: "Ore Prices",    sub: "Live prices for all ores",             href: "/dashboard/ores",       icon: "◇", colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)" },
+  "tile-trade":      { id: "tile-trade",       type: "tile", label: "Trade Routes",  sub: "Best buy → sell routes by profit/SCU", href: "/dashboard/trade",      icon: "⇄", colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)" },
+  "tile-refineries": { id: "tile-refineries",  type: "tile", label: "Refineries",    sub: "Live overview of all stations",        href: "/dashboard/refineries", icon: "◈", colorVar: "var(--color-amber)", dimVar: "rgba(224,120,0,0.12)" },
+  "tile-org":        { id: "tile-org",         type: "tile", label: "Org",           sub: "Shared jobs, groups & earnings",       href: "/dashboard/org",        icon: "◉", colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)" },
+  "tile-new-job":    { id: "tile-new-job",     type: "tile", label: "New Job",       sub: "Log a new refinery drop-off",          href: "/dashboard/jobs/new",   icon: "+", colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)" },
 };
 
 const DEFAULT_ORDER: ItemId[] = ["active-jobs","tile-jobs","tile-history","tile-ores","tile-trade","tile-refineries","tile-org","tile-new-job"];
-const STORAGE_KEY = "hma-dashboard-layout-v2";
+const STORAGE_KEY = "hma-dashboard-layout-v3";
 
 function loadConfig(): Config {
   try {
@@ -58,7 +55,7 @@ function loadConfig(): Config {
 }
 function saveConfig(c: Config) { localStorage.setItem(STORAGE_KEY, JSON.stringify(c)); }
 
-// ── Sub-components (defined outside main component for stable identity) ────────
+// ── Sub-components ────────────────────────────────────────────────────────────
 
 function ActiveJobsSection({ jobs, compact }: { jobs: ActiveJob[]; compact?: boolean }) {
   const [, tick] = useState(0);
@@ -82,7 +79,6 @@ function ActiveJobsSection({ jobs, compact }: { jobs: ActiveJob[]; compact?: boo
           const ready = leftSec === 0;
           const h = Math.floor(leftSec / 3600);
           const m = Math.floor((leftSec % 3600) / 60);
-          const timeLeft = h > 0 ? `${h}h ${m}m` : `${m}m`;
           return (
             <div key={job.id} className="panel p-3 relative overflow-hidden" style={ready ? { borderColor: "rgba(90,170,48,0.4)" } : undefined}>
               {ready && <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at top right,rgba(90,170,48,0.07) 0%,transparent 60%)" }} />}
@@ -91,7 +87,7 @@ function ActiveJobsSection({ jobs, compact }: { jobs: ActiveJob[]; compact?: boo
                   <div className="font-display font-semibold text-ink text-sm truncate">{job.stationName}</div>
                   <div className="text-[11px] text-muted truncate">{job.materials.map((m) => m.name).join(", ")}</div>
                 </div>
-                <span className={`font-mono text-xs tabular-nums shrink-0 ${ready ? "text-toxic" : "text-quant"}`}>{ready ? "✓ Ready" : timeLeft}</span>
+                <span className={`font-mono text-xs tabular-nums shrink-0 ${ready ? "text-toxic" : "text-quant"}`}>{ready ? "✓ Ready" : h > 0 ? `${h}h ${m}m` : `${m}m`}</span>
               </div>
               <div className="mt-2 h-1 overflow-hidden rounded-full border border-edge bg-hull">
                 <div className={`h-full rounded-full ${ready ? "bg-toxic" : "bg-quant"}`} style={{ width: `${pct}%` }} />
@@ -106,7 +102,7 @@ function ActiveJobsSection({ jobs, compact }: { jobs: ActiveJob[]; compact?: boo
 
 function DragHandle() {
   return (
-    <div className="absolute top-2 left-2 z-20 text-muted/50 hover:text-muted/90 transition-colors select-none" aria-hidden style={{ cursor: "grab" }}>
+    <div className="absolute top-2 left-2 z-20 text-muted/50 hover:text-muted/90 transition-colors select-none" style={{ cursor: "grab" }} aria-hidden>
       <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
         <circle cx="5" cy="4" r="1.2"/><circle cx="11" cy="4" r="1.2"/>
         <circle cx="5" cy="8" r="1.2"/><circle cx="11" cy="8" r="1.2"/>
@@ -155,21 +151,26 @@ function Tile({ meta, editing, onRemove }: { meta: ItemMeta; editing: boolean; o
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────────
+// ── Main ───────────────────────────────────────────────────────────────────────
 
 export default function DashboardClient({ username, activeJobs }: { username: string; activeJobs: ActiveJob[] }) {
   const [config, setConfig] = useState<Config>(() => DEFAULT_ORDER.map((id) => ({ id, visible: true })));
   const [hydrated, setHydrated] = useState(false);
   const [editing, setEditing] = useState(false);
+
+  // Drag state
   const [dragId, setDragId] = useState<ItemId | null>(null);
-  const [insertBeforeId, setInsertBeforeId] = useState<ItemId | null>(null);
+  const [insertBefore, setInsertBefore] = useState<ItemId | null>(null); // insert dragged item BEFORE this id
+  const [sidebarHover, setSidebarHover] = useState<SidebarSide | null>(null); // for active-jobs sidebar drop zones
+  const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setConfig(loadConfig()); setHydrated(true); }, []);
 
   const update = useCallback((next: Config) => { setConfig(next); saveConfig(next); }, []);
   const hide = (id: ItemId) => update(config.map((x) => x.id === id ? { ...x, visible: false } : x));
   const show = (id: ItemId) => update(config.map((x) => x.id === id ? { ...x, visible: true } : x));
-  const toggleSidebar = (id: ItemId) => update(config.map((x) => x.id === id ? { ...x, sidebarLayout: x.sidebarLayout === "sidebar" ? "full" : "sidebar" } : x));
+
+  // ── Drag handlers ──────────────────────────────────────────────────────────
 
   function handleDragStart(e: React.DragEvent, id: ItemId) {
     e.dataTransfer.effectAllowed = "move";
@@ -177,34 +178,87 @@ export default function DashboardClient({ username, activeJobs }: { username: st
     setTimeout(() => setDragId(id), 0);
   }
 
-  function handleDragOver(e: React.DragEvent, id: ItemId) {
+  // Determine insert-before based on cursor position (left/right half of target)
+  function handleDragOverTile(e: React.DragEvent, targetId: ItemId) {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (id !== dragId) setInsertBeforeId(id);
+    e.stopPropagation();
+    if (targetId === dragId) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const isLeftHalf = e.clientX < rect.left + rect.width / 2;
+    const visIds = config.filter((x) => x.visible).map((x) => x.id);
+    const targetIdx = visIds.indexOf(targetId);
+
+    if (isLeftHalf) {
+      setInsertBefore(targetId);
+    } else {
+      // insert after targetId = insert before the next visible item
+      const nextId = visIds[targetIdx + 1] ?? null;
+      setInsertBefore(nextId);
+    }
+    setSidebarHover(null);
   }
 
-  function handleDrop(e: React.DragEvent, targetId: ItemId) {
+  // Sidebar drop zones (only when dragging active-jobs)
+  function handleDragOverSidebarZone(e: React.DragEvent, side: SidebarSide) {
+    e.preventDefault();
+    e.stopPropagation();
+    setSidebarHover(side);
+    setInsertBefore(null);
+  }
+
+  function handleDrop(e: React.DragEvent, targetId?: ItemId, sidebarSide?: SidebarSide) {
     e.preventDefault();
     const sourceId = e.dataTransfer.getData("text/plain") as ItemId;
-    if (!sourceId || sourceId === targetId) { resetDrag(); return; }
+    if (!sourceId) { resetDrag(); return; }
+
     const next = [...config];
-    const from = next.findIndex((x) => x.id === sourceId);
-    const to = next.findIndex((x) => x.id === targetId);
-    const [item] = next.splice(from, 1);
-    next.splice(to, 0, item);
-    update(next);
+
+    // Dropping active-jobs onto a sidebar zone
+    if (sourceId === "active-jobs" && sidebarSide) {
+      const idx = next.findIndex((x) => x.id === "active-jobs");
+      if (idx !== -1) next[idx] = { ...next[idx], sidebar: sidebarSide };
+      update(next);
+      resetDrag();
+      return;
+    }
+
+    // Reorder: insert before insertBefore
+    if (insertBefore && sourceId !== insertBefore) {
+      const fromIdx = next.findIndex((x) => x.id === sourceId);
+      const [item] = next.splice(fromIdx, 1);
+      const toIdx = next.findIndex((x) => x.id === insertBefore);
+      next.splice(toIdx, 0, item);
+      // Clear sidebar if tile is dropped into grid
+      if (sourceId === "active-jobs") next[next.findIndex((x) => x.id === "active-jobs")].sidebar = undefined;
+      update(next);
+    } else if (targetId && targetId !== sourceId && !insertBefore) {
+      // fallback: swap
+      const fromIdx = next.findIndex((x) => x.id === sourceId);
+      const toIdx = next.findIndex((x) => x.id === targetId);
+      [next[fromIdx], next[toIdx]] = [next[toIdx], next[fromIdx]];
+      update(next);
+    }
+
     resetDrag();
   }
 
-  function resetDrag() { setDragId(null); setInsertBeforeId(null); }
+  function resetDrag() {
+    setDragId(null);
+    setInsertBefore(null);
+    setSidebarHover(null);
+  }
 
-  function pushTransform(id: ItemId): string {
-    if (!dragId || !insertBeforeId || id === dragId) return "none";
+  // ── Push transform ─────────────────────────────────────────────────────────
+
+  function getTileTransform(id: ItemId): string {
+    if (!dragId || !insertBefore || id === dragId || !editing) return "none";
     const visIds = config.filter((x) => x.visible).map((x) => x.id);
-    const gapIdx = visIds.indexOf(insertBeforeId);
+    const gapIdx = visIds.indexOf(insertBefore);
     const myIdx = visIds.indexOf(id);
-    if (myIdx === gapIdx - 1) return "translateX(-18px)";
-    if (myIdx === gapIdx) return "translateX(18px)";
+    if (gapIdx === -1 || myIdx === -1) return "none";
+    if (myIdx === gapIdx - 1) return "translateX(-20px)";
+    if (myIdx === gapIdx) return "translateX(20px)";
     return "none";
   }
 
@@ -213,21 +267,23 @@ export default function DashboardClient({ username, activeJobs }: { username: st
   const visible = config.filter((x) => x.visible);
   const hidden = config.filter((x) => !x.visible);
 
-  // Group consecutive tiles; sections may pull adjacent tiles into a sidebar-row
+  // ── Layout grouping ────────────────────────────────────────────────────────
+  // active-jobs with sidebar goes into a sidebar-row with the adjacent tile group
   type Group =
     | { kind: "full-section"; entry: ConfigEntry }
     | { kind: "tiles"; entries: ConfigEntry[] }
-    | { kind: "sidebar-row"; section: ConfigEntry; tiles: ConfigEntry[] };
+    | { kind: "sidebar-row"; section: ConfigEntry; side: SidebarSide; tiles: ConfigEntry[] };
 
   const groups: Group[] = [];
   for (let i = 0; i < visible.length; i++) {
     const entry = visible[i];
     if (META[entry.id].type === "section") {
-      if (entry.sidebarLayout === "sidebar") {
+      if (entry.sidebar) {
+        // collect next tile group
         const tiles: ConfigEntry[] = [];
         let j = i + 1;
         while (j < visible.length && META[visible[j].id].type === "tile") { tiles.push(visible[j]); j++; }
-        groups.push({ kind: "sidebar-row", section: entry, tiles });
+        groups.push({ kind: "sidebar-row", section: entry, side: entry.sidebar, tiles });
         i = j - 1;
       } else {
         groups.push({ kind: "full-section", entry });
@@ -239,25 +295,32 @@ export default function DashboardClient({ username, activeJobs }: { username: st
     }
   }
 
-  // ── Draggable wrapper ──────────────────────────────────────────────────────
-  const makeDraggable = (entry: ConfigEntry, extra?: string) => ({
-    draggable: editing,
-    onDragStart: (e: React.DragEvent) => handleDragStart(e, entry.id),
-    onDragOver: (e: React.DragEvent) => handleDragOver(e, entry.id),
-    onDrop: (e: React.DragEvent) => handleDrop(e, entry.id),
-    onDragEnd: resetDrag,
-    style: {
-      transform: pushTransform(entry.id),
-      transition: "transform 180ms ease, opacity 180ms ease, box-shadow 180ms ease",
-      opacity: dragId === entry.id ? 0.3 : 1,
-      cursor: editing ? "grab" : undefined,
-    } as React.CSSProperties,
-    className: [
-      "relative",
-      editing && insertBeforeId === entry.id ? "ring-2 ring-quant/70 ring-offset-2 ring-offset-void rounded-lg" : "",
-      extra ?? "",
-    ].join(" "),
-  });
+  const isDraggingSection = dragId === "active-jobs";
+
+  // ── Tile draggable props ───────────────────────────────────────────────────
+  function tileProps(entry: ConfigEntry) {
+    return {
+      draggable: editing,
+      onDragStart: (e: React.DragEvent) => handleDragStart(e, entry.id),
+      onDragOver: (e: React.DragEvent) => handleDragOverTile(e, entry.id),
+      onDrop: (e: React.DragEvent) => handleDrop(e, entry.id),
+      onDragEnd: resetDrag,
+      style: {
+        transform: getTileTransform(entry.id),
+        transition: "transform 180ms ease, opacity 150ms ease",
+        opacity: dragId === entry.id ? 0.25 : 1,
+        cursor: editing ? "grab" as const : undefined,
+        position: "relative" as const,
+      },
+      className: [
+        "relative",
+        // Drop gap indicator: thin glowing line before this tile
+        editing && insertBefore === entry.id
+          ? "before:absolute before:-left-3 before:top-0 before:bottom-0 before:w-0.5 before:bg-quant before:rounded-full before:shadow-[0_0_8px_var(--color-quant)]"
+          : "",
+      ].filter(Boolean).join(" "),
+    };
+  }
 
   return (
     <div className="space-y-1">
@@ -280,27 +343,32 @@ export default function DashboardClient({ username, activeJobs }: { username: st
         </button>
       </div>
 
-      <div className={`space-y-6 ${editing ? "select-none" : ""}`}>
+      <div className={`space-y-6 ${editing ? "select-none" : ""}`} onDragEnd={resetDrag}>
         {groups.map((group, gi) => {
 
+          // ── Full-width section ──────────────────────────────────────────────
           if (group.kind === "full-section") {
-            const isSidebar = group.entry.sidebarLayout === "sidebar";
             return (
-              <div key={group.entry.id} {...makeDraggable(group.entry, editing ? "rounded-lg outline-dashed outline-2 outline-offset-4 p-3 -mx-3 " + (insertBeforeId === group.entry.id ? "outline-quant bg-hull/20" : "outline-edge/30") : "")}>
+              <div key={group.entry.id}
+                draggable={editing}
+                onDragStart={(e) => handleDragStart(e, group.entry.id)}
+                onDragOver={(e) => { e.preventDefault(); handleDragOverTile(e, group.entry.id); }}
+                onDrop={(e) => handleDrop(e, group.entry.id)}
+                onDragEnd={resetDrag}
+                className={`relative transition-all duration-200 ${editing ? "rounded-lg outline-dashed outline-2 outline-offset-4 p-3 -mx-3 cursor-grab " + (insertBefore === group.entry.id ? "outline-quant bg-hull/20" : "outline-edge/30") : ""}`}
+                style={{ opacity: dragId === group.entry.id ? 0.25 : 1 }}
+              >
                 {editing && (
                   <>
                     <DragHandle />
                     <div className="flex items-center gap-2 mb-3 pl-5">
                       <span className="font-mono text-[10px] uppercase tracking-widest text-muted">Currently Running</span>
                       <div className="ml-auto flex gap-1">
-                        <button onClick={() => toggleSidebar(group.entry.id)}
-                          className={`flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-[10px] uppercase tracking-wider transition ${isSidebar ? "border-quant text-quant" : "border-edge text-muted hover:border-quant hover:text-quant"}`}>
-                          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3 h-3">
-                            <rect x="1" y="2" width="5" height="12" rx="1"/><rect x="8" y="2" width="7" height="12" rx="1"/>
-                          </svg>
-                          {isSidebar ? "Seitenleiste" : "Vollbreite"}
-                        </button>
-                        <button onClick={() => hide(group.entry.id)} className="flex items-center gap-1 rounded border border-danger/40 px-2 py-1 text-[10px] text-danger hover:bg-danger/10 transition">
+                        <span className="font-mono text-[10px] text-muted/50 flex items-center gap-1">
+                          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3 h-3"><path d="M8 3v10M3 8h10"/></svg>
+                          Links/rechts ziehen für Seitenleiste
+                        </span>
+                        <button onClick={() => hide(group.entry.id)} className="flex items-center gap-1 rounded border border-danger/40 px-2 py-1 text-[10px] text-danger hover:bg-danger/10 transition ml-2">
                           × Ausblenden
                         </button>
                       </div>
@@ -315,58 +383,95 @@ export default function DashboardClient({ username, activeJobs }: { username: st
             );
           }
 
+          // ── Sidebar row ─────────────────────────────────────────────────────
           if (group.kind === "sidebar-row") {
+            const sectionEl = (
+              <div
+                draggable={editing}
+                onDragStart={(e) => handleDragStart(e, group.section.id)}
+                onDragEnd={resetDrag}
+                className={`w-56 shrink-0 relative ${editing ? "rounded-lg outline-dashed outline-2 outline-edge/30 outline-offset-2 p-3 cursor-grab" : ""}`}
+                style={{ opacity: dragId === group.section.id ? 0.25 : 1 }}
+              >
+                {editing && (
+                  <>
+                    <DragHandle />
+                    <div className="flex items-center gap-1 mb-2 pl-5">
+                      <span className="font-mono text-[10px] text-muted/60">Seitenleiste</span>
+                      <button onClick={() => update(config.map((x) => x.id === group.section.id ? { ...x, sidebar: undefined } : x))}
+                        className="ml-auto text-[10px] text-muted hover:text-ink transition px-1">↔ Vollbreite</button>
+                      <button onClick={() => hide(group.section.id)} className="text-[10px] text-danger px-1">×</button>
+                    </div>
+                  </>
+                )}
+                {activeJobs.length > 0
+                  ? <ActiveJobsSection jobs={activeJobs} compact />
+                  : editing ? <div className="rounded border border-dashed border-edge px-3 py-2 text-[11px] text-muted">Wird angezeigt wenn Jobs laufen</div>
+                  : null}
+              </div>
+            );
+
+            const tilesEl = (
+              <div ref={gridRef} className="relative flex-1 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* Sidebar drop zones (visible when dragging active-jobs) */}
+                {editing && isDraggingSection && (
+                  <>
+                    <div onDragOver={(e) => handleDragOverSidebarZone(e, "left")} onDrop={(e) => handleDrop(e, undefined, "left")}
+                      className={`absolute -left-3 top-0 bottom-0 w-8 z-10 flex items-center justify-center rounded-l-lg transition-all ${sidebarHover === "left" ? "bg-quant/20 border-l-2 border-quant" : "bg-quant/5"}`}>
+                      <span className="text-[10px] text-quant rotate-180 writing-mode-vertical font-mono" style={{ writingMode: "vertical-rl" }}>← Links</span>
+                    </div>
+                    <div onDragOver={(e) => handleDragOverSidebarZone(e, "right")} onDrop={(e) => handleDrop(e, undefined, "right")}
+                      className={`absolute -right-3 top-0 bottom-0 w-8 z-10 flex items-center justify-center rounded-r-lg transition-all ${sidebarHover === "right" ? "bg-quant/20 border-r-2 border-quant" : "bg-quant/5"}`}>
+                      <span className="text-[10px] text-quant font-mono" style={{ writingMode: "vertical-rl" }}>Rechts →</span>
+                    </div>
+                  </>
+                )}
+                {group.tiles.map((entry) => (
+                  <div key={entry.id} {...tileProps(entry)}>
+                    {editing && <DragHandle />}
+                    <Tile meta={META[entry.id]} editing={editing} onRemove={() => hide(entry.id)} />
+                  </div>
+                ))}
+              </div>
+            );
+
             return (
               <div key={`sr-${gi}`} className="flex gap-4 items-start">
-                <div
-                  {...makeDraggable(group.section, "w-64 shrink-0 " + (editing ? "rounded-lg outline-dashed outline-2 outline-offset-2 p-3 " + (insertBeforeId === group.section.id ? "outline-quant bg-hull/20" : "outline-edge/30") : ""))}
-                >
-                  {editing && (
-                    <>
-                      <DragHandle />
-                      <div className="flex items-center gap-1 mb-2 pl-5">
-                        <button onClick={() => toggleSidebar(group.section.id)}
-                          className="flex items-center gap-1 rounded border border-quant px-2 py-1 font-mono text-[10px] text-quant transition">
-                          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3 h-3">
-                            <rect x="1" y="2" width="5" height="12" rx="1"/><rect x="8" y="2" width="7" height="12" rx="1"/>
-                          </svg>
-                          Seitenleiste
-                        </button>
-                        <button onClick={() => hide(group.section.id)} className="flex items-center gap-1 rounded border border-danger/40 px-2 py-1 text-[10px] text-danger hover:bg-danger/10 transition">×</button>
-                      </div>
-                    </>
-                  )}
-                  {activeJobs.length > 0
-                    ? <ActiveJobsSection jobs={activeJobs} compact />
-                    : editing ? <div className="rounded border border-dashed border-edge px-3 py-2 text-[11px] text-muted">Wird angezeigt wenn Jobs laufen</div>
-                    : null}
-                </div>
-                <div className="flex-1 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {group.tiles.map((entry) => (
-                    <div key={entry.id} {...makeDraggable(entry)}>
-                      {editing && <DragHandle />}
-                      <Tile meta={META[entry.id]} editing={editing} onRemove={() => hide(entry.id)} />
-                    </div>
-                  ))}
-                </div>
+                {group.side === "left" ? <>{sectionEl}{tilesEl}</> : <>{tilesEl}{sectionEl}</>}
               </div>
             );
           }
 
-          // tile grid
+          // ── Tile grid ───────────────────────────────────────────────────────
           return (
-            <div key={`tg-${gi}`} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {group.entries.map((entry) => (
-                <div key={entry.id} {...makeDraggable(entry)}>
-                  {editing && <DragHandle />}
-                  <Tile meta={META[entry.id]} editing={editing} onRemove={() => hide(entry.id)} />
-                </div>
-              ))}
+            <div key={`tg-${gi}`} className="relative">
+              {/* Sidebar drop zones (visible when dragging active-jobs over tile grid) */}
+              {editing && isDraggingSection && (
+                <>
+                  <div onDragOver={(e) => handleDragOverSidebarZone(e, "left")} onDrop={(e) => handleDrop(e, undefined, "left")}
+                    className={`absolute -left-3 top-0 bottom-0 w-8 z-10 flex items-center justify-center rounded-l-lg transition-all ${sidebarHover === "left" ? "bg-quant/20 border-l-2 border-quant" : "bg-quant/5 border-l border-quant/20"}`}>
+                    <span className="text-[10px] text-quant font-mono" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>← Links</span>
+                  </div>
+                  <div onDragOver={(e) => handleDragOverSidebarZone(e, "right")} onDrop={(e) => handleDrop(e, undefined, "right")}
+                    className={`absolute -right-3 top-0 bottom-0 w-8 z-10 flex items-center justify-center rounded-r-lg transition-all ${sidebarHover === "right" ? "bg-quant/20 border-r-2 border-quant" : "bg-quant/5 border-r border-quant/20"}`}>
+                    <span className="text-[10px] text-quant font-mono" style={{ writingMode: "vertical-rl" }}>Rechts →</span>
+                  </div>
+                </>
+              )}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {group.entries.map((entry) => (
+                  <div key={entry.id} {...tileProps(entry)}>
+                    {editing && <DragHandle />}
+                    <Tile meta={META[entry.id]} editing={editing} onRemove={() => hide(entry.id)} />
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })}
       </div>
 
+      {/* Hidden items */}
       {editing && hidden.length > 0 && (
         <div className="mt-8 rounded-lg border border-dashed border-edge p-4 space-y-3">
           <p className="font-mono text-xs uppercase tracking-widest text-muted">Ausgeblendet</p>
