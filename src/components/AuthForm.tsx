@@ -46,7 +46,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
       <Link href="/" className="eyebrow mb-8 hover:text-quant">
-        &larr; haqpy Miner Assistant
+        &larr; haqpy's Miner Assistant
       </Link>
 
       <div className="panel p-7">

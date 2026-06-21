@@ -14,7 +14,7 @@ export default async function Home() {
         <div className="h-16 w-px bg-edge md:h-20" />
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
-            haqpy Miner<br />Assistant
+            haqpy's Miner<br />Assistant
           </h1>
         </div>
       </div>

@@ -76,7 +76,7 @@ export default function Nav({ username }: { username: string }) {
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3">
         <Link href="/dashboard" className="font-display text-lg font-bold tracking-tight shrink-0">
           <span className="text-quant">hMA</span>
-          <span className="ml-1 hidden text-muted sm:inline text-sm font-normal">haqpy Miner Assistant</span>
+          <span className="ml-1 hidden text-muted sm:inline text-sm font-normal">haqpy's Miner Assistant</span>
         </Link>
 
         <nav className="flex flex-1 flex-wrap items-center gap-1 overflow-x-auto">

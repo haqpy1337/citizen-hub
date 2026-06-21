@@ -12,7 +12,7 @@ const rajdhani = Rajdhani({
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "hMA – haqpy Miner Assistant",
+  title: "hMA – haqpy's Miner Assistant",
   description: "Star Citizen refinery job tracker with live UEX data.",
 };
 
