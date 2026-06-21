@@ -157,39 +157,35 @@ export default function GroupDetailClient({
         <div className="space-y-4">
           {/* Add member search */}
           {isCreator && (
-            <div className="panel p-4">
-              <label className="label mb-2">Nutzer hinzufügen</label>
-              <div className="relative" ref={searchRef}>
-                <input
-                  className="field"
-                  placeholder="Username suchen…"
-                  value={searchQ}
-                  onChange={(e) => setSearchQ(e.target.value)}
-                />
-                {searchResults.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-md border border-edge bg-panel overflow-hidden shadow-lg">
-                    {searchResults.map((u) => (
-                      <button
-                        key={u.id}
-                        onClick={() => addMember(u)}
-                        disabled={addingId === u.id}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-hull transition"
-                      >
-                        <div className="h-7 w-7 rounded-full bg-hull border border-edge flex items-center justify-center text-[11px] font-bold text-ink uppercase">
-                          {u.username[0]}
-                        </div>
-                        <span className="text-sm text-ink">{u.username}</span>
-                        {addingId === u.id && <span className="ml-auto text-xs text-muted">…</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {searchQ.trim().length >= 2 && searchResults.length === 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-md border border-edge bg-panel px-4 py-3 text-sm text-muted">
-                    Kein Nutzer gefunden.
-                  </div>
-                )}
-              </div>
+            <div className="panel p-4 space-y-2" ref={searchRef}>
+              <label className="label">Nutzer hinzufügen</label>
+              <input
+                className="field"
+                placeholder="Username suchen…"
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
+              />
+              {searchResults.length > 0 && (
+                <div className="rounded-md border border-edge bg-hull overflow-hidden">
+                  {searchResults.map((u) => (
+                    <button
+                      key={u.id}
+                      onClick={() => addMember(u)}
+                      disabled={addingId === u.id}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-panel transition border-b border-edge last:border-0"
+                    >
+                      <div className="h-7 w-7 rounded-full bg-panel border border-edge flex items-center justify-center text-[11px] font-bold text-ink uppercase">
+                        {u.username[0]}
+                      </div>
+                      <span className="text-sm text-ink">{u.username}</span>
+                      {addingId === u.id && <span className="ml-auto text-xs text-muted">…</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {searchQ.trim().length >= 2 && searchResults.length === 0 && (
+                <p className="text-sm text-muted px-1">Kein Nutzer gefunden.</p>
+              )}
             </div>
           )}
 
