@@ -1,8 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Background -->
-  <rect width="32" height="32" rx="6" fill="#111110"/>
-  <!-- Hexagon (ore crystal) -->
-  <polygon points="16,4 26,9.5 26,22.5 16,28 6,22.5 6,9.5" fill="none" stroke="#d94a0a" stroke-width="1.5"/>
-  <!-- Inner M shape -->
-  <polyline points="10,21 10,12 16,18 22,12 22,21" fill="none" stroke="#d94a0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="32" height="32" rx="4" fill="#0e0e0e"/>
+  <text x="2" y="23" font-family="system-ui, sans-serif" font-size="14" font-weight="700" fill="#5a8fb8">h</text>
+  <text x="11" y="23" font-family="system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff">MA</text>
 </svg>
