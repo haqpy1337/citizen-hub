@@ -10,14 +10,12 @@ export async function GET(req: Request) {
   const q = searchParams.get("q")?.trim() ?? "";
   if (q.length < 2) return NextResponse.json([]);
 
-  const users = await prisma.user.findMany({
-    where: {
-      username: { contains: q },
-      NOT: { id: session.userId },
-    },
-    select: { id: true, username: true },
-    take: 10,
-  });
+  const users = await prisma.$queryRaw<{ id: string; username: string }[]>`
+    SELECT id, username FROM "User"
+    WHERE LOWER(username) LIKE LOWER(${"%" + q + "%"})
+    AND id != ${session.userId}
+    LIMIT 10
+  `;
 
   return NextResponse.json(users);
 }
