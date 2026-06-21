@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { RefineryStation } from "@/lib/clientTypes";
-import { getClientRefineryStations, isUexConfigured } from "@/lib/clientUex";
+import { getClientRefineryStations } from "@/lib/clientUex";
 
 type SortKey = "name" | "queueSec" | "bestYield";
 
@@ -16,7 +16,7 @@ function formatQueueTime(sec: number): string {
 
 export default function RefineriesView() {
   const [stations, setStations] = useState<RefineryStation[] | null>(null);
-  const configured = isUexConfigured();
+
   const [error, setError] = useState<string | null>(null);
 
   const [q, setQ] = useState("");
@@ -71,13 +71,6 @@ export default function RefineriesView() {
 
   return (
     <div>
-      {!configured && (
-        <p className="mb-4 rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-sm text-amber">
-          No UEX API key set – only publicly available data is loaded. Add your key to{" "}
-          <code>.env</code> (see README).
-        </p>
-      )}
-
       {/* Filter bar */}
       <div className="panel mb-5 flex flex-wrap items-end gap-3 p-4">
         <div className="flex-1 min-w-[200px]">

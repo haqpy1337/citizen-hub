@@ -61,7 +61,7 @@ const META: Record<ItemId, ItemMeta> = {
     colorVar: "var(--color-amber)", dimVar: "rgba(224,120,0,0.12)",
   },
   "tile-org": {
-    id: "tile-org", type: "tile", label: "Org", sub: "Shared jobs, groups & earnings", href: "/dashboard/org", icon: "◉",
+    id: "tile-org", type: "tile", label: "Groups", sub: "Shared jobs & earnings", href: "/dashboard/groups", icon: "◉",
     colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)",
   },
   "tile-new-job": {

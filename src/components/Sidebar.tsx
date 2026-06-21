@@ -67,14 +67,14 @@ const links = [
     ),
   },
   {
-    href: "/dashboard/org",
-    label: "Org",
+    href: "/dashboard/groups",
+    label: "Groups",
     icon: (
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <circle cx="10" cy="6" r="2.5" />
-        <circle cx="4" cy="14" r="2" />
-        <circle cx="16" cy="14" r="2" />
-        <path d="M10 8.5v2M10 10.5l-4 2M10 10.5l4 2" />
+        <circle cx="7" cy="7" r="2.5" />
+        <circle cx="14" cy="7" r="2" />
+        <path d="M1 17c0-3 2.5-5 6-5s6 2 6 5" />
+        <path d="M14 9c2 0 4 1.5 4 4" />
       </svg>
     ),
   },

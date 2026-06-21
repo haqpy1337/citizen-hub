@@ -10,7 +10,6 @@ const schema = z.object({
   })),
 });
 
-// Set/replace all splits for a job
 export async function POST(
   req: Request,
   { params }: { params: { id: string; jobId: string } }
@@ -18,18 +17,17 @@ export async function POST(
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const membership = await prisma.orgMembership.findUnique({
-    where: { orgId_userId: { orgId: params.id, userId: session.userId } },
+  const membership = await prisma.groupMembership.findUnique({
+    where: { groupId_userId: { groupId: params.id, userId: session.userId } },
   });
   if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
 
-  // Verify job belongs to org
-  const orgMemberIds = await prisma.orgMembership
-    .findMany({ where: { orgId: params.id }, select: { userId: true } })
-    .then((ms: { userId: string }[]) => ms.map((m) => m.userId));
+  const memberIds = await prisma.groupMembership
+    .findMany({ where: { groupId: params.id }, select: { userId: true } })
+    .then((ms) => ms.map((m) => m.userId));
 
   const job = await prisma.refineryJob.findFirst({
-    where: { id: params.jobId, userId: { in: orgMemberIds } },
+    where: { id: params.jobId, userId: { in: memberIds } },
   });
   if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 
@@ -40,7 +38,6 @@ export async function POST(
   if (Math.round(total) !== 100)
     return NextResponse.json({ error: "Splits müssen 100% ergeben" }, { status: 400 });
 
-  // Upsert all splits
   await prisma.$transaction([
     prisma.earningsSplit.deleteMany({ where: { jobId: params.jobId } }),
     ...body.data.splits
@@ -52,9 +49,6 @@ export async function POST(
       ),
   ]);
 
-  const splits = await prisma.earningsSplit.findMany({
-    where: { jobId: params.jobId },
-    include: { job: { select: { userId: true } } },
-  });
+  const splits = await prisma.earningsSplit.findMany({ where: { jobId: params.jobId } });
   return NextResponse.json(splits);
 }
