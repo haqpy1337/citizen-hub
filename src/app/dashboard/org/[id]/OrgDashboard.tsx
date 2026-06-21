@@ -119,7 +119,7 @@ export default function OrgDashboard({
   const roleColor = (role: string) =>
     role === "owner" ? "text-amber" : role === "admin" ? "text-quant" : "text-muted";
 
-  const myGroups = org.groups.filter((g) => g.members.some((gm) => gm.userId === myUserId));
+  const myGroups = org.groups.filter((g) => (g.members ?? []).some((gm) => gm.userId === myUserId));
 
   return (
     <div className="mx-auto max-w-5xl py-8 px-4 space-y-6">
@@ -221,7 +221,7 @@ export default function OrgDashboard({
                     </span>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-2">
-                    {job.materials.map((m) => (
+                    {(job.materials ?? []).map((m) => (
                       <span key={m.name} className="text-xs text-muted">
                         {m.quantity} {m.unit} {m.name}
                       </span>
@@ -253,7 +253,7 @@ export default function OrgDashboard({
             <tbody>
               {org.members.map((m) => {
                 const memberGroups = org.groups.filter((g) =>
-                  g.members.some((gm) => gm.userId === m.userId)
+                  (g.members ?? []).some((gm) => gm.userId === m.userId)
                 );
                 return (
                   <tr key={m.userId} className="border-b border-edge/40 last:border-0 hover:bg-hull/50">
@@ -317,27 +317,26 @@ export default function OrgDashboard({
           )}
 
           {org.groups.map((group) => {
-            const iAmInGroup = group.members.some((gm) => gm.userId === myUserId);
+            const members = group.members ?? [];
+            const iAmInGroup = members.some((gm) => gm.userId === myUserId);
+            const notInGroup = org.members.filter((m) => !members.some((gm) => gm.userId === m.userId));
             return (
               <div key={group.id} className="panel p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-semibold text-ink">{group.name}</h3>
-                    <p className="text-xs text-muted">{group._count.jobs} Jobs · {group.members.length} Mitglieder</p>
+                    <p className="text-xs text-muted">{group._count?.jobs ?? 0} Jobs · {members.length} Mitglieder</p>
                   </div>
                   {iAmInGroup && (
-                    <button
-                      onClick={() => leaveGroup(group.id)}
-                      className="text-xs text-danger hover:underline"
-                    >
+                    <button onClick={() => leaveGroup(group.id)} className="text-xs text-danger hover:underline">
                       Verlassen
                     </button>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {group.members.map((gm) => (
+                  {members.map((gm) => (
                     <div key={gm.userId} className="flex items-center gap-1 bg-hull border border-edge rounded px-2 py-1">
-                      <span className="text-xs text-ink">{gm.user.username}</span>
+                      <span className="text-xs text-ink">{gm.user?.username ?? gm.userId}</span>
                       {isAdmin && gm.userId !== myUserId && (
                         <button
                           onClick={() => removeFromGroup(group.id, gm.userId)}
@@ -348,26 +347,21 @@ export default function OrgDashboard({
                       )}
                     </div>
                   ))}
-                  {group.members.length === 0 && <span className="text-xs text-muted">Keine Mitglieder</span>}
+                  {members.length === 0 && <span className="text-xs text-muted">Keine Mitglieder</span>}
                 </div>
-                {isAdmin && (
+                {isAdmin && notInGroup.length > 0 && (
                   <div>
                     <p className="label mb-1">Mitglied hinzufügen</p>
                     <div className="flex flex-wrap gap-2">
-                      {org.members
-                        .filter((m) => !group.members.some((gm) => gm.userId === m.userId))
-                        .map((m) => (
-                          <button
-                            key={m.userId}
-                            onClick={() => addToGroup(group.id, m.userId)}
-                            className="btn-ghost text-xs py-1"
-                          >
-                            + {m.user.username}
-                          </button>
-                        ))}
-                      {org.members.every((m) => group.members.some((gm) => gm.userId === m.userId)) && (
-                        <span className="text-xs text-muted">Alle Mitglieder bereits in der Gruppe</span>
-                      )}
+                      {notInGroup.map((m) => (
+                        <button
+                          key={m.userId}
+                          onClick={() => addToGroup(group.id, m.userId)}
+                          className="btn-ghost text-xs py-1"
+                        >
+                          + {m.user.username}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
