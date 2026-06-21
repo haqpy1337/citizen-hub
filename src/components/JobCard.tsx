@@ -48,6 +48,11 @@ export default function JobCard({ job, onChange }: Props) {
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted">
             {job.systemName && <span className="tag">{job.systemName}</span>}
             {job.method && <span className="tag">{job.method}</span>}
+            {job.group && (
+              <a href={`/dashboard/groups/${job.group.id}`} className="tag border-quant/40 text-quant hover:bg-quant/10 transition">
+                ◉ {job.group.name}
+              </a>
+            )}
           </div>
         </div>
         <button

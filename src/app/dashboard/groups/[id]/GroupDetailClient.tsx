@@ -50,7 +50,10 @@ export default function GroupDetailClient({
   const router = useRouter();
   const [group, setGroup] = useState(initialGroup);
   const [tab, setTab] = useState<"members" | "jobs">("members");
-  const [jobs] = useState<Job[]>(initialJobs);
+  const [jobs, setJobs] = useState<Job[]>(initialJobs);
+  const [editingSplits, setEditingSplits] = useState<Record<string, Record<string, string>>>({});
+  const [splitsError, setSplitsError] = useState<Record<string, string>>({});
+  const [splitsLoading, setSplitsLoading] = useState<Record<string, boolean>>({});
 
   // Member search
   const [searchQ, setSearchQ] = useState("");
@@ -102,6 +105,54 @@ export default function GroupDetailClient({
     const res = await fetch(`/api/groups/${group.id}/members/${userId}`, { method: "DELETE" });
     if (!res.ok) return;
     setGroup((g) => ({ ...g, members: g.members.filter((m) => m.userId !== userId) }));
+  }
+
+  function openSplitEditor(job: Job) {
+    const memberIds = group.members.map((m) => m.userId);
+    const existing: Record<string, string> = {};
+    for (const m of group.members) {
+      const split = job.earningsSplits.find((s) => s.userId === m.userId);
+      existing[m.userId] = split ? String(split.sharePercent) : "";
+    }
+    setEditingSplits((prev) => ({ ...prev, [job.id]: existing }));
+  }
+
+  function closeSplitEditor(jobId: string) {
+    setEditingSplits((prev) => { const n = { ...prev }; delete n[jobId]; return n; });
+    setSplitsError((prev) => { const n = { ...prev }; delete n[jobId]; return n; });
+  }
+
+  async function saveSplits(jobId: string) {
+    const inputs = editingSplits[jobId] ?? {};
+    const splits = Object.entries(inputs)
+      .map(([userId, val]) => ({ userId, sharePercent: Number(val) || 0 }))
+      .filter((s) => s.sharePercent > 0);
+    const total = splits.reduce((s, x) => s + x.sharePercent, 0);
+    if (Math.round(total) !== 100) {
+      setSplitsError((p) => ({ ...p, [jobId]: `Summe: ${total}% — muss 100% ergeben` }));
+      return;
+    }
+    setSplitsLoading((p) => ({ ...p, [jobId]: true }));
+    const res = await fetch(`/api/groups/${group.id}/jobs/${jobId}/splits`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ splits }),
+    });
+    setSplitsLoading((p) => ({ ...p, [jobId]: false }));
+    if (!res.ok) { setSplitsError((p) => ({ ...p, [jobId]: "Fehler beim Speichern" })); return; }
+    const newSplits: Split[] = await res.json();
+    setJobs((prev) => prev.map((j) => j.id === jobId ? { ...j, earningsSplits: newSplits } : j));
+    closeSplitEditor(jobId);
+  }
+
+  async function togglePaidOut(jobId: string, userId: string) {
+    const res = await fetch(`/api/groups/${group.id}/jobs/${jobId}/splits/${userId}`, { method: "PATCH" });
+    if (!res.ok) return;
+    const updated: Split = await res.json();
+    setJobs((prev) => prev.map((j) => j.id !== jobId ? j : {
+      ...j,
+      earningsSplits: j.earningsSplits.map((s) => s.userId === userId ? { ...s, paidOut: updated.paidOut } : s),
+    }));
   }
 
   async function deleteGroup() {
@@ -218,50 +269,116 @@ export default function GroupDetailClient({
       )}
 
       {tab === "jobs" && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {jobs.length === 0 ? (
             <div className="panel p-8 text-center text-muted text-sm">
               Noch keine Jobs von Gruppenmitgliedern.
             </div>
           ) : (
-            jobs.map((j) => (
-              <div key={j.id} className="panel p-4 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-display font-semibold text-ink">{j.stationName}</div>
-                    <div className="text-xs text-muted mt-0.5">
-                      von <span className="text-ink">{j.user.username}</span> · {formatDuration(j.durationSec)} · {new Date(j.startedAt).toLocaleDateString("de-DE")}
+            jobs.map((j) => {
+              const isEditing = !!editingSplits[j.id];
+              const inputs = editingSplits[j.id] ?? {};
+              const total = Object.values(inputs).reduce((s, v) => s + (Number(v) || 0), 0);
+              return (
+                <div key={j.id} className="panel p-4 space-y-3">
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-display font-semibold text-ink">{j.stationName}</div>
+                      <div className="text-xs text-muted mt-0.5">
+                        von <span className="text-ink">{j.user.username}</span> · {formatDuration(j.durationSec)} · {new Date(j.startedAt).toLocaleDateString("de-DE")}
+                      </div>
                     </div>
+                    <span className={`tag text-[10px] uppercase shrink-0 ${j.status === "running" ? "text-toxic" : "text-muted"}`}>
+                      {j.status === "running" ? "Läuft" : "Fertig"}
+                    </span>
                   </div>
-                  <span className={`tag text-[10px] uppercase ${j.status === "running" ? "text-toxic" : "text-muted"}`}>
-                    {j.status === "running" ? "Läuft" : "Fertig"}
-                  </span>
-                </div>
-                {j.materials.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {j.materials.map((m, i) => (
-                      <span key={i} className="tag">{m.name} {m.quantity} SCU</span>
-                    ))}
-                  </div>
-                )}
-                {j.earningsSplits.length > 0 && (
-                  <div className="border-t border-edge pt-2 flex flex-wrap gap-x-4 gap-y-1">
-                    {j.earningsSplits.map((s) => {
-                      const member = group.members.find((m) => m.userId === s.userId);
-                      return (
-                        <div key={s.userId} className="flex items-center gap-1.5 text-xs">
-                          <span className="text-muted">{member?.user.username ?? s.userId}</span>
-                          <span className="text-ink font-mono">{s.sharePercent}%</span>
-                          <span className={s.paidOut ? "text-toxic" : "text-amber"}>
-                            {s.paidOut ? "✓" : "○"}
-                          </span>
+
+                  {/* Materials */}
+                  {j.materials.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {j.materials.map((m, i) => (
+                        <span key={i} className="tag">{m.name} {m.quantity} SCU</span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Splits display */}
+                  {!isEditing && j.earningsSplits.length > 0 && (
+                    <div className="border-t border-edge pt-3 space-y-1.5">
+                      <p className="font-mono text-[10px] uppercase tracking-wider text-muted">Aufteilung</p>
+                      {j.earningsSplits.map((s) => {
+                        const member = group.members.find((m) => m.userId === s.userId);
+                        return (
+                          <div key={s.userId} className="flex items-center gap-2 text-sm">
+                            <span className="flex-1 text-ink">{member?.user.username ?? s.userId}</span>
+                            <span className="font-mono text-quant tabular-nums">{s.sharePercent}%</span>
+                            <button
+                              onClick={() => togglePaidOut(j.id, s.userId)}
+                              className={`text-xs px-2 py-0.5 rounded border transition ${s.paidOut ? "border-toxic/40 text-toxic" : "border-edge text-muted hover:border-amber hover:text-amber"}`}
+                            >
+                              {s.paidOut ? "✓ Bezahlt" : "Ausstehend"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Split editor */}
+                  {isEditing && (
+                    <div className="border-t border-edge pt-3 space-y-2">
+                      <p className="font-mono text-[10px] uppercase tracking-wider text-muted">Aufteilung setzen (Summe: <span className={Math.round(total) === 100 ? "text-toxic" : "text-amber"}>{total}%</span>)</p>
+                      {group.members.map((m) => (
+                        <div key={m.userId} className="flex items-center gap-2">
+                          <span className="flex-1 text-sm text-ink">{m.user.username}</span>
+                          <div className="relative w-24">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              className="field pr-6 text-right"
+                              value={inputs[m.userId] ?? ""}
+                              onChange={(e) => setEditingSplits((prev) => ({
+                                ...prev,
+                                [j.id]: { ...prev[j.id], [m.userId]: e.target.value }
+                              }))}
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted">%</span>
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))
+                      ))}
+                      {splitsError[j.id] && <p className="text-xs text-danger">{splitsError[j.id]}</p>}
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => saveSplits(j.id)}
+                          disabled={splitsLoading[j.id]}
+                          className="btn-primary text-xs px-3 py-1.5"
+                        >
+                          {splitsLoading[j.id] ? "…" : "Speichern"}
+                        </button>
+                        <button onClick={() => closeSplitEditor(j.id)} className="btn-ghost text-xs px-3 py-1.5">
+                          Abbrechen
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Split action */}
+                  {!isEditing && (
+                    <div className="border-t border-edge pt-2">
+                      <button
+                        onClick={() => openSplitEditor(j)}
+                        className="text-xs text-muted hover:text-quant transition"
+                      >
+                        {j.earningsSplits.length > 0 ? "✎ Aufteilung bearbeiten" : "+ Aufteilung setzen"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       )}

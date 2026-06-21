@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import OreCombobox from "./OreCombobox";
 import { parseDurationInput, formatDuration } from "@/lib/format";
 import type { OreCommodity, RefineryMethod, RefineryStation } from "@/lib/clientTypes";
-import { getClientRefineryStations, getClientRefineryMethods, getClientOreCommodities } from "@/lib/clientUex";
+import { getClientRefineryStations, getClientRefineryMethods, getClientOreCommodities, getClientOres } from "@/lib/clientUex";
+import type { FullOre } from "@/app/api/ores/route";
 
 interface MaterialRow {
   name: string;
@@ -40,6 +41,7 @@ export default function JobForm() {
   const [stations, setStations] = useState<RefineryStation[]>([]);
   const [methods, setMethods] = useState<RefineryMethod[]>([]);
   const [ores, setOres] = useState<OreCommodity[]>([]);
+  const [allOres, setAllOres] = useState<FullOre[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [liveOk, setLiveOk] = useState(true);
 
@@ -60,12 +62,14 @@ export default function JobForm() {
       getClientRefineryStations(),
       getClientRefineryMethods(),
       getClientOreCommodities(),
+      getClientOres(),
       fetch("/api/groups").then((r) => r.ok ? r.json() : []),
     ])
-      .then(([stations, methods, ores, groups]) => {
+      .then(([stations, methods, ores, allOres, groups]) => {
         setStations(stations);
         setMethods(methods);
         setOres(ores);
+        setAllOres(allOres);
         setGroups(Array.isArray(groups) ? groups : []);
         if (stations.length === 0) setLiveOk(false);
       })
@@ -352,13 +356,24 @@ export default function JobForm() {
       {(() => {
         const rows = materials.filter((m) => m.name.trim() && m.quantity.trim() && Number(m.quantity) > 0);
         if (rows.length === 0) return null;
+        // Build map: raw ore id → best refined sell price
+        // Refined ores have parentId pointing to their raw version
+        const refinedPriceMap = new Map<number, number>();
+        for (const o of allOres) {
+          if (o.isRefined && o.parentId && o.priceSell) {
+            const existing = refinedPriceMap.get(o.parentId);
+            if (!existing || o.priceSell > existing) refinedPriceMap.set(o.parentId, o.priceSell);
+          }
+        }
         let totalValue = 0;
         const lines = rows.map((m) => {
           const qtyScu = m.unit === "cSCU" ? Number(m.quantity) / 100 : Number(m.quantity);
           const yieldMod = m.yieldPercent ? Number(m.yieldPercent) : 0;
           const refined = qtyScu * (100 + yieldMod) / 100;
-          const ore = ores.find((o) => o.id === m.commodityId || o.name.toLowerCase() === m.name.toLowerCase());
-          const price = ore?.pricePerScu ?? null;
+          // Try refined price via parentId first, fallback to direct price
+          const price = (m.commodityId ? refinedPriceMap.get(m.commodityId) : null)
+            ?? allOres.find((o) => o.name.toLowerCase() === m.name.toLowerCase().replace("(raw)", "(refined)").trim())?.priceSell
+            ?? null;
           const value = price != null ? refined * price : null;
           if (value != null) totalValue += value;
           return { name: m.name, qtyScu, yieldMod, refined, price, value };
