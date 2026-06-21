@@ -10,23 +10,23 @@
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 :root {
   color-scheme: dark;
-  --color-void:          #0e0d0b;
-  --color-hull:          #181614;
-  --color-panel:         #1f1d1a;
-  --color-edge:          #302c27;
+  --color-void:          #090806;
+  --color-hull:          #141210;
+  --color-panel:         #211e1a;
+  --color-edge:          #3a342d;
   --color-steel:         #4a4440;
   --color-ink:           #ede4d4;
   --color-muted:         #6a6058;
   --color-quant:         #d94a0a;
-  --color-quant-dim:     #7a2806;
+  --color-quant-dim:     rgba(217,74,10,0.14);
   --color-amber:         #e07800;
   --color-toxic:         #5aaa30;
   --color-danger:        #e02010;
-  --grid-color:          rgba(217,74,10,0.07);
-  --shadow-panel:        3px 0 0 0 rgba(217,74,10,0.6) inset,
-                         0 0 0 1px rgba(217,74,10,0.1) inset,
-                         0 6px 24px rgba(0,0,0,0.8),
-                         4px 4px 0 rgba(0,0,0,0.4);
+  --grid-color:          rgba(217,74,10,0.06);
+  --shadow-panel:        3px 0 0 0 rgba(217,74,10,0.55) inset,
+                         0 0 0 1px rgba(217,74,10,0.12) inset,
+                         0 8px 32px rgba(0,0,0,0.9),
+                         0 2px 8px rgba(0,0,0,0.6);
   --shadow-glow:         0 0 0 1px rgba(217,74,10,0.6), 0 0 20px rgba(217,74,10,0.25);
   --panel-accent-top:    transparent;
   --panel-clip:          polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
