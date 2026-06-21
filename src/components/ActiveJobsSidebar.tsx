@@ -9,7 +9,7 @@ export default async function ActiveJobsSidebar({ userId }: { userId: string }) 
   });
 
   return (
-    <aside className="hidden xl:flex w-72 shrink-0 flex-col border-l border-edge pl-6 ml-6">
+    <aside className="hidden xl:flex w-96 shrink-0 flex-col border-l border-edge pl-8 ml-2">
       <div className="py-0 pb-4 border-b border-edge">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-sm font-semibold text-ink flex items-center gap-2">
@@ -24,7 +24,7 @@ export default async function ActiveJobsSidebar({ userId }: { userId: string }) 
         </div>
       </div>
 
-      <div className="flex-1 pt-4 space-y-3">
+      <div className="flex-1 pt-5 space-y-4">
         {jobs.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
             <span className="text-4xl opacity-20">⛏</span>
@@ -67,7 +67,7 @@ function JobCard({ job }: {
 
   return (
     <div
-      className="panel p-4 relative overflow-hidden"
+      className="panel p-5 relative overflow-hidden"
       style={ready ? { borderColor: "rgba(90,170,48,0.45)" } : undefined}
     >
       {ready && (
