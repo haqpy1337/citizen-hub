@@ -16,7 +16,7 @@ type Job = {
 type Org = { id: string; name: string; members: Member[]; groups: Group[] };
 
 export default function OrgDashboard({
-  org: initialOrg, myRole, myUserId, myUsername,
+  org: initialOrg, myRole, myUserId,
 }: {
   org: Org; myRole: string; myUserId: string; myUsername: string;
 }) {
@@ -41,17 +41,22 @@ export default function OrgDashboard({
 
   async function generateInvite() {
     const res = await fetch(`/api/orgs/${org.id}/invite`, { method: "POST" });
-    if (res.ok) {
-      const data = await res.json();
-      setInviteToken(data.token);
-    }
+    if (res.ok) setInviteToken((await res.json()).token);
   }
 
   async function removeMember(userId: string) {
-    if (!confirm("Mitglied entfernen?")) return;
-    await fetch(`/api/orgs/${org.id}/members/${userId}`, { method: "DELETE" });
+    const isSelf = userId === myUserId;
+    if (!confirm(isSelf ? "Org verlassen?" : "Mitglied entfernen?")) return;
+    const res = await fetch(`/api/orgs/${org.id}/members/${userId}`, { method: "DELETE" });
+    if (!res.ok) return;
+    if (isSelf) { router.push("/dashboard/org"); router.refresh(); return; }
     setOrg((o) => ({ ...o, members: o.members.filter((m) => m.userId !== userId) }));
-    if (userId === myUserId) { router.push("/dashboard/org"); router.refresh(); }
+  }
+
+  async function deleteOrg() {
+    if (!confirm(`Org "${org.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
+    const res = await fetch(`/api/orgs/${org.id}`, { method: "DELETE" });
+    if (res.ok) { router.push("/dashboard/org"); router.refresh(); }
   }
 
   async function createGroup(e: React.FormEvent) {
@@ -64,28 +69,40 @@ export default function OrgDashboard({
     });
     if (res.ok) {
       const g = await res.json();
-      setOrg((o) => ({ ...o, groups: [...o.groups, g] }));
+      // API returns group with members array, ensure it exists
+      setOrg((o) => ({ ...o, groups: [...o.groups, { ...g, members: g.members ?? [] }] }));
       setNewGroupName("");
     }
     setCreatingGroup(false);
   }
 
   async function addToGroup(groupId: string, userId: string) {
-    await fetch(`/api/orgs/${org.id}/groups/${groupId}/members`, {
+    const res = await fetch(`/api/orgs/${org.id}/groups/${groupId}/members`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId }),
     });
-    const res = await fetch(`/api/orgs/${org.id}`);
-    if (res.ok) { const data = await res.json(); setOrg(data); }
+    if (!res.ok) return;
+    // Update local state directly — don't re-fetch the whole org
+    const member = org.members.find((m) => m.userId === userId);
+    if (!member) return;
+    setOrg((o) => ({
+      ...o,
+      groups: o.groups.map((g) =>
+        g.id === groupId
+          ? { ...g, members: [...g.members, { userId, user: member.user }] }
+          : g
+      ),
+    }));
   }
 
   async function removeFromGroup(groupId: string, userId: string) {
-    await fetch(`/api/orgs/${org.id}/groups/${groupId}/members`, {
+    const res = await fetch(`/api/orgs/${org.id}/groups/${groupId}/members`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId }),
     });
+    if (!res.ok) return;
     setOrg((o) => ({
       ...o,
       groups: o.groups.map((g) =>
@@ -94,22 +111,41 @@ export default function OrgDashboard({
     }));
   }
 
+  async function leaveGroup(groupId: string) {
+    if (!confirm("Gruppe verlassen?")) return;
+    await removeFromGroup(groupId, myUserId);
+  }
+
   const roleColor = (role: string) =>
     role === "owner" ? "text-amber" : role === "admin" ? "text-quant" : "text-muted";
+
+  const myGroups = org.groups.filter((g) => g.members.some((gm) => gm.userId === myUserId));
 
   return (
     <div className="mx-auto max-w-5xl py-8 px-4 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold">{org.name}</h1>
           <p className="text-muted text-sm">{org.members.length} Mitglieder · {org.groups.length} Gruppen</p>
         </div>
-        {isAdmin && (
-          <button onClick={generateInvite} className="btn-ghost text-xs">
-            + Einladungslink
-          </button>
-        )}
+        <div className="flex gap-2 flex-wrap">
+          {isAdmin && (
+            <button onClick={generateInvite} className="btn-ghost text-xs">
+              + Einladungslink
+            </button>
+          )}
+          {myRole !== "owner" && (
+            <button onClick={() => removeMember(myUserId)} className="btn-danger text-xs py-1.5 px-3">
+              Org verlassen
+            </button>
+          )}
+          {myRole === "owner" && (
+            <button onClick={deleteOrg} className="btn-danger text-xs py-1.5 px-3">
+              Org löschen
+            </button>
+          )}
+        </div>
       </div>
 
       {inviteToken && (
@@ -127,6 +163,25 @@ export default function OrgDashboard({
             </button>
           </div>
           <p className="text-xs text-muted">Unter "Org beitreten" auf /dashboard/org eingeben.</p>
+        </div>
+      )}
+
+      {/* Meine Gruppen (Schnellübersicht) */}
+      {myGroups.length > 0 && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs text-muted uppercase tracking-wider">Meine Gruppen:</span>
+          {myGroups.map((g) => (
+            <div key={g.id} className="flex items-center gap-1 bg-hull border border-edge rounded px-2 py-1">
+              <span className="text-xs text-ink">{g.name}</span>
+              <button
+                onClick={() => leaveGroup(g.id)}
+                className="text-muted hover:text-danger text-xs ml-1"
+                title="Gruppe verlassen"
+              >
+                ×
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -160,9 +215,7 @@ export default function OrgDashboard({
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-ink">{job.stationName}</span>
                     {job.systemName && <span className="text-muted text-xs">{job.systemName}</span>}
-                    {job.group && (
-                      <span className="tag">{job.group.name}</span>
-                    )}
+                    {job.group && <span className="tag">{job.group.name}</span>}
                     <span className={`tag ${done ? "text-toxic border-toxic/30" : "text-quant border-quant/30"}`}>
                       {done ? "Fertig" : "Läuft"}
                     </span>
@@ -220,12 +273,12 @@ export default function OrgDashboard({
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {(isAdmin || m.userId === myUserId) && m.role !== "owner" && (
+                      {isAdmin && m.userId !== myUserId && m.role !== "owner" && (
                         <button
                           onClick={() => removeMember(m.userId)}
                           className="text-xs text-danger hover:underline"
                         >
-                          {m.userId === myUserId ? "Verlassen" : "Entfernen"}
+                          Entfernen
                         </button>
                       )}
                     </td>
@@ -263,50 +316,64 @@ export default function OrgDashboard({
             <p className="text-muted text-sm">Noch keine Gruppen.</p>
           )}
 
-          {org.groups.map((group) => (
-            <div key={group.id} className="panel p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-ink">{group.name}</h3>
-                  <p className="text-xs text-muted">{group._count.jobs} Jobs · {group.members.length} Mitglieder</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {group.members.map((gm) => (
-                  <div key={gm.userId} className="flex items-center gap-1 bg-hull rounded px-2 py-1">
-                    <span className="text-xs text-ink">{gm.user.username}</span>
-                    {isAdmin && (
-                      <button
-                        onClick={() => removeFromGroup(group.id, gm.userId)}
-                        className="text-muted hover:text-danger text-xs ml-1"
-                      >
-                        ×
-                      </button>
-                    )}
+          {org.groups.map((group) => {
+            const iAmInGroup = group.members.some((gm) => gm.userId === myUserId);
+            return (
+              <div key={group.id} className="panel p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-ink">{group.name}</h3>
+                    <p className="text-xs text-muted">{group._count.jobs} Jobs · {group.members.length} Mitglieder</p>
                   </div>
-                ))}
-                {group.members.length === 0 && <span className="text-xs text-muted">Keine Mitglieder</span>}
-              </div>
-              {isAdmin && (
-                <div>
-                  <p className="label mb-1">Mitglied hinzufügen</p>
-                  <div className="flex flex-wrap gap-2">
-                    {org.members
-                      .filter((m) => !group.members.some((gm) => gm.userId === m.userId))
-                      .map((m) => (
+                  {iAmInGroup && (
+                    <button
+                      onClick={() => leaveGroup(group.id)}
+                      className="text-xs text-danger hover:underline"
+                    >
+                      Verlassen
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {group.members.map((gm) => (
+                    <div key={gm.userId} className="flex items-center gap-1 bg-hull border border-edge rounded px-2 py-1">
+                      <span className="text-xs text-ink">{gm.user.username}</span>
+                      {isAdmin && gm.userId !== myUserId && (
                         <button
-                          key={m.userId}
-                          onClick={() => addToGroup(group.id, m.userId)}
-                          className="btn-ghost text-xs py-1"
+                          onClick={() => removeFromGroup(group.id, gm.userId)}
+                          className="text-muted hover:text-danger text-xs ml-1"
                         >
-                          + {m.user.username}
+                          ×
                         </button>
-                      ))}
-                  </div>
+                      )}
+                    </div>
+                  ))}
+                  {group.members.length === 0 && <span className="text-xs text-muted">Keine Mitglieder</span>}
                 </div>
-              )}
-            </div>
-          ))}
+                {isAdmin && (
+                  <div>
+                    <p className="label mb-1">Mitglied hinzufügen</p>
+                    <div className="flex flex-wrap gap-2">
+                      {org.members
+                        .filter((m) => !group.members.some((gm) => gm.userId === m.userId))
+                        .map((m) => (
+                          <button
+                            key={m.userId}
+                            onClick={() => addToGroup(group.id, m.userId)}
+                            className="btn-ghost text-xs py-1"
+                          >
+                            + {m.user.username}
+                          </button>
+                        ))}
+                      {org.members.every((m) => group.members.some((gm) => gm.userId === m.userId)) && (
+                        <span className="text-xs text-muted">Alle Mitglieder bereits in der Gruppe</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
