@@ -16,7 +16,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     .then((ms) => ms.map((m) => m.userId));
 
   const jobs = await prisma.refineryJob.findMany({
-    where: { userId: { in: memberIds } },
+    where: { groupId: params.id },
     include: {
       materials: true,
       user: { select: { id: true, username: true } },

@@ -25,7 +25,7 @@ export default async function GroupDetailPage({ params }: { params: { id: string
 
   const memberIds = group.members.map((m) => m.userId);
   const jobs = await prisma.refineryJob.findMany({
-    where: { userId: { in: memberIds } },
+    where: { groupId: params.id },
     include: {
       materials: { select: { name: true, quantity: true, commodityId: true, yieldPercent: true, unit: true } },
       user: { select: { id: true, username: true } },
