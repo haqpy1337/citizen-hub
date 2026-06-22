@@ -29,13 +29,18 @@ export default async function GroupDetailPage({ params }: { params: { id: string
     include: {
       materials: { select: { name: true, quantity: true, commodityId: true, yieldPercent: true, unit: true } },
       user: { select: { id: true, username: true } },
-      earningsSplits: {
-        include: { user: { select: { id: true, username: true } } },
-      },
+      earningsSplits: true,
     },
     orderBy: { startedAt: "desc" },
     take: 50,
   });
+
+  // Enrich splits with username (EarningsSplit has no FK relation to User in schema)
+  const splitUserIds = [...new Set(jobs.flatMap((j) => j.earningsSplits.map((s) => s.userId)))];
+  const splitUsers = splitUserIds.length > 0
+    ? await prisma.user.findMany({ where: { id: { in: splitUserIds } }, select: { id: true, username: true } })
+    : [];
+  const splitUserMap = new Map(splitUsers.map((u) => [u.id, u.username]));
 
   return (
     <GroupDetailClient
@@ -52,7 +57,7 @@ export default async function GroupDetailPage({ params }: { params: { id: string
         createdAt: j.createdAt.toISOString(),
         earningsSplits: j.earningsSplits.map((s) => ({
           ...s,
-          username: (s as any).user?.username ?? undefined,
+          username: splitUserMap.get(s.userId),
         })),
       }))}
       currentUserId={session!.userId}
