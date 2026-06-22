@@ -9,13 +9,13 @@ export default async function NewJobPage({
 
   return (
     <div>
-      <p className="eyebrow">New Entry</p>
+      <p className="eyebrow">Logbook // New Run</p>
       <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">
-        Create Refinery Job
+        Log Refinery Drop
       </h1>
       <p className="mt-2 text-muted">
-        Log what you just dropped off in-game. Pick a station and ores from the
-        live list, or type them in manually.
+        Record what you just dropped off at a refinery station. Select from the live
+        station list or enter manually.
       </p>
 
       <div className="mt-8">

@@ -130,8 +130,9 @@ export default function MiningClient() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold text-ink">{t.mining.heading}</h1>
-        <p className="text-muted text-sm mt-1">{t.mining.subtitle}</p>
+        <p className="eyebrow">Exploration // Hotspots</p>
+        <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">{t.mining.heading}</h1>
+        <p className="mt-2 text-muted">{t.mining.subtitle}</p>
       </div>
 
       {/* Tabs */}

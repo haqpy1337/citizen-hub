@@ -6,7 +6,7 @@ export default function JobsPage() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <p className="eyebrow">Logbook</p>
+          <p className="eyebrow">Logbook // Active</p>
           <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">
             My Jobs
           </h1>
@@ -16,7 +16,7 @@ export default function JobsPage() {
         </Link>
       </div>
       <p className="mt-2 text-muted">
-        All jobs across all stations — running, completed, and archived.
+        All your refinery runs — currently processing, ready to collect, and archived.
       </p>
 
       <div className="mt-8">
