@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   const dest = path.join(avatarsDir, filename);
   await writeFile(dest, output);
 
-  const avatarUrl = `/api/avatars/${session.userId}`;
+  const avatarUrl = `/api/avatars/${session.userId}?v=${Date.now()}`;
   await prisma.user.update({ where: { id: session.userId }, data: { avatarUrl } });
 
   return NextResponse.json({ avatarUrl });

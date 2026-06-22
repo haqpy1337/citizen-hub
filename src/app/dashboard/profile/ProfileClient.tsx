@@ -32,9 +32,8 @@ export default function ProfileClient({ user: initial }: { user: User }) {
       return;
     }
     const { avatarUrl } = await res.json();
-    setUser((u) => ({ ...u, avatarUrl: avatarUrl + "?t=" + Date.now() }));
+    setUser((u) => ({ ...u, avatarUrl }));
     setSuccess(true);
-    // Force sidebar to update (re-fetch layout)
     router.refresh();
   }
 
