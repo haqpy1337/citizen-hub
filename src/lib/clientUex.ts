@@ -127,6 +127,24 @@ export async function getClientSellLocations(commodityId: number): Promise<SellL
     .sort((a, b) => b.priceSell - a.priceSell);
 }
 
+export async function getClientBestPrices(): Promise<Map<number, { bestSell: number; bestBuy: number | null }>> {
+  const all = await uexGet<any>("commodities_prices_all");
+  const map = new Map<number, { bestSell: number; bestBuy: number | null }>();
+  for (const r of all) {
+    if (!r.id_commodity) continue;
+    const existing = map.get(r.id_commodity);
+    const sell = r.price_sell > 0 ? r.price_sell : 0;
+    const buy = r.price_buy > 0 ? r.price_buy : null;
+    if (!existing) {
+      map.set(r.id_commodity, { bestSell: sell, bestBuy: buy });
+    } else {
+      if (sell > existing.bestSell) existing.bestSell = sell;
+      if (buy !== null && (existing.bestBuy === null || buy < existing.bestBuy)) existing.bestBuy = buy;
+    }
+  }
+  return map;
+}
+
 export async function getClientTradeRoutes(): Promise<{ routes: TradeRoute[]; updatedAt: string }> {
   const all = await uexGet<any>("commodities_prices_all");
 

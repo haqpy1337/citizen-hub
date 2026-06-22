@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { FullOre } from "@/app/api/ores/route";
 import type { SellLocation } from "@/app/api/ore-prices/[id]/route";
-import { getClientOres, getClientSellLocations } from "@/lib/clientUex";
+import { getClientOres, getClientSellLocations, getClientBestPrices } from "@/lib/clientUex";
 import { useT } from "@/components/LanguageProvider";
 
 type SortKey = "name" | "code" | "kind" | "type" | "priceSell" | "priceBuy" | "weightScu" | "flags";
@@ -11,6 +11,7 @@ type SortKey = "name" | "code" | "kind" | "type" | "priceSell" | "priceBuy" | "w
 export default function OreTable() {
   const { t } = useT();
   const [ores, setOres] = useState<FullOre[] | null>(null);
+  const [bestPrices, setBestPrices] = useState<Map<number, { bestSell: number; bestBuy: number | null }>>(new Map());
   const [error, setError] = useState<string | null>(null);
 
   const [q, setQ] = useState("");
@@ -23,8 +24,8 @@ export default function OreTable() {
   const [sellLoading, setSellLoading] = useState(false);
 
   useEffect(() => {
-    getClientOres()
-      .then(setOres)
+    Promise.all([getClientOres(), getClientBestPrices()])
+      .then(([o, p]) => { setOres(o); setBestPrices(p); })
       .catch(() => setError(t.ores.failedToLoad));
   }, [t]);
 
@@ -39,9 +40,13 @@ export default function OreTable() {
       );
     }
     const minSellNum = parseFloat(minSell);
-    if (!isNaN(minSellNum) && minSellNum > 0) r = r.filter((o) => (o.priceSell ?? 0) >= minSellNum);
+    if (!isNaN(minSellNum) && minSellNum > 0) {
+      r = r.filter((o) => (bestPrices.get(o.id)?.bestSell ?? o.priceSell ?? 0) >= minSellNum);
+    }
 
     const flagScore = (o: FullOre) => (o.isIllegal ? 2 : 0) + (o.isVolatileQt ? 1 : 0);
+    const effectiveSell = (o: FullOre) => bestPrices.get(o.id)?.bestSell || o.priceSell || 0;
+    const effectiveBuy  = (o: FullOre) => bestPrices.get(o.id)?.bestBuy  ?? o.priceBuy  ?? null;
     const dir = asc ? 1 : -1;
     return [...r].sort((a, b) => {
       if (sortKey === "name") return a.name.localeCompare(b.name) * dir;
@@ -49,11 +54,13 @@ export default function OreTable() {
       if (sortKey === "kind") return (a.kind ?? "").localeCompare(b.kind ?? "") * dir;
       if (sortKey === "type") return (a.isRefined ? 1 : 0) - (b.isRefined ? 1 : 0) * dir;
       if (sortKey === "flags") return (flagScore(a) - flagScore(b)) * dir;
-      const av = (a[sortKey as "priceSell" | "priceBuy" | "weightScu"] as number | null) ?? -1;
-      const bv = (b[sortKey as "priceSell" | "priceBuy" | "weightScu"] as number | null) ?? -1;
+      if (sortKey === "priceSell") return (effectiveSell(a) - effectiveSell(b)) * dir;
+      if (sortKey === "priceBuy")  return ((effectiveBuy(a) ?? -1) - (effectiveBuy(b) ?? -1)) * dir;
+      const av = (a[sortKey as "weightScu"] as number | null) ?? -1;
+      const bv = (b[sortKey as "weightScu"] as number | null) ?? -1;
       return (av - bv) * dir;
     });
-  }, [ores, q, minSell, sortKey, asc]);
+  }, [ores, bestPrices, q, minSell, sortKey, asc]);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setAsc(!asc);
@@ -131,6 +138,8 @@ export default function OreTable() {
           <tbody>
             {rows.map((o) => {
               const isExpanded = expandedId === o.id;
+              const bestSell = bestPrices.get(o.id)?.bestSell || o.priceSell || null;
+              const bestBuy  = bestPrices.get(o.id)?.bestBuy  ?? o.priceBuy  ?? null;
               return (
                 <React.Fragment key={o.id}>
                   <tr
@@ -150,12 +159,12 @@ export default function OreTable() {
                       {o.isRefined && <span className="tag border-toxic/30 text-toxic">{t.ores.refined}</span>}
                     </td>
                     <td className="px-4 py-3 text-right font-mono tabular-nums">
-                      {o.priceSell ? (
-                        <span className="text-toxic font-semibold">{o.priceSell.toLocaleString()}</span>
+                      {bestSell ? (
+                        <span className="text-toxic font-semibold">{bestSell.toLocaleString()}</span>
                       ) : <span className="text-muted">—</span>}
                     </td>
                     <td className="px-4 py-3 text-right font-mono tabular-nums text-muted">
-                      {o.priceBuy ? o.priceBuy.toLocaleString() : "—"}
+                      {bestBuy ? bestBuy.toLocaleString() : "—"}
                     </td>
                     <td className="px-4 py-3 text-right font-mono tabular-nums text-muted">
                       {o.weightScu ? o.weightScu.toFixed(2) : "—"}
