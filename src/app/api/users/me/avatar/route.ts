@@ -32,7 +32,8 @@ export async function POST(req: Request) {
   const input = Buffer.from(arrayBuffer);
   const output = await sharpLib(input)
     .resize(128, 128, { fit: "cover", position: "centre" })
-    .jpeg({ quality: 85 })
+    .flatten({ background: { r: 255, g: 255, b: 255 } })
+    .jpeg({ quality: 90 })
     .toBuffer();
 
   const filename = `${session.userId}.jpg`;
