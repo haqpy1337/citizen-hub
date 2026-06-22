@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { getClientOres } from "@/lib/clientUex";
 import type { FullOre } from "@/app/api/ores/route";
 import Avatar from "@/components/Avatar";
+import JobTimer from "@/components/JobTimer";
 import { useT } from "@/components/LanguageProvider";
 
 type Member = {
@@ -339,10 +340,15 @@ export default function GroupDetailClient({
                         {t.groups.jobs.by} <span className="text-ink">{j.user.username}</span> · {formatDuration(j.durationSec)} · {new Date(j.startedAt).toLocaleDateString()}
                       </div>
                     </div>
-                    <span className={`tag text-[10px] uppercase shrink-0 ${j.status === "running" ? "text-toxic" : "text-muted"}`}>
-                      {j.status === "running" ? t.groups.jobs.running : t.groups.jobs.done}
-                    </span>
                   </div>
+
+                  {/* Timer */}
+                  <JobTimer
+                    startedAt={j.startedAt}
+                    finishesAt={j.finishesAt}
+                    durationSec={j.durationSec}
+                    status={j.status}
+                  />
 
                   {/* Materials */}
                   {j.materials.length > 0 && (
