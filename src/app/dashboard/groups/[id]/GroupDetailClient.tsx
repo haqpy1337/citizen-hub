@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getClientOres } from "@/lib/clientUex";
 import type { FullOre } from "@/app/api/ores/route";
 import Avatar from "@/components/Avatar";
@@ -73,6 +73,15 @@ export default function GroupDetailClient({
   useEffect(() => {
     getClientOres().then(setAllOres).catch(() => {});
   }, []);
+
+  // Build a userId → username map from every known source so split display never shows raw IDs
+  const userMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of group.members) map.set(m.userId, m.user.username);
+    map.set(group.creator.id, group.creator.username);
+    for (const j of jobs) map.set(j.user.id, j.user.username);
+    return map;
+  }, [group, jobs]);
 
   // Member search
   const [searchQ, setSearchQ] = useState("");
@@ -370,11 +379,10 @@ export default function GroupDetailClient({
                     <div className="border-t border-edge pt-3 space-y-1.5">
                       <p className="font-mono text-[10px] uppercase tracking-wider text-muted">{t.groups.splits.heading}</p>
                       {j.earningsSplits.map((s) => {
-                        const member = group.members.find((m) => m.userId === s.userId);
                         const share = jobValue != null ? Math.round(s.sharePercent / 100 * jobValue) : null;
                         return (
                           <div key={s.userId} className="flex items-center gap-2 text-sm">
-                            <span className="flex-1 text-ink">{member?.user.username ?? s.userId}</span>
+                            <span className="flex-1 text-ink">{userMap.get(s.userId) ?? s.userId}</span>
                             <span className="font-mono text-quant tabular-nums">{s.sharePercent}%</span>
                             {share != null && (
                               <span className="font-mono text-xs text-muted tabular-nums">~{share.toLocaleString()} aUEC</span>
