@@ -17,7 +17,7 @@ type Member = {
   user: { id: string; username: string; avatarUrl: string | null };
 };
 
-type Split = { userId: string; sharePercent: number; paidOut: boolean };
+type Split = { userId: string; sharePercent: number; paidOut: boolean; username?: string };
 
 type JobMaterial = {
   name: string;
@@ -74,10 +74,16 @@ export default function GroupDetailClient({
     getClientOres().then(setAllOres).catch(() => {});
   }, []);
 
-  // Build a userId → username map from every known source so split display never shows raw IDs
+  // Build a id → username map from every known source.
+  // Maps both m.userId (User.id) AND m.id (GroupMembership.id) because old splits
+  // may have been stored with the membership record id instead of the user id.
   const userMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const m of group.members) map.set(m.userId, m.user.username);
+    for (const m of group.members) {
+      map.set(m.userId, m.user.username);
+      map.set(m.id, m.user.username);        // fallback: GroupMembership.id
+      map.set(m.user.id, m.user.username);   // fallback: user.id from nested object
+    }
     map.set(group.creator.id, group.creator.username);
     for (const j of jobs) map.set(j.user.id, j.user.username);
     return map;
@@ -382,7 +388,7 @@ export default function GroupDetailClient({
                         const share = jobValue != null ? Math.round(s.sharePercent / 100 * jobValue) : null;
                         return (
                           <div key={s.userId} className="flex items-center gap-2 text-sm">
-                            <span className="flex-1 text-ink">{userMap.get(s.userId) ?? s.userId}</span>
+                            <span className="flex-1 text-ink">{s.username ?? userMap.get(s.userId) ?? s.userId}</span>
                             <span className="font-mono text-quant tabular-nums">{s.sharePercent}%</span>
                             {share != null && (
                               <span className="font-mono text-xs text-muted tabular-nums">~{share.toLocaleString()} aUEC</span>

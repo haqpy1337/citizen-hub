@@ -38,17 +38,30 @@ export async function POST(
   if (Math.round(total) !== 100)
     return NextResponse.json({ error: "Splits müssen 100% ergeben" }, { status: 400 });
 
+  // Validate that all userIds in the splits belong to actual group members
+  const memberUserIds = new Set(
+    await prisma.groupMembership
+      .findMany({ where: { groupId: params.id }, select: { userId: true } })
+      .then((ms) => ms.map((m) => m.userId))
+  );
+
+  const validSplits = body.data.splits.filter((s) => s.sharePercent > 0 && memberUserIds.has(s.userId));
+
   await prisma.$transaction([
     prisma.earningsSplit.deleteMany({ where: { jobId: params.jobId } }),
-    ...body.data.splits
-      .filter((s) => s.sharePercent > 0)
-      .map((s) =>
-        prisma.earningsSplit.create({
-          data: { jobId: params.jobId, userId: s.userId, sharePercent: s.sharePercent },
-        })
-      ),
+    ...validSplits.map((s) =>
+      prisma.earningsSplit.create({
+        data: { jobId: params.jobId, userId: s.userId, sharePercent: s.sharePercent },
+      })
+    ),
   ]);
 
+  // Return splits enriched with username for display
   const splits = await prisma.earningsSplit.findMany({ where: { jobId: params.jobId } });
-  return NextResponse.json(splits);
+  const users = await prisma.user.findMany({
+    where: { id: { in: splits.map((s) => s.userId) } },
+    select: { id: true, username: true },
+  });
+  const usernameMap = new Map(users.map((u) => [u.id, u.username]));
+  return NextResponse.json(splits.map((s) => ({ ...s, username: usernameMap.get(s.userId) ?? s.userId })));
 }
