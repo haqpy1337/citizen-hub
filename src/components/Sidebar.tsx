@@ -135,9 +135,12 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
     setDesignsOpen(false);
   }
 
-  function toggleLang() {
-    setLang(lang === "en" ? "de" : "en");
-  }
+  const [langOpen, setLangOpen] = useState(false);
+
+  const languages: { id: Lang; label: string; flag: string }[] = [
+    { id: "en", label: "English", flag: "🇬🇧" },
+    { id: "de", label: "Deutsch", flag: "🇩🇪" },
+  ];
 
   const navContent = (
     <div className="flex h-full flex-col">
@@ -184,15 +187,38 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
 
       {/* Bottom: Language + Designs + User */}
       <div className="border-t border-edge px-3 py-3 space-y-1">
-        {/* Language toggle */}
+        {/* Language picker */}
         <button
-          onClick={toggleLang}
+          onClick={() => setLangOpen((v) => !v)}
           className="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-muted hover:text-ink hover:bg-hull/60 transition"
         >
-          <span className="w-4 h-4 shrink-0 text-center text-sm">🌐</span>
+          <span className="w-4 h-4 shrink-0 text-base leading-none">{languages.find(l => l.id === lang)?.flag}</span>
           <span className="font-mono text-xs uppercase tracking-wider flex-1 text-left">{t.nav.language}</span>
-          <span className="font-mono text-[10px] text-quant">{lang === "en" ? "DE" : "EN"}</span>
+          <span className="font-mono text-[10px] text-quant">{languages.find(l => l.id === lang)?.label}</span>
+          <svg className={`w-3 h-3 shrink-0 transition-transform ${langOpen ? "rotate-180" : ""}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M2 4l4 4 4-4" />
+          </svg>
         </button>
+
+        {langOpen && (
+          <div className="mx-1 rounded-md border border-edge bg-hull overflow-hidden">
+            {languages.map((l) => (
+              <button
+                key={l.id}
+                onClick={() => { setLang(l.id); setLangOpen(false); }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition hover:bg-panel ${lang === l.id ? "text-quant" : "text-ink"}`}
+              >
+                <span className="text-base leading-none">{l.flag}</span>
+                <span className="text-xs flex-1">{l.label}</span>
+                {lang === l.id && (
+                  <svg className="w-3 h-3 shrink-0 text-quant" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1.5 6l3 3 6-6" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Design picker */}
         <button
