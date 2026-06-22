@@ -22,6 +22,7 @@ type ItemId =
   | "tile-trade"
   | "tile-refineries"
   | "tile-org"
+  | "tile-mining"
   | "tile-new-job";
 
 type ItemMeta = {
@@ -37,7 +38,7 @@ type ItemMeta = {
 
 const DEFAULT_ORDER: ItemId[] = [
   "active-jobs", "tile-jobs", "tile-history", "tile-ores",
-  "tile-trade", "tile-refineries", "tile-org", "tile-new-job",
+  "tile-trade", "tile-refineries", "tile-org", "tile-mining", "tile-new-job",
 ];
 
 const STORAGE_KEY = "hma-dashboard-layout";
@@ -243,6 +244,10 @@ export default function DashboardClient({ username, activeJobs }: { username: st
     },
     "tile-org": {
       id: "tile-org", type: "tile", label: t.dashboard.tiles.groups.label, sub: t.dashboard.tiles.groups.sub, href: "/dashboard/groups", icon: "◉",
+      colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)",
+    },
+    "tile-mining": {
+      id: "tile-mining", type: "tile", label: t.dashboard.tiles.mining.label, sub: t.dashboard.tiles.mining.sub, href: "/dashboard/mining", icon: "⛏",
       colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)",
     },
     "tile-new-job": {

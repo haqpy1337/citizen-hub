@@ -1,6 +1,12 @@
 import JobForm from "@/components/JobForm";
 
-export default function NewJobPage() {
+export default async function NewJobPage({
+  searchParams,
+}: {
+  searchParams: { station?: string };
+}) {
+  const initialStation = searchParams.station ?? undefined;
+
   return (
     <div>
       <p className="eyebrow">New Entry</p>
@@ -13,7 +19,7 @@ export default function NewJobPage() {
       </p>
 
       <div className="mt-8">
-        <JobForm />
+        <JobForm initialStation={initialStation} />
       </div>
     </div>
   );

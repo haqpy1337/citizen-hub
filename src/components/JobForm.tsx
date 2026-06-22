@@ -36,7 +36,7 @@ function formatQueueShort(sec: number): string {
 
 type Group = { id: string; name: string };
 
-export default function JobForm() {
+export default function JobForm({ initialStation }: { initialStation?: string }) {
   const router = useRouter();
   const { t } = useT();
 
@@ -48,7 +48,7 @@ export default function JobForm() {
   const [liveOk, setLiveOk] = useState(true);
 
   const [stationId, setStationId] = useState<string>("");
-  const [stationName, setStationName] = useState("");
+  const [stationName, setStationName] = useState(initialStation ?? "");
   const [systemName, setSystemName] = useState("");
   const [method, setMethod] = useState("");
   const [duration, setDuration] = useState("");

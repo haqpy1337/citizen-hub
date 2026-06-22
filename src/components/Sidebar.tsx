@@ -90,6 +90,16 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
       ),
     },
     {
+      href: "/dashboard/mining",
+      label: t.nav.mining,
+      icon: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <path d="M10 2L4 8l2 2-4 6h6l2-4 2 4h6l-4-6 2-2-6-6z" />
+          <circle cx="10" cy="8" r="1.5" fill="currentColor" stroke="none" />
+        </svg>
+      ),
+    },
+    {
       href: "/dashboard/groups",
       label: t.nav.groups,
       icon: (
