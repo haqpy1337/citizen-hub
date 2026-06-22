@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 
 type User = { id: string; username: string; avatarUrl: string | null; createdAt: string };
 
 export default function ProfileClient({ user: initial }: { user: User }) {
+  const router = useRouter();
   const [user, setUser] = useState(initial);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +34,8 @@ export default function ProfileClient({ user: initial }: { user: User }) {
     const { avatarUrl } = await res.json();
     setUser((u) => ({ ...u, avatarUrl: avatarUrl + "?t=" + Date.now() }));
     setSuccess(true);
+    // Force sidebar to update (re-fetch layout)
+    router.refresh();
   }
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {

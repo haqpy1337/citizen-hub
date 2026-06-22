@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: { params: { userId: string 
     return new NextResponse(buf, {
       headers: {
         "Content-Type": "image/jpeg",
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "no-cache",
       },
     });
   } catch {
