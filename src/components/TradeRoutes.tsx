@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { TradeRoute } from "@/app/api/trade-routes/route";
 import { getClientTradeRoutes } from "@/lib/clientUex";
+import { useT } from "@/components/LanguageProvider";
 
 export default function TradeRoutes() {
+  const { t } = useT();
   const [routes, setRoutes] = useState<TradeRoute[] | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -22,15 +24,9 @@ export default function TradeRoutes() {
         setRoutes(d.routes);
         setUpdatedAt(d.updatedAt);
       })
-      .catch(() => setError("Failed to load trade routes."))
+      .catch(() => setError(t.trade.failedToLoad))
       .finally(() => setLoading(false));
-  }, []);
-
-  const systems = useMemo(() => {
-    const s = new Set<string>();
-    (routes ?? []).forEach((r) => { s.add(r.buySystem); s.add(r.sellSystem); });
-    return [...s].sort();
-  }, [routes]);
+  }, [t]);
 
   const rows = useMemo(() => {
     let r = routes ?? [];
@@ -60,46 +56,46 @@ export default function TradeRoutes() {
       {/* Filters */}
       <div className="panel mb-5 flex flex-wrap items-end gap-3 p-4">
         <div className="flex-1 min-w-[180px]">
-          <label className="label">Search</label>
+          <label className="label">{t.trade.search}</label>
           <input
             className="field"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Ore, terminal or system…"
+            placeholder={t.trade.searchPlaceholder}
           />
         </div>
         <div>
-          <label className="label">Route type</label>
+          <label className="label">{t.trade.routeType}</label>
           <select className="field" value={systemFilter} onChange={(e) => setSystemFilter(e.target.value as typeof systemFilter)}>
-            <option value="all">All routes</option>
-            <option value="same">Same system</option>
-            <option value="cross">Cross system</option>
+            <option value="all">{t.trade.allRoutes}</option>
+            <option value="same">{t.trade.sameSystem}</option>
+            <option value="cross">{t.trade.crossSystem}</option>
           </select>
         </div>
         <div>
-          <label className="label">Cargo (SCU)</label>
+          <label className="label">{t.trade.cargo}</label>
           <input
             className="field w-28"
             type="number"
             min="0"
             value={scu}
             onChange={(e) => setScu(e.target.value)}
-            placeholder="e.g. 96"
+            placeholder={t.trade.cargoPlaceholder}
           />
         </div>
         <div>
-          <label className="label">Investment (UEC)</label>
+          <label className="label">{t.trade.investment}</label>
           <input
             className="field w-36"
             type="number"
             min="0"
             value={investment}
             onChange={(e) => setInvestment(e.target.value)}
-            placeholder="optional"
+            placeholder={t.trade.investmentPlaceholder}
           />
         </div>
         <div className="font-mono text-xs text-muted self-center">
-          {loading ? "Loading…" : `${rows.length} routes`}
+          {loading ? t.trade.loading : t.trade.count(rows.length)}
         </div>
       </div>
 
@@ -109,24 +105,23 @@ export default function TradeRoutes() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-edge text-left">
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted w-6">#</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">Commodity</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">Buy at</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">Buy price</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">Sell at</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">Sell price</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">Profit/SCU</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">Margin</th>
+                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted w-6">{t.trade.rank}</th>
+                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">{t.trade.commodity}</th>
+                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">{t.trade.buyAt}</th>
+                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.buyPrice}</th>
+                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">{t.trade.sellAt}</th>
+                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.sellPrice}</th>
+                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.profitPerScu}</th>
+                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.margin}</th>
                 {scuNum > 0 && (
                   <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">
-                    Profit (max {scuNum} SCU)
+                    {t.trade.profitMax(scuNum)}
                   </th>
                 )}
               </tr>
             </thead>
             <tbody>
               {rows.slice(0, 100).map((route, i) => {
-                // Cap by available stock at buy terminal
                 const effectiveScu = scuNum > 0
                   ? (route.buyStockScu > 0 ? Math.min(scuNum, route.buyStockScu) : scuNum)
                   : 0;
@@ -156,7 +151,7 @@ export default function TradeRoutes() {
                           <span className="font-mono text-[10px] text-muted">{route.commodityCode}</span>
                         )}
                         {!route.isSameSystem && (
-                          <span className="tag border-amber/30 text-amber text-[10px]">Cross-system</span>
+                          <span className="tag border-amber/30 text-amber text-[10px]">{t.trade.crossSystemTag}</span>
                         )}
                       </div>
                     </td>
@@ -165,7 +160,7 @@ export default function TradeRoutes() {
                       <div className="font-mono text-xs text-muted">{route.buySystem}{route.buyLocation !== "—" ? ` · ${route.buyLocation}` : ""}</div>
                       {route.buyStockScu > 0 && (
                         <div className={`font-mono text-[10px] mt-0.5 ${route.buyStockScu < 10 ? "text-danger" : route.buyStockScu < 50 ? "text-amber" : "text-quant"}`}>
-                          {route.buyStockScu} SCU in stock
+                          {t.trade.inStock(route.buyStockScu)}
                         </div>
                       )}
                     </td>
@@ -192,12 +187,12 @@ export default function TradeRoutes() {
                         </div>
                         {stockCapped && (
                           <div className="font-mono text-[10px] text-amber">
-                            limited to {effectiveScu} SCU (stock)
+                            {t.trade.limitedTo(effectiveScu)}
                           </div>
                         )}
-                        {affordableProfit !== null && investNum > 0 && (
+                        {affordableProfit !== null && investNum > 0 && affordableScu !== null && (
                           <div className="font-mono text-[10px] text-muted">
-                            {affordableScu} SCU affordable → +{affordableProfit.toLocaleString()}
+                            {t.trade.affordable(affordableScu, `+${affordableProfit.toLocaleString()}`)}
                           </div>
                         )}
                       </td>
@@ -208,7 +203,7 @@ export default function TradeRoutes() {
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={9} className="px-4 py-10 text-center text-muted">
-                    No routes match the current filter.
+                    {t.trade.noMatch}
                   </td>
                 </tr>
               )}
@@ -216,14 +211,14 @@ export default function TradeRoutes() {
           </table>
           {rows.length > 100 && (
             <p className="px-4 py-3 font-mono text-xs text-muted border-t border-edge">
-              Showing top 100 of {rows.length} routes — use the search to filter further.
+              {t.trade.top100(rows.length)}
             </p>
           )}
         </div>
       )}
 
       <p className="mt-2 font-mono text-[10px] text-muted px-1">
-        Live prices via UEX Corp API · ★ = best route · Cross-system routes require quantum travel
+        {t.trade.footer}
         {updatedAt && ` · Updated ${new Date(updatedAt).toLocaleTimeString()}`}
       </p>
     </div>

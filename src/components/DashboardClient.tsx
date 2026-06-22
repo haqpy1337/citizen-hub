@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useT } from "@/components/LanguageProvider";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,42 +35,6 @@ type ItemMeta = {
   dimVar: string;
 };
 
-// ── Item definitions ─────────────────────────────────────────────────────────
-
-const META: Record<ItemId, ItemMeta> = {
-  "active-jobs": {
-    id: "active-jobs", type: "section", label: "Active Jobs", colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)",
-  },
-  "tile-jobs": {
-    id: "tile-jobs", type: "tile", label: "My Jobs", sub: "Manage your refinery orders", href: "/dashboard/jobs", icon: "⛏",
-    colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)",
-  },
-  "tile-history": {
-    id: "tile-history", type: "tile", label: "Job History", sub: "Past runs with profit estimates", href: "/dashboard/history", icon: "▤",
-    colorVar: "var(--color-amber)", dimVar: "rgba(224,120,0,0.12)",
-  },
-  "tile-ores": {
-    id: "tile-ores", type: "tile", label: "Ore Prices", sub: "Live prices for all ores", href: "/dashboard/ores", icon: "◇",
-    colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)",
-  },
-  "tile-trade": {
-    id: "tile-trade", type: "tile", label: "Trade Routes", sub: "Best buy → sell routes by profit/SCU", href: "/dashboard/trade", icon: "⇄",
-    colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)",
-  },
-  "tile-refineries": {
-    id: "tile-refineries", type: "tile", label: "Refineries", sub: "Live overview of all stations", href: "/dashboard/refineries", icon: "◈",
-    colorVar: "var(--color-amber)", dimVar: "rgba(224,120,0,0.12)",
-  },
-  "tile-org": {
-    id: "tile-org", type: "tile", label: "Groups", sub: "Shared jobs & earnings", href: "/dashboard/groups", icon: "◉",
-    colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)",
-  },
-  "tile-new-job": {
-    id: "tile-new-job", type: "tile", label: "New Job", sub: "Log a new refinery drop-off", href: "/dashboard/jobs/new", icon: "+",
-    colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)",
-  },
-};
-
 const DEFAULT_ORDER: ItemId[] = [
   "active-jobs", "tile-jobs", "tile-history", "tile-ores",
   "tile-trade", "tile-refineries", "tile-org", "tile-new-job",
@@ -86,7 +51,6 @@ function loadConfig(): StoredConfig {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_ORDER.map((id) => ({ id, visible: true }));
     const parsed: StoredConfig = JSON.parse(raw);
-    // Merge: add any new items not in stored config
     const stored = new Set(parsed.map((x) => x.id));
     const merged = [...parsed];
     for (const id of DEFAULT_ORDER) {
@@ -104,7 +68,7 @@ function saveConfig(config: StoredConfig) {
 
 // ── Active Jobs section ───────────────────────────────────────────────────────
 
-function ActiveJobsSection({ jobs }: { jobs: ActiveJob[] }) {
+function ActiveJobsSection({ jobs, t }: { jobs: ActiveJob[]; t: ReturnType<typeof useT>["t"] }) {
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
@@ -119,9 +83,9 @@ function ActiveJobsSection({ jobs }: { jobs: ActiveJob[] }) {
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold text-ink flex items-center gap-2">
           <span className="inline-block w-2 h-2 rounded-full bg-toxic animate-pulse" />
-          Currently Running
+          {t.dashboard.currentlyRunning}
         </h2>
-        <Link href="/dashboard/jobs" className="font-mono text-xs text-quant hover:underline">View all →</Link>
+        <Link href="/dashboard/jobs" className="font-mono text-xs text-quant hover:underline">{t.dashboard.viewAll}</Link>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {jobs.map((job) => {
@@ -143,14 +107,14 @@ function ActiveJobsSection({ jobs }: { jobs: ActiveJob[] }) {
                   <div className="mt-0.5 text-xs text-muted truncate">{job.materials.map((m) => m.name).join(", ")}</div>
                 </div>
                 <span className={`font-mono text-sm tabular-nums shrink-0 ${ready ? "text-toxic" : "text-quant"}`}>
-                  {ready ? "✓ Ready" : timeLeft}
+                  {ready ? t.dashboard.ready : timeLeft}
                 </span>
               </div>
               <div className="mt-3 h-1.5 overflow-hidden rounded-full border border-edge bg-hull">
                 <div className={`h-full rounded-full ${ready ? "bg-toxic" : "bg-quant"}`} style={{ width: `${pct}%` }} />
               </div>
               <div className="mt-1.5 flex justify-between">
-                <span className="text-[10px] text-muted font-mono">{Math.round(pct)}% complete</span>
+                <span className="text-[10px] text-muted font-mono">{Math.round(pct)}{t.dashboard.complete}</span>
                 {!ready && <span className="text-[10px] text-muted font-mono">{new Date(job.finishesAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr</span>}
               </div>
             </div>
@@ -180,7 +144,7 @@ function Tile({ meta, editing, onRemove }: { meta: ItemMeta; editing: boolean; o
             <span className="text-2xl text-muted group-hover:text-quant transition-colors duration-200">+</span>
           </div>
           <div className="relative">
-            <div className="font-display text-lg font-semibold text-muted group-hover:text-ink transition-colors duration-200">New Job</div>
+            <div className="font-display text-lg font-semibold text-muted group-hover:text-ink transition-colors duration-200">{meta.label}</div>
             <div className="text-xs text-muted mt-0.5">{meta.sub}</div>
           </div>
         </Link>
@@ -220,7 +184,7 @@ function RemoveBtn({ onRemove }: { onRemove: () => void }) {
     <button
       onClick={(e) => { e.stopPropagation(); onRemove(); }}
       className="absolute -top-2 -right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-danger text-void text-[10px] font-bold shadow-lg hover:scale-110 transition-transform"
-      aria-label="Ausblenden"
+      aria-label="Hide"
     >
       ×
     </button>
@@ -244,12 +208,48 @@ function DragHandle() {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function DashboardClient({ username, activeJobs }: { username: string; activeJobs: ActiveJob[] }) {
+  const { t } = useT();
   const [config, setConfig] = useState<StoredConfig>(() => DEFAULT_ORDER.map((id) => ({ id, visible: true })));
   const [hydrated, setHydrated] = useState(false);
   const [editing, setEditing] = useState(false);
   const [dragId, setDragId] = useState<ItemId | null>(null);
   const [dragOverId, setDragOverId] = useState<ItemId | null>(null);
   const dragCounter = useRef(0);
+
+  // Build META dynamically using translations
+  const META: Record<ItemId, ItemMeta> = {
+    "active-jobs": {
+      id: "active-jobs", type: "section", label: t.dashboard.activeJobs, colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)",
+    },
+    "tile-jobs": {
+      id: "tile-jobs", type: "tile", label: t.dashboard.tiles.jobs.label, sub: t.dashboard.tiles.jobs.sub, href: "/dashboard/jobs", icon: "⛏",
+      colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)",
+    },
+    "tile-history": {
+      id: "tile-history", type: "tile", label: t.dashboard.tiles.history.label, sub: t.dashboard.tiles.history.sub, href: "/dashboard/history", icon: "▤",
+      colorVar: "var(--color-amber)", dimVar: "rgba(224,120,0,0.12)",
+    },
+    "tile-ores": {
+      id: "tile-ores", type: "tile", label: t.dashboard.tiles.ores.label, sub: t.dashboard.tiles.ores.sub, href: "/dashboard/ores", icon: "◇",
+      colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)",
+    },
+    "tile-trade": {
+      id: "tile-trade", type: "tile", label: t.dashboard.tiles.trade.label, sub: t.dashboard.tiles.trade.sub, href: "/dashboard/trade", icon: "⇄",
+      colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)",
+    },
+    "tile-refineries": {
+      id: "tile-refineries", type: "tile", label: t.dashboard.tiles.refineries.label, sub: t.dashboard.tiles.refineries.sub, href: "/dashboard/refineries", icon: "◈",
+      colorVar: "var(--color-amber)", dimVar: "rgba(224,120,0,0.12)",
+    },
+    "tile-org": {
+      id: "tile-org", type: "tile", label: t.dashboard.tiles.groups.label, sub: t.dashboard.tiles.groups.sub, href: "/dashboard/groups", icon: "◉",
+      colorVar: "var(--color-toxic)", dimVar: "rgba(90,170,48,0.12)",
+    },
+    "tile-new-job": {
+      id: "tile-new-job", type: "tile", label: t.dashboard.tiles.newJob.label, sub: t.dashboard.tiles.newJob.sub, href: "/dashboard/jobs/new", icon: "+",
+      colorVar: "var(--color-quant)", dimVar: "var(--color-quant-dim)",
+    },
+  };
 
   // Load from localStorage after mount
   useEffect(() => {
@@ -273,7 +273,6 @@ export default function DashboardClient({ username, activeJobs }: { username: st
     updateConfig(config.map((x) => x.id === id ? { ...x, visible: true } : x));
   }
 
-  // Drag & drop handlers
   function onDragStart(id: ItemId) {
     setDragId(id);
   }
@@ -302,7 +301,6 @@ export default function DashboardClient({ username, activeJobs }: { username: st
 
   if (!hydrated) return null;
 
-  // Group consecutive tiles for the grid
   type RenderGroup =
     | { kind: "section"; item: StoredConfig[0] }
     | { kind: "tiles"; items: StoredConfig[0][] };
@@ -329,7 +327,7 @@ export default function DashboardClient({ username, activeJobs }: { username: st
         <div>
           <p className="eyebrow">{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
           <h1 className="mt-1 font-display text-4xl font-bold tracking-tight">
-            Welcome back, <span className="text-quant">{username}</span>.
+            {t.dashboard.greeting(username).split(username)[0]}<span className="text-quant">{username}</span>{t.dashboard.greeting(username).split(username)[1]}
           </h1>
         </div>
         <button
@@ -343,14 +341,14 @@ export default function DashboardClient({ username, activeJobs }: { username: st
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3.5 h-3.5">
                 <path d="M2 8l4 4 8-8" />
               </svg>
-              Fertig
+              Done
             </>
           ) : (
             <>
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-3.5 h-3.5">
                 <path d="M11 2l3 3-8 8H3v-3L11 2z" />
               </svg>
-              Dashboard anpassen
+              {t.dashboard.customize}
             </>
           )}
         </button>
@@ -378,14 +376,14 @@ export default function DashboardClient({ username, activeJobs }: { username: st
                     onClick={() => hide(item.id)}
                     className="absolute -top-2 -right-0 z-10 flex items-center gap-1 rounded-full border border-danger/50 bg-panel px-2 py-0.5 text-[10px] text-danger hover:bg-danger/10 transition"
                   >
-                    × Ausblenden
+                    {t.dashboard.hide}
                   </button>
                 )}
                 <div className={editing ? "pt-4" : ""}>
-                  <ActiveJobsSection jobs={activeJobs} />
+                  <ActiveJobsSection jobs={activeJobs} t={t} />
                   {activeJobs.length === 0 && editing && (
                     <div className="rounded-md border border-dashed border-edge px-4 py-3 text-sm text-muted">
-                      Active Jobs — wird angezeigt wenn Jobs laufen
+                      {t.dashboard.activeJobs}
                     </div>
                   )}
                 </div>
@@ -393,7 +391,6 @@ export default function DashboardClient({ username, activeJobs }: { username: st
             );
           }
 
-          // Tile group
           return (
             <div key={gi} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {group.items.map((item) => {
@@ -426,7 +423,7 @@ export default function DashboardClient({ username, activeJobs }: { username: st
       {/* Hidden items — shown in edit mode */}
       {editing && hidden.length > 0 && (
         <div className="mt-8 rounded-lg border border-dashed border-edge p-4 space-y-3">
-          <p className="font-mono text-xs uppercase tracking-widest text-muted">Ausgeblendete Bereiche</p>
+          <p className="font-mono text-xs uppercase tracking-widest text-muted">{t.dashboard.hiddenSections}</p>
           <div className="flex flex-wrap gap-2">
             {hidden.map((item) => {
               const meta = META[item.id];
@@ -438,7 +435,7 @@ export default function DashboardClient({ username, activeJobs }: { username: st
                 >
                   <span>{meta.icon ?? "▤"}</span>
                   <span className="font-mono text-xs">{meta.label}</span>
-                  <span className="text-quant text-xs">+ Hinzufügen</span>
+                  <span className="text-quant text-xs">{t.dashboard.add}</span>
                 </button>
               );
             })}
@@ -449,8 +446,8 @@ export default function DashboardClient({ username, activeJobs }: { username: st
       {/* Empty state */}
       {visible.length === 0 && !editing && (
         <div className="flex flex-col items-center justify-center py-24 text-muted space-y-3">
-          <p className="text-sm">Keine Kacheln sichtbar.</p>
-          <button onClick={() => setEditing(true)} className="btn-ghost text-xs">Dashboard anpassen</button>
+          <p className="text-sm">{t.dashboard.noTilesVisible}</p>
+          <button onClick={() => setEditing(true)} className="btn-ghost text-xs">{t.dashboard.customize}</button>
         </div>
       )}
     </div>

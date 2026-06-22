@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import JobCard from "./JobCard";
 import type { Job } from "@/lib/clientTypes";
+import { useT } from "@/components/LanguageProvider";
 
 export default function JobsBoard({ variant }: { variant: "active" | "all" }) {
+  const { t } = useT();
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,9 +18,9 @@ export default function JobsBoard({ variant }: { variant: "active" | "all" }) {
       const data = await res.json();
       setJobs(data.jobs);
     } catch {
-      setError("Failed to load jobs.");
+      setError(t.jobs.failedToLoad);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -31,7 +33,7 @@ export default function JobsBoard({ variant }: { variant: "active" | "all" }) {
   }
 
   if (jobs === null) {
-    return <div className="panel p-6 text-sm text-muted">Loading jobs…</div>;
+    return <div className="panel p-6 text-sm text-muted">{t.jobs.loading}</div>;
   }
 
   const visible =
@@ -44,11 +46,11 @@ export default function JobsBoard({ variant }: { variant: "active" | "all" }) {
       <div className="panel flex flex-col items-start gap-3 p-8">
         <p className="text-muted">
           {variant === "active"
-            ? "No jobs currently running."
-            : "You have no jobs yet."}
+            ? t.jobs.noJobsRunning
+            : t.jobs.noJobsYet}
         </p>
         <Link href="/dashboard/jobs/new" className="btn-primary">
-          Start a job
+          {t.jobs.startJob}
         </Link>
       </div>
     );

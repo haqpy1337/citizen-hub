@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import Sidebar from "@/components/Sidebar";
+import { LanguageProvider } from "@/components/LanguageProvider";
 
 export default async function DashboardLayout({
   children,
@@ -17,11 +18,13 @@ export default async function DashboardLayout({
   });
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar username={session.username} avatarUrl={user?.avatarUrl ?? null} />
-      <div className="flex flex-1 flex-col min-w-0">
-        <main className="flex-1 px-6 py-8 max-w-5xl w-full mx-auto">{children}</main>
+    <LanguageProvider>
+      <div className="flex min-h-screen">
+        <Sidebar username={session.username} avatarUrl={user?.avatarUrl ?? null} />
+        <div className="flex flex-1 flex-col min-w-0">
+          <main className="flex-1 px-6 py-8 max-w-5xl w-full mx-auto">{children}</main>
+        </div>
       </div>
-    </div>
+    </LanguageProvider>
   );
 }

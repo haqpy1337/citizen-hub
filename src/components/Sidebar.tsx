@@ -5,81 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDesign, type Design } from "./ThemeProvider";
 import Avatar from "./Avatar";
-
-const links = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    exact: true,
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <rect x="2" y="2" width="7" height="7" rx="1" />
-        <rect x="11" y="2" width="7" height="7" rx="1" />
-        <rect x="2" y="11" width="7" height="7" rx="1" />
-        <rect x="11" y="11" width="7" height="7" rx="1" />
-      </svg>
-    ),
-  },
-  {
-    href: "/dashboard/jobs",
-    label: "My Jobs",
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <path d="M4 6h12M4 10h8M4 14h10" />
-      </svg>
-    ),
-  },
-  {
-    href: "/dashboard/history",
-    label: "History",
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <circle cx="10" cy="10" r="7" />
-        <path d="M10 6v4l2.5 2.5" />
-      </svg>
-    ),
-  },
-  {
-    href: "/dashboard/ores",
-    label: "Ore Prices",
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <path d="M10 2l2.5 5H17l-4 3.5 1.5 5.5L10 13l-4.5 3 1.5-5.5L3 7h4.5L10 2z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/dashboard/trade",
-    label: "Trade Routes",
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <path d="M3 7h14M3 7l3-3M3 7l3 3M17 13H3M17 13l-3-3M17 13l-3 3" />
-      </svg>
-    ),
-  },
-  {
-    href: "/dashboard/refineries",
-    label: "Refineries",
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <path d="M10 2v4M6 4l4 2 4-2M4 8h12l1 9H3L4 8z" />
-        <path d="M8 12v3M12 12v3" />
-      </svg>
-    ),
-  },
-  {
-    href: "/dashboard/groups",
-    label: "Groups",
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <circle cx="7" cy="7" r="2.5" />
-        <circle cx="14" cy="7" r="2" />
-        <path d="M1 17c0-3 2.5-5 6-5s6 2 6 5" />
-        <path d="M14 9c2 0 4 1.5 4 4" />
-      </svg>
-    ),
-  },
-];
+import { useT } from "@/components/LanguageProvider";
+import type { Lang } from "@/lib/i18n";
 
 const designs: { id: Design; label: string; desc: string }[] = [
   { id: "mole",    label: "Mole",         desc: "ARGO industrial" },
@@ -94,11 +21,87 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
   const pathname = usePathname();
   const router = useRouter();
   const setDesign = useDesign();
+  const { t, lang, setLang } = useT();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [designsOpen, setDesignsOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [current, setCurrent] = useState<Design>("mole");
   const userRef = useRef<HTMLDivElement>(null);
+
+  const links = [
+    {
+      href: "/dashboard",
+      label: t.nav.dashboard,
+      exact: true,
+      icon: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <rect x="2" y="2" width="7" height="7" rx="1" />
+          <rect x="11" y="2" width="7" height="7" rx="1" />
+          <rect x="2" y="11" width="7" height="7" rx="1" />
+          <rect x="11" y="11" width="7" height="7" rx="1" />
+        </svg>
+      ),
+    },
+    {
+      href: "/dashboard/jobs",
+      label: t.nav.myJobs,
+      icon: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <path d="M4 6h12M4 10h8M4 14h10" />
+        </svg>
+      ),
+    },
+    {
+      href: "/dashboard/history",
+      label: t.nav.history,
+      icon: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <circle cx="10" cy="10" r="7" />
+          <path d="M10 6v4l2.5 2.5" />
+        </svg>
+      ),
+    },
+    {
+      href: "/dashboard/ores",
+      label: t.nav.orePrices,
+      icon: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <path d="M10 2l2.5 5H17l-4 3.5 1.5 5.5L10 13l-4.5 3 1.5-5.5L3 7h4.5L10 2z" />
+        </svg>
+      ),
+    },
+    {
+      href: "/dashboard/trade",
+      label: t.nav.tradeRoutes,
+      icon: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <path d="M3 7h14M3 7l3-3M3 7l3 3M17 13H3M17 13l-3-3M17 13l-3 3" />
+        </svg>
+      ),
+    },
+    {
+      href: "/dashboard/refineries",
+      label: t.nav.refineries,
+      icon: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <path d="M10 2v4M6 4l4 2 4-2M4 8h12l1 9H3L4 8z" />
+          <path d="M8 12v3M12 12v3" />
+        </svg>
+      ),
+    },
+    {
+      href: "/dashboard/groups",
+      label: t.nav.groups,
+      icon: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <circle cx="7" cy="7" r="2.5" />
+          <circle cx="14" cy="7" r="2" />
+          <path d="M1 17c0-3 2.5-5 6-5s6 2 6 5" />
+          <path d="M14 9c2 0 4 1.5 4 4" />
+        </svg>
+      ),
+    },
+  ];
 
   useEffect(() => {
     const stored = (localStorage.getItem("hma-design") ?? "mole") as Design;
@@ -132,6 +135,10 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
     setDesignsOpen(false);
   }
 
+  function toggleLang() {
+    setLang(lang === "en" ? "de" : "en");
+  }
+
   const navContent = (
     <div className="flex h-full flex-col">
       {/* Logo */}
@@ -142,7 +149,7 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
             hM
           </div>
           <div className="leading-tight">
-            <div className="font-display font-bold text-sm text-ink">haqpy's</div>
+            <div className="font-display font-bold text-sm text-ink">haqpy&apos;s</div>
             <div className="font-mono text-[10px] text-muted uppercase tracking-widest">Miner Assistant</div>
           </div>
         </Link>
@@ -175,8 +182,18 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
         })}
       </nav>
 
-      {/* Bottom: Designs + User */}
+      {/* Bottom: Language + Designs + User */}
       <div className="border-t border-edge px-3 py-3 space-y-1">
+        {/* Language toggle */}
+        <button
+          onClick={toggleLang}
+          className="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-muted hover:text-ink hover:bg-hull/60 transition"
+        >
+          <span className="w-4 h-4 shrink-0 text-center text-sm">🌐</span>
+          <span className="font-mono text-xs uppercase tracking-wider flex-1 text-left">{t.nav.language}</span>
+          <span className="font-mono text-[10px] text-quant">{lang === "en" ? "DE" : "EN"}</span>
+        </button>
+
         {/* Design picker */}
         <button
           onClick={() => setDesignsOpen((v) => !v)}
@@ -186,7 +203,7 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
             <circle cx="10" cy="10" r="3" />
             <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4" />
           </svg>
-          <span className="font-mono text-xs uppercase tracking-wider flex-1 text-left">Design</span>
+          <span className="font-mono text-xs uppercase tracking-wider flex-1 text-left">{t.nav.design}</span>
           <span className="font-mono text-[10px] text-quant">{designs.find(d => d.id === current)?.label}</span>
           <svg
             className={`w-3 h-3 shrink-0 transition-transform ${designsOpen ? "rotate-180" : ""}`}
@@ -241,13 +258,13 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
                 onClick={() => setUserOpen(false)}
                 className="block px-4 py-2.5 text-sm text-muted hover:bg-hull hover:text-ink transition"
               >
-                Profil
+                {t.nav.profile}
               </Link>
               <button
                 onClick={logout}
                 className="w-full px-4 py-2.5 text-left text-sm text-muted hover:bg-hull hover:text-danger transition border-t border-edge"
               >
-                Logout
+                {t.nav.logout}
               </button>
             </div>
           )}
@@ -279,7 +296,7 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
         </button>
         <Link href="/dashboard" className="flex items-center gap-2 flex-1">
           <span className="font-display font-bold text-sm text-quant">hMA</span>
-          <span className="font-mono text-xs text-muted">haqpy's Miner Assistant</span>
+          <span className="font-mono text-xs text-muted">haqpy&apos;s Miner Assistant</span>
         </Link>
         <span className="font-mono text-xs text-muted">{username}</span>
       </header>

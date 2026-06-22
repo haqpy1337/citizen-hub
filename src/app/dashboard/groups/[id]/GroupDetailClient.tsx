@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { getClientOres } from "@/lib/clientUex";
 import type { FullOre } from "@/app/api/ores/route";
 import Avatar from "@/components/Avatar";
+import { useT } from "@/components/LanguageProvider";
 
 type Member = {
   id: string;
@@ -59,6 +60,7 @@ export default function GroupDetailClient({
   currentUserId: string;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [group, setGroup] = useState(initialGroup);
   const [tab, setTab] = useState<"members" | "jobs">("members");
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
@@ -179,7 +181,7 @@ export default function GroupDetailClient({
       .filter((s) => s.sharePercent > 0);
     const total = splits.reduce((s, x) => s + x.sharePercent, 0);
     if (Math.round(total) !== 100) {
-      setSplitsError((p) => ({ ...p, [jobId]: `Summe: ${total}% — muss 100% ergeben` }));
+      setSplitsError((p) => ({ ...p, [jobId]: t.groups.splits.sum(total) }));
       return;
     }
     setSplitsLoading((p) => ({ ...p, [jobId]: true }));
@@ -189,7 +191,7 @@ export default function GroupDetailClient({
       body: JSON.stringify({ splits }),
     });
     setSplitsLoading((p) => ({ ...p, [jobId]: false }));
-    if (!res.ok) { setSplitsError((p) => ({ ...p, [jobId]: "Fehler beim Speichern" })); return; }
+    if (!res.ok) { setSplitsError((p) => ({ ...p, [jobId]: t.groups.splits.error })); return; }
     const newSplits: Split[] = await res.json();
     setJobs((prev) => prev.map((j) => j.id === jobId ? { ...j, earningsSplits: newSplits } : j));
     closeSplitEditor(jobId);
@@ -206,7 +208,7 @@ export default function GroupDetailClient({
   }
 
   async function deleteGroup() {
-    if (!confirm(`Gruppe "${group.name}" wirklich löschen?`)) return;
+    if (!confirm(t.groups.deleteConfirm(group.name))) return;
     const res = await fetch(`/api/groups/${group.id}`, { method: "DELETE" });
     if (res.ok) router.push("/dashboard/groups");
   }
@@ -223,33 +225,33 @@ export default function GroupDetailClient({
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <a href="/dashboard/groups" className="text-sm text-muted hover:text-ink transition">Gruppen</a>
+            <a href="/dashboard/groups" className="text-sm text-muted hover:text-ink transition">{t.groups.heading}</a>
             <span className="text-muted/50">/</span>
             <span className="text-sm text-ink">{group.name}</span>
           </div>
           <h1 className="font-display text-2xl font-bold text-ink">{group.name}</h1>
           <p className="text-sm text-muted mt-0.5">
-            {group.members.length} {group.members.length === 1 ? "Mitglied" : "Mitglieder"} · von {group.creator.username}
+            {group.members.length} {group.members.length === 1 ? t.groups.member : t.groups.members} · {t.groups.by} {group.creator.username}
           </p>
         </div>
         {isCreator && (
           <button onClick={deleteGroup} className="btn text-danger border-danger/30 hover:bg-danger/10 text-sm px-3 py-1.5">
-            Gruppe löschen
+            {t.groups.deleteGroup}
           </button>
         )}
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-edge">
-        {(["members", "jobs"] as const).map((t) => (
+        {(["members", "jobs"] as const).map((tabId) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabId}
+            onClick={() => setTab(tabId)}
             className={`px-4 py-2 text-sm font-mono uppercase tracking-wider transition border-b-2 -mb-px ${
-              tab === t ? "border-quant text-quant" : "border-transparent text-muted hover:text-ink"
+              tab === tabId ? "border-quant text-quant" : "border-transparent text-muted hover:text-ink"
             }`}
           >
-            {t === "members" ? "Mitglieder" : "Jobs"}
+            {tabId === "members" ? t.groups.tabs.members : t.groups.tabs.jobs}
           </button>
         ))}
       </div>
@@ -259,10 +261,10 @@ export default function GroupDetailClient({
           {/* Add member search */}
           {isCreator && (
             <div className="panel p-4 space-y-2" ref={searchRef}>
-              <label className="label">Nutzer hinzufügen</label>
+              <label className="label">{t.groups.addMember}</label>
               <input
                 className="field"
-                placeholder="Username suchen…"
+                placeholder={t.groups.searchPlaceholder}
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
               />
@@ -285,7 +287,7 @@ export default function GroupDetailClient({
                 </div>
               )}
               {searchQ.trim().length >= 2 && searchResults.length === 0 && (
-                <p className="text-sm text-muted px-1">Kein Nutzer gefunden.</p>
+                <p className="text-sm text-muted px-1">{t.groups.notFound}</p>
               )}
             </div>
           )}
@@ -297,17 +299,16 @@ export default function GroupDetailClient({
                 <Avatar username={m.user.username} avatarUrl={m.user.avatarUrl} size={32} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-ink">{m.user.username}</div>
-                  {m.userId === currentUserId && <div className="text-[10px] text-muted">Du</div>}
                 </div>
                 {m.role === "creator" && (
-                  <span className="tag text-[10px] uppercase tracking-wider">Ersteller</span>
+                  <span className="tag text-[10px] uppercase tracking-wider">{t.groups.creator}</span>
                 )}
                 {isCreator && m.userId !== currentUserId && (
                   <button
                     onClick={() => removeMember(m.userId)}
                     className="text-xs text-muted hover:text-danger transition ml-2"
                   >
-                    Entfernen
+                    {t.groups.remove}
                   </button>
                 )}
               </div>
@@ -320,7 +321,7 @@ export default function GroupDetailClient({
         <div className="space-y-3">
           {jobs.length === 0 ? (
             <div className="panel p-8 text-center text-muted text-sm">
-              Noch keine Jobs von Gruppenmitgliedern.
+              {t.groups.jobs.empty}
             </div>
           ) : (
             jobs.map((j) => {
@@ -335,11 +336,11 @@ export default function GroupDetailClient({
                     <div>
                       <div className="font-display font-semibold text-ink">{j.stationName}</div>
                       <div className="text-xs text-muted mt-0.5">
-                        von <span className="text-ink">{j.user.username}</span> · {formatDuration(j.durationSec)} · {new Date(j.startedAt).toLocaleDateString("de-DE")}
+                        {t.groups.jobs.by} <span className="text-ink">{j.user.username}</span> · {formatDuration(j.durationSec)} · {new Date(j.startedAt).toLocaleDateString()}
                       </div>
                     </div>
                     <span className={`tag text-[10px] uppercase shrink-0 ${j.status === "running" ? "text-toxic" : "text-muted"}`}>
-                      {j.status === "running" ? "Läuft" : "Fertig"}
+                      {j.status === "running" ? t.groups.jobs.running : t.groups.jobs.done}
                     </span>
                   </div>
 
@@ -355,7 +356,7 @@ export default function GroupDetailClient({
                   {/* Splits display */}
                   {!isEditing && j.earningsSplits.length > 0 && (
                     <div className="border-t border-edge pt-3 space-y-1.5">
-                      <p className="font-mono text-[10px] uppercase tracking-wider text-muted">Aufteilung</p>
+                      <p className="font-mono text-[10px] uppercase tracking-wider text-muted">{t.groups.splits.heading}</p>
                       {j.earningsSplits.map((s) => {
                         const member = group.members.find((m) => m.userId === s.userId);
                         const share = jobValue != null ? Math.round(s.sharePercent / 100 * jobValue) : null;
@@ -370,7 +371,7 @@ export default function GroupDetailClient({
                               onClick={() => togglePaidOut(j.id, s.userId)}
                               className={`text-xs px-2 py-0.5 rounded border transition ${s.paidOut ? "border-toxic/40 text-toxic" : "border-edge text-muted hover:border-amber hover:text-amber"}`}
                             >
-                              {s.paidOut ? "✓ Bezahlt" : "Ausstehend"}
+                              {s.paidOut ? t.groups.splits.paid : t.groups.splits.pending}
                             </button>
                           </div>
                         );
@@ -381,7 +382,9 @@ export default function GroupDetailClient({
                   {/* Split editor */}
                   {isEditing && (
                     <div className="border-t border-edge pt-3 space-y-2">
-                      <p className="font-mono text-[10px] uppercase tracking-wider text-muted">Aufteilung setzen (Summe: <span className={Math.round(total) === 100 ? "text-toxic" : "text-amber"}>{total}%</span>)</p>
+                      <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
+                        {t.groups.splits.heading} (<span className={Math.round(total) === 100 ? "text-toxic" : "text-amber"}>{total}%</span>)
+                      </p>
                       {group.members.map((m) => {
                         const pct = Number(inputs[m.userId] ?? 0) || 0;
                         const share = jobValue != null && pct > 0 ? Math.round(pct / 100 * jobValue) : null;
@@ -416,10 +419,10 @@ export default function GroupDetailClient({
                           disabled={splitsLoading[j.id]}
                           className="btn-primary text-xs px-3 py-1.5"
                         >
-                          {splitsLoading[j.id] ? "…" : "Speichern"}
+                          {splitsLoading[j.id] ? t.groups.splits.saving : t.groups.splits.save}
                         </button>
                         <button onClick={() => closeSplitEditor(j.id)} className="btn-ghost text-xs px-3 py-1.5">
-                          Abbrechen
+                          {t.groups.splits.cancel}
                         </button>
                       </div>
                     </div>
@@ -432,7 +435,7 @@ export default function GroupDetailClient({
                         onClick={() => openSplitEditor(j)}
                         className="text-xs text-muted hover:text-quant transition"
                       >
-                        {j.earningsSplits.length > 0 ? "✎ Aufteilung bearbeiten" : "+ Aufteilung setzen"}
+                        {j.earningsSplits.length > 0 ? t.groups.splits.editSplit : t.groups.splits.setSplit}
                       </button>
                     </div>
                   )}

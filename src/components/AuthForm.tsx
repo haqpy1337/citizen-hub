@@ -1,14 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { translations, type Lang } from "@/lib/i18n";
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const params = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [lang, setLangState] = useState<Lang>("en");
+
+  // Hydrate lang from localStorage after mount (SSR guard)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("hma-lang") as Lang | null;
+      if (stored === "de" || stored === "en") setLangState(stored);
+    } catch {
+      // localStorage not available (SSR)
+    }
+  }, []);
+
+  function toggleLang() {
+    const next: Lang = lang === "en" ? "de" : "en";
+    setLangState(next);
+    try {
+      localStorage.setItem("hma-lang", next);
+    } catch {
+      // ignore
+    }
+  }
+
+  const t = translations[lang].auth;
 
   const isRegister = mode === "register";
 
@@ -44,9 +68,17 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 relative">
+      {/* Language toggle */}
+      <button
+        onClick={toggleLang}
+        className="absolute top-6 right-6 font-mono text-xs text-muted hover:text-ink transition border border-edge rounded px-2 py-1"
+      >
+        {lang === "en" ? "DE" : "EN"}
+      </button>
+
       <Link href="/" className="eyebrow mb-8 hover:text-quant">
-        &larr; haqpy's Miner Assistant
+        {t.back}
       </Link>
 
       <div className="panel p-7">
@@ -54,19 +86,17 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
           <span className="font-display text-3xl font-bold text-quant">hMA</span>
           <div className="h-8 w-px bg-edge" />
           <h1 className="font-display text-2xl font-bold tracking-tight">
-            {isRegister ? "Create account" : "Sign in"}
+            {isRegister ? t.createAccount : t.signIn}
           </h1>
         </div>
         <p className="mb-6 text-sm text-muted">
-          {isRegister
-            ? "Set up your personal mining logbook."
-            : "Back to your dashboard."}
+          {isRegister ? t.setupSubtitle : t.backSubtitle}
         </p>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="label" htmlFor="username">
-              Username
+              {t.username}
             </label>
             <input
               id="username"
@@ -75,18 +105,18 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
               required
               autoComplete="username"
               className="field"
-              placeholder="e.g. RockHopper"
+              placeholder={t.usernamePlaceholder}
             />
             {isRegister && (
               <p className="mt-1 font-mono text-xs text-muted">
-                Letters, numbers, _ and - only. Min. 3 characters.
+                {t.usernameHint}
               </p>
             )}
           </div>
 
           <div>
             <label className="label" htmlFor="password">
-              Password
+              {t.password}
             </label>
             <input
               id="password"
@@ -95,7 +125,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
               required
               autoComplete={isRegister ? "new-password" : "current-password"}
               className="field"
-              placeholder={isRegister ? "min. 8 characters" : "••••••••"}
+              placeholder={isRegister ? t.passwordPlaceholder : "••••••••"}
             />
           </div>
 
@@ -106,7 +136,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
           )}
 
           <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? "Please wait…" : isRegister ? "Register" : "Sign in"}
+            {loading ? t.pleaseWait : isRegister ? t.register : t.signIn}
           </button>
         </form>
       </div>
@@ -114,16 +144,16 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
       <p className="mt-6 text-center text-sm text-muted">
         {isRegister ? (
           <>
-            Already registered?{" "}
+            {t.alreadyRegistered}{" "}
             <Link href="/login" className="text-quant hover:underline">
-              Sign in
+              {t.signIn}
             </Link>
           </>
         ) : (
           <>
-            No account yet?{" "}
+            {t.noAccount}{" "}
             <Link href="/register" className="text-quant hover:underline">
-              Create account
+              {t.createAccount}
             </Link>
           </>
         )}

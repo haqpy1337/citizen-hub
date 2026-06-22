@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { RefineryStation } from "@/lib/clientTypes";
 import { getClientRefineryStations } from "@/lib/clientUex";
+import { useT } from "@/components/LanguageProvider";
 
 type SortKey = "name" | "queueSec" | "bestYield";
 
@@ -15,8 +16,8 @@ function formatQueueTime(sec: number): string {
 }
 
 export default function RefineriesView() {
+  const { t } = useT();
   const [stations, setStations] = useState<RefineryStation[] | null>(null);
-
   const [error, setError] = useState<string | null>(null);
 
   const [q, setQ] = useState("");
@@ -27,8 +28,8 @@ export default function RefineriesView() {
   useEffect(() => {
     getClientRefineryStations()
       .then(setStations)
-      .catch(() => setError("Failed to load live data."));
-  }, []);
+      .catch(() => setError(t.refineries.failedToLoad));
+  }, [t]);
 
   const systems = useMemo(() => {
     const set = new Set<string>();
@@ -67,25 +68,25 @@ export default function RefineriesView() {
 
   if (error) return <div className="panel p-6 text-sm text-danger">{error}</div>;
   if (stations === null)
-    return <div className="panel p-6 text-sm text-muted">Loading live data…</div>;
+    return <div className="panel p-6 text-sm text-muted">{t.refineries.loading}</div>;
 
   return (
     <div>
       {/* Filter bar */}
       <div className="panel mb-5 flex flex-wrap items-end gap-3 p-4">
         <div className="flex-1 min-w-[200px]">
-          <label className="label">Search (station or ore)</label>
+          <label className="label">{t.refineries.search}</label>
           <input
             className="field"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="e.g. Quantanium or ARC-L1"
+            placeholder={t.refineries.searchPlaceholder}
           />
         </div>
         <div className="min-w-[160px]">
-          <label className="label">System</label>
+          <label className="label">{t.refineries.system}</label>
           <select className="field" value={system} onChange={(e) => setSystem(e.target.value)}>
-            <option value="">All</option>
+            <option value="">{t.refineries.all}</option>
             {systems.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -93,7 +94,7 @@ export default function RefineriesView() {
             ))}
           </select>
         </div>
-        <div className="font-mono text-xs text-muted">{rows.length} refineries</div>
+        <div className="font-mono text-xs text-muted">{t.refineries.count(rows.length)}</div>
       </div>
 
       {/* Table */}
@@ -101,14 +102,14 @@ export default function RefineriesView() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-edge text-left">
-              <Th label="Station" active={sortKey === "name"} asc={asc} onClick={() => toggleSort("name")} />
+              <Th label={t.refineries.colStation} active={sortKey === "name"} asc={asc} onClick={() => toggleSort("name")} />
               <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">
-                System
+                {t.refineries.colSystem}
               </th>
-              <Th label="Queue" active={sortKey === "queueSec"} asc={asc} onClick={() => toggleSort("queueSec")} align="right" />
-              <Th label="Best Yield" active={sortKey === "bestYield"} asc={asc} onClick={() => toggleSort("bestYield")} align="right" />
+              <Th label={t.refineries.colQueue} active={sortKey === "queueSec"} asc={asc} onClick={() => toggleSort("queueSec")} align="right" />
+              <Th label={t.refineries.colBestYield} active={sortKey === "bestYield"} asc={asc} onClick={() => toggleSort("bestYield")} align="right" />
               <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">
-                Ores
+                {t.refineries.colOres}
               </th>
             </tr>
           </thead>
@@ -144,7 +145,7 @@ export default function RefineriesView() {
             {rows.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-10 text-center text-muted">
-                  No refineries match the current filter.
+                  {t.refineries.noMatch}
                 </td>
               </tr>
             )}

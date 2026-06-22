@@ -7,6 +7,7 @@ import { parseDurationInput, formatDuration } from "@/lib/format";
 import type { OreCommodity, RefineryMethod, RefineryStation } from "@/lib/clientTypes";
 import { getClientRefineryStations, getClientRefineryMethods, getClientOreCommodities, getClientOres } from "@/lib/clientUex";
 import type { FullOre } from "@/app/api/ores/route";
+import { useT } from "@/components/LanguageProvider";
 
 interface MaterialRow {
   name: string;
@@ -14,7 +15,7 @@ interface MaterialRow {
   quantity: string;
   unit: "SCU" | "cSCU";
   yieldPercent: string;
-  liveYieldMod: number | null; // auto-filled from API, shown as hint
+  liveYieldMod: number | null;
 }
 
 const emptyRow: MaterialRow = {
@@ -37,6 +38,7 @@ type Group = { id: string; name: string };
 
 export default function JobForm() {
   const router = useRouter();
+  const { t } = useT();
 
   const [stations, setStations] = useState<RefineryStation[]>([]);
   const [methods, setMethods] = useState<RefineryMethod[]>([]);
@@ -76,7 +78,6 @@ export default function JobForm() {
       .catch(() => setLiveOk(false));
   }, []);
 
-  /** Look up the live yield modifier for an ore at the currently selected station. */
   function getLiveYieldMod(oreName: string): number | null {
     if (!stationId) return null;
     const station = stations.find((s) => String(s.id) === stationId);
@@ -93,7 +94,6 @@ export default function JobForm() {
     if (st) {
       setStationName(st.name);
       setSystemName(st.system ?? "");
-      // Refresh live yield modifiers for all current material rows
       setMaterials((rows) =>
         rows.map((r) => {
           if (!r.name) return r;
@@ -118,7 +118,6 @@ export default function JobForm() {
       rows.map((r, idx) => {
         if (idx !== i) return r;
         const updated = { ...r, ...patch };
-        // If ore name changed, auto-lookup the live yield mod
         if ("name" in patch) {
           const mod = getLiveYieldMod(patch.name ?? "");
           updated.liveYieldMod = mod;
@@ -142,9 +141,9 @@ export default function JobForm() {
     e.preventDefault();
     setError(null);
 
-    if (!stationName.trim()) return setError("Please enter a station name.");
+    if (!stationName.trim()) return setError(t.jobForm.errStation);
     if (!durationSec || durationSec <= 0)
-      return setError("Please enter a valid duration, e.g. '1h 30m'.");
+      return setError(t.jobForm.errDuration);
 
     const parsedMaterials = materials
       .filter((m) => m.name.trim() && m.quantity.trim())
@@ -157,7 +156,7 @@ export default function JobForm() {
       }));
 
     if (parsedMaterials.length === 0)
-      return setError("Please add at least one material with a quantity.");
+      return setError(t.jobForm.errMaterials);
 
     setSaving(true);
     try {
@@ -177,13 +176,13 @@ export default function JobForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Failed to save.");
+        setError(data.error ?? t.jobForm.errConnection);
         return;
       }
       router.push("/dashboard/jobs");
       router.refresh();
     } catch {
-      setError("Connection failed.");
+      setError(t.jobForm.errConnection);
     } finally {
       setSaving(false);
     }
@@ -193,22 +192,22 @@ export default function JobForm() {
     <form onSubmit={onSubmit} className="space-y-8">
       {!liveOk && (
         <p className="rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-sm text-amber">
-          Live data currently unavailable. You can still enter station and materials manually.
+          {t.jobForm.liveDataUnavailable}
         </p>
       )}
 
       {/* Station */}
       <section className="panel p-5">
-        <h2 className="font-display text-lg font-semibold">Station</h2>
+        <h2 className="font-display text-lg font-semibold">{t.jobForm.station}</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="label">Refinery (live list)</label>
+            <label className="label">{t.jobForm.refineryLive}</label>
             <select
               className="field"
               value={stationId}
               onChange={(e) => pickStation(e.target.value)}
             >
-              <option value="">— enter manually —</option>
+              <option value="">{t.jobForm.enterManually}</option>
               {stations.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -219,32 +218,32 @@ export default function JobForm() {
             </select>
           </div>
           <div>
-            <label className="label">Station name</label>
+            <label className="label">{t.jobForm.stationName}</label>
             <input
               className="field"
               value={stationName}
               onChange={(e) => setStationName(e.target.value)}
-              placeholder="e.g. ARC-L1 Wide Forest Station"
+              placeholder={t.jobForm.stationPlaceholder}
               required
             />
           </div>
           <div>
-            <label className="label">System (optional)</label>
+            <label className="label">{t.jobForm.systemOptional}</label>
             <input
               className="field"
               value={systemName}
               onChange={(e) => setSystemName(e.target.value)}
-              placeholder="Stanton"
+              placeholder={t.jobForm.systemPlaceholder}
             />
           </div>
           <div>
-            <label className="label">Refining method (optional)</label>
+            <label className="label">{t.jobForm.methodOptional}</label>
             <input
               className="field"
               list="methods"
               value={method}
               onChange={(e) => setMethod(e.target.value)}
-              placeholder="e.g. Dinyx Solventation"
+              placeholder={t.jobForm.methodPlaceholder}
             />
             <datalist id="methods">
               {methods.map((m) => (
@@ -258,11 +257,11 @@ export default function JobForm() {
       {/* Group */}
       {groups.length > 0 && (
         <section className="panel p-5">
-          <h2 className="font-display text-lg font-semibold">Gruppe (optional)</h2>
+          <h2 className="font-display text-lg font-semibold">{t.jobForm.groupOptional}</h2>
           <div className="mt-4">
-            <label className="label">Dieser Job gehört zu</label>
+            <label className="label">{t.jobForm.jobBelongsTo}</label>
             <select className="field" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-              <option value="">— Kein Gruppe —</option>
+              <option value="">{t.jobForm.noGroup}</option>
               {groups.map((g) => (
                 <option key={g.id} value={g.id}>{g.name}</option>
               ))}
@@ -274,15 +273,15 @@ export default function JobForm() {
       {/* Materials */}
       <section className="panel p-5">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold">Materials</h2>
+          <h2 className="font-display text-lg font-semibold">{t.jobForm.materials}</h2>
           <button type="button" onClick={addRow} className="btn-ghost px-3 py-1.5 text-xs">
-            + Add material
+            {t.jobForm.addMaterial}
           </button>
         </div>
 
         {stationId && (
           <p className="mt-2 font-mono text-xs text-quant">
-            ◆ Live yield modifiers from selected station will be applied automatically.
+            {t.jobForm.liveYieldHint}
           </p>
         )}
 
@@ -293,7 +292,7 @@ export default function JobForm() {
                 <OreCombobox
                   value={row.name}
                   ores={ores}
-                  placeholder="Ore, e.g. Quantanium (Raw)"
+                  placeholder={t.jobForm.orePlaceholder}
                   onChange={(name, ore) =>
                     updateRow(i, { name, commodityId: ore?.id ?? null })
                   }
@@ -303,7 +302,7 @@ export default function JobForm() {
                   type="number"
                   min="0"
                   step="any"
-                  placeholder="Amount"
+                  placeholder={t.jobForm.amountPlaceholder}
                   value={row.quantity}
                   onChange={(e) => updateRow(i, { quantity: e.target.value })}
                 />
@@ -322,7 +321,7 @@ export default function JobForm() {
                     min="-100"
                     max="100"
                     step="any"
-                    placeholder="% Yield mod"
+                    placeholder={t.jobForm.yieldPlaceholder}
                     value={row.yieldPercent}
                     onChange={(e) => updateRow(i, { yieldPercent: e.target.value, liveYieldMod: null })}
                   />
@@ -356,8 +355,6 @@ export default function JobForm() {
       {(() => {
         const rows = materials.filter((m) => m.name.trim() && m.quantity.trim() && Number(m.quantity) > 0);
         if (rows.length === 0) return null;
-        // Build map: raw ore id → best refined sell price
-        // Refined ores have parentId pointing to their raw version
         const refinedPriceMap = new Map<number, number>();
         for (const o of allOres) {
           if (o.isRefined && o.parentId && o.priceSell) {
@@ -370,7 +367,6 @@ export default function JobForm() {
           const qtyScu = m.unit === "cSCU" ? Number(m.quantity) / 100 : Number(m.quantity);
           const yieldMod = m.yieldPercent ? Number(m.yieldPercent) : 0;
           const refined = qtyScu * (100 + yieldMod) / 100;
-          // Try refined price via parentId first, fallback to direct price
           const price = (m.commodityId ? refinedPriceMap.get(m.commodityId) : null)
             ?? allOres.find((o) => o.name.toLowerCase() === m.name.toLowerCase().replace("(raw)", "(refined)").trim())?.priceSell
             ?? null;
@@ -381,8 +377,8 @@ export default function JobForm() {
         const hasAnyPrice = lines.some((l) => l.price != null);
         return (
           <section className="panel p-5 border-quant/30">
-            <h2 className="font-display text-lg font-semibold text-quant">Geschätzter Ertrag</h2>
-            <p className="text-xs text-muted mt-0.5">Yield-Mod × Menge × aktueller Verkaufspreis</p>
+            <h2 className="font-display text-lg font-semibold text-quant">{t.jobForm.estimatedYield}</h2>
+            <p className="text-xs text-muted mt-0.5">{t.jobForm.yieldSubtitle}</p>
             <div className="mt-4 space-y-2">
               {lines.map((l, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm border-b border-edge/40 pb-2 last:border-0">
@@ -401,14 +397,14 @@ export default function JobForm() {
                       ~{Math.round(l.value!).toLocaleString()} aUEC
                     </span>
                   ) : (
-                    <span className="text-muted text-xs w-32 text-right">kein Preis</span>
+                    <span className="text-muted text-xs w-32 text-right">{t.jobForm.noPrice}</span>
                   )}
                 </div>
               ))}
             </div>
             {hasAnyPrice && (
               <div className="mt-3 flex justify-between items-center border-t border-edge pt-3">
-                <span className="font-mono text-xs text-muted uppercase tracking-wider">Gesamt</span>
+                <span className="font-mono text-xs text-muted uppercase tracking-wider">{t.jobForm.total}</span>
                 <span className="font-display font-bold text-quant tabular-nums">
                   ~{Math.round(totalValue).toLocaleString()} aUEC
                 </span>
@@ -422,25 +418,25 @@ export default function JobForm() {
       <section className="panel p-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="label">Processing time</label>
+            <label className="label">{t.jobForm.processingTime}</label>
             <input
               className="field"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
-              placeholder="e.g. 1h 30m or 01:30:00"
+              placeholder={t.jobForm.timePlaceholder}
               required
             />
             <p className="mt-1 font-mono text-xs text-muted">
-              {durationSec ? `= ${formatDuration(durationSec)}` : "Format: 1h 30m / 90m / 01:30:00"}
+              {durationSec ? `= ${formatDuration(durationSec)}` : t.jobForm.timeHint}
             </p>
           </div>
           <div>
-            <label className="label">Note (optional)</label>
+            <label className="label">{t.jobForm.noteOptional}</label>
             <input
               className="field"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. for org run"
+              placeholder={t.jobForm.notePlaceholder}
             />
           </div>
         </div>
@@ -454,10 +450,10 @@ export default function JobForm() {
 
       <div className="flex gap-3">
         <button type="submit" disabled={saving} className="btn-primary">
-          {saving ? "Saving…" : "Start job"}
+          {saving ? t.jobForm.saving : t.jobForm.startJob}
         </button>
         <button type="button" onClick={() => router.back()} className="btn-ghost">
-          Cancel
+          {t.jobForm.cancel}
         </button>
       </div>
     </form>

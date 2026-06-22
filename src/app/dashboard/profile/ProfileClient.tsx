@@ -3,11 +3,13 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
+import { useT } from "@/components/LanguageProvider";
 
 type User = { id: string; username: string; avatarUrl: string | null; createdAt: string };
 
 export default function ProfileClient({ user: initial }: { user: User }) {
   const router = useRouter();
+  const { t } = useT();
   const [user, setUser] = useState(initial);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +18,7 @@ export default function ProfileClient({ user: initial }: { user: User }) {
 
   async function handleFile(file: File) {
     if (file.size > 5 * 1024 * 1024) {
-      setError("Datei zu groß (max 5 MB)");
+      setError(t.profile.errTooBig);
       return;
     }
     setError(null);
@@ -28,7 +30,7 @@ export default function ProfileClient({ user: initial }: { user: User }) {
     setUploading(false);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Upload fehlgeschlagen");
+      setError(data.error ?? t.profile.errFailed);
       return;
     }
     const { avatarUrl } = await res.json();
@@ -51,7 +53,7 @@ export default function ProfileClient({ user: initial }: { user: User }) {
 
   return (
     <div className="max-w-md space-y-6">
-      <h1 className="font-display text-2xl font-bold text-ink">Profil</h1>
+      <h1 className="font-display text-2xl font-bold text-ink">{t.profile.heading}</h1>
 
       <div className="panel p-6 space-y-5">
         {/* Current avatar + upload */}
@@ -60,7 +62,7 @@ export default function ProfileClient({ user: initial }: { user: User }) {
           <div className="space-y-1.5">
             <p className="text-sm font-semibold text-ink">{user.username}</p>
             <p className="text-xs text-muted">
-              Dabei seit {new Date(user.createdAt).toLocaleDateString("de-DE", { year: "numeric", month: "long" })}
+              {t.profile.memberSince(new Date(user.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long" }))}
             </p>
           </div>
         </div>
@@ -73,9 +75,9 @@ export default function ProfileClient({ user: initial }: { user: User }) {
           className="border-2 border-dashed border-edge hover:border-quant/50 rounded-lg p-6 text-center cursor-pointer transition"
         >
           <p className="text-sm text-muted">
-            {uploading ? "Wird hochgeladen…" : "Profilbild hochladen"}
+            {uploading ? t.profile.uploading : t.profile.uploadHint}
           </p>
-          <p className="text-xs text-muted/60 mt-1">JPG, PNG, WebP · max 5 MB</p>
+          <p className="text-xs text-muted/60 mt-1">{t.profile.uploadSub}</p>
           <input
             ref={inputRef}
             type="file"
@@ -86,7 +88,7 @@ export default function ProfileClient({ user: initial }: { user: User }) {
         </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}
-        {success && <p className="text-sm text-toxic">✓ Profilbild aktualisiert</p>}
+        {success && <p className="text-sm text-toxic">{t.profile.success}</p>}
       </div>
     </div>
   );

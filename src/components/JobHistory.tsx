@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Job } from "@/lib/clientTypes";
+import { useT } from "@/components/LanguageProvider";
 
 type StatusFilter = "all" | "collected" | "cancelled";
 type SortKey = "finishesAt" | "stationName" | "durationSec";
@@ -21,6 +22,7 @@ function formatDuration(sec: number) {
 }
 
 export default function JobHistory() {
+  const { t } = useT();
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,8 +35,8 @@ export default function JobHistory() {
     fetch("/api/jobs", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => setJobs(data.jobs ?? []))
-      .catch(() => setError("Failed to load history."));
-  }, []);
+      .catch(() => setError(t.history.failedToLoad));
+  }, [t]);
 
   const past = useMemo(() => {
     return (jobs ?? []).filter(
@@ -63,7 +65,7 @@ export default function JobHistory() {
   }, [past, statusFilter, q, sortKey, asc]);
 
   if (error) return <div className="panel p-6 text-sm text-danger">{error}</div>;
-  if (jobs === null) return <div className="panel p-6 text-sm text-muted">Loading history…</div>;
+  if (jobs === null) return <div className="panel p-6 text-sm text-muted">{t.history.loading}</div>;
 
   const collected = rows.filter((j) => j.status === "collected").length;
   const cancelled = rows.filter((j) => j.status === "cancelled").length;
@@ -73,37 +75,37 @@ export default function JobHistory() {
       {/* Summary bar */}
       {rows.length > 0 && (
         <div className="panel mb-5 grid grid-cols-3 divide-x divide-edge p-0 overflow-hidden">
-          <Stat label="Jobs shown" value={String(rows.length)} />
-          <Stat label="Collected" value={String(collected)} />
-          <Stat label="Cancelled" value={String(cancelled)} />
+          <Stat label={t.history.jobsShown} value={String(rows.length)} />
+          <Stat label={t.history.collected} value={String(collected)} />
+          <Stat label={t.history.cancelled} value={String(cancelled)} />
         </div>
       )}
 
       {/* Filters */}
       <div className="panel mb-5 flex flex-wrap items-end gap-3 p-4">
         <div className="flex-1 min-w-[180px]">
-          <label className="label">Search</label>
+          <label className="label">{t.history.search}</label>
           <input
             className="field"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Station or ore…"
+            placeholder={t.history.searchPlaceholder}
           />
         </div>
         <div>
-          <label className="label">Status</label>
+          <label className="label">{t.history.status}</label>
           <select className="field" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
-            <option value="all">All</option>
-            <option value="collected">Collected</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="all">{t.history.all}</option>
+            <option value="collected">{t.history.collected}</option>
+            <option value="cancelled">{t.history.cancelled}</option>
           </select>
         </div>
         <div>
-          <label className="label">Sort</label>
+          <label className="label">{t.history.sort}</label>
           <select className="field" value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}>
-            <option value="finishesAt">Date (newest first)</option>
-            <option value="stationName">Station</option>
-            <option value="durationSec">Duration</option>
+            <option value="finishesAt">{t.history.dateNewest}</option>
+            <option value="stationName">{t.history.station}</option>
+            <option value="durationSec">{t.history.duration}</option>
           </select>
         </div>
       </div>
@@ -111,7 +113,7 @@ export default function JobHistory() {
       {/* Empty state */}
       {rows.length === 0 && (
         <div className="panel p-10 text-center text-muted">
-          No completed or cancelled jobs yet.
+          {t.history.noJobs}
         </div>
       )}
 
@@ -128,17 +130,17 @@ export default function JobHistory() {
                       {job.stationName}
                     </h3>
                     {isCollected && (
-                      <span className="tag border-toxic/40 text-toxic">✓ Collected</span>
+                      <span className="tag border-toxic/40 text-toxic">{t.jobs.collected}</span>
                     )}
                     {job.status === "cancelled" && (
-                      <span className="tag border-steel text-muted">Cancelled</span>
+                      <span className="tag border-steel text-muted">{t.history.cancelled}</span>
                     )}
                   </div>
                   <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-muted">
                     {job.systemName && <span className="tag">{job.systemName}</span>}
                     {job.method && <span className="tag">{job.method}</span>}
                     <span className="font-mono">{formatDate(job.finishesAt)}</span>
-                    <span className="font-mono">Duration: {formatDuration(job.durationSec)}</span>
+                    <span className="font-mono">{t.history.durationPrefix}{formatDuration(job.durationSec)}</span>
                   </div>
                 </div>
 

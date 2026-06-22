@@ -4,10 +4,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import type { FullOre } from "@/app/api/ores/route";
 import type { SellLocation } from "@/app/api/ore-prices/[id]/route";
 import { getClientOres, getClientSellLocations } from "@/lib/clientUex";
+import { useT } from "@/components/LanguageProvider";
 
 type SortKey = "name" | "code" | "kind" | "type" | "priceSell" | "priceBuy" | "weightScu" | "flags";
 
 export default function OreTable() {
+  const { t } = useT();
   const [ores, setOres] = useState<FullOre[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,7 +18,6 @@ export default function OreTable() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [asc, setAsc] = useState(true);
 
-  // Which ore row is expanded (by ore id)
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [sellLocations, setSellLocations] = useState<SellLocation[] | null>(null);
   const [sellLoading, setSellLoading] = useState(false);
@@ -24,8 +25,8 @@ export default function OreTable() {
   useEffect(() => {
     getClientOres()
       .then(setOres)
-      .catch(() => setError("Failed to load ore data."));
-  }, []);
+      .catch(() => setError(t.ores.failedToLoad));
+  }, [t]);
 
   const rows = useMemo(() => {
     let r = ores ?? [];
@@ -79,23 +80,23 @@ export default function OreTable() {
   }
 
   if (error) return <div className="panel p-6 text-sm text-danger">{error}</div>;
-  if (ores === null) return <div className="panel p-6 text-sm text-muted">Loading ore data…</div>;
+  if (ores === null) return <div className="panel p-6 text-sm text-muted">{t.ores.loading}</div>;
 
   return (
     <div>
       {/* Filters */}
       <div className="panel mb-5 flex flex-wrap items-end gap-3 p-4">
         <div className="flex-1 min-w-[200px]">
-          <label className="label">Search</label>
+          <label className="label">{t.ores.search}</label>
           <input
             className="field"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Name, code or kind…"
+            placeholder={t.ores.searchPlaceholder}
           />
         </div>
         <div className="w-36">
-          <label className="label">Min sell (UEC/SCU)</label>
+          <label className="label">{t.ores.minSell}</label>
           <input
             className="field"
             type="number"
@@ -107,7 +108,7 @@ export default function OreTable() {
           />
         </div>
         <div className="font-mono text-xs text-muted self-center whitespace-nowrap">
-          {rows.length} ores
+          {t.ores.oresCount(rows.length)}
         </div>
       </div>
 
@@ -116,15 +117,15 @@ export default function OreTable() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-edge text-left">
-              <Th label="Name" sortKey="name" active={sortKey} asc={asc} onSort={toggleSort} />
-              <Th label="Code" sortKey="code" active={sortKey} asc={asc} onSort={toggleSort} />
-              <Th label="Kind" sortKey="kind" active={sortKey} asc={asc} onSort={toggleSort} />
-              <Th label="Type" sortKey="type" active={sortKey} asc={asc} onSort={toggleSort} />
-              <Th label="Sell (UEC/SCU)" sortKey="priceSell" active={sortKey} asc={asc} onSort={toggleSort} align="right" />
-              <Th label="Buy (UEC/SCU)" sortKey="priceBuy" active={sortKey} asc={asc} onSort={toggleSort} align="right" />
-              <Th label="kg/SCU" sortKey="weightScu" active={sortKey} asc={asc} onSort={toggleSort} align="right" />
-              <Th label="Flags" sortKey="flags" active={sortKey} asc={asc} onSort={toggleSort} align="center" />
-              <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">Where to sell</th>
+              <Th label={t.ores.name} sortKey="name" active={sortKey} asc={asc} onSort={toggleSort} />
+              <Th label={t.ores.code} sortKey="code" active={sortKey} asc={asc} onSort={toggleSort} />
+              <Th label={t.ores.kind} sortKey="kind" active={sortKey} asc={asc} onSort={toggleSort} />
+              <Th label={t.ores.type} sortKey="type" active={sortKey} asc={asc} onSort={toggleSort} />
+              <Th label={t.ores.sell} sortKey="priceSell" active={sortKey} asc={asc} onSort={toggleSort} align="right" />
+              <Th label={t.ores.buy} sortKey="priceBuy" active={sortKey} asc={asc} onSort={toggleSort} align="right" />
+              <Th label={t.ores.density} sortKey="weightScu" active={sortKey} asc={asc} onSort={toggleSort} align="right" />
+              <Th label={t.ores.flags} sortKey="flags" active={sortKey} asc={asc} onSort={toggleSort} align="center" />
+              <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.ores.whereToSell}</th>
             </tr>
           </thead>
           <tbody>
@@ -145,8 +146,8 @@ export default function OreTable() {
                     <td className="px-4 py-3 font-mono text-xs text-muted">{o.code || "—"}</td>
                     <td className="px-4 py-3 text-muted">{o.kind}</td>
                     <td className="px-4 py-3">
-                      {o.isRefinable && <span className="tag border-quant/30 text-quant">Raw</span>}
-                      {o.isRefined && <span className="tag border-toxic/30 text-toxic">Refined</span>}
+                      {o.isRefinable && <span className="tag border-quant/30 text-quant">{t.ores.raw}</span>}
+                      {o.isRefined && <span className="tag border-toxic/30 text-toxic">{t.ores.refined}</span>}
                     </td>
                     <td className="px-4 py-3 text-right font-mono tabular-nums">
                       {o.priceSell ? (
@@ -162,10 +163,10 @@ export default function OreTable() {
                     <td className="px-4 py-3 text-center">
                       <div className="flex justify-center gap-1">
                         {o.isVolatileQt && (
-                          <span className="tag border-amber/40 text-amber" title="Volatile during quantum travel">QT</span>
+                          <span className="tag border-amber/40 text-amber" title="Volatile during quantum travel">{t.ores.volatile}</span>
                         )}
                         {o.isIllegal && (
-                          <span className="tag border-danger/40 text-danger" title="Illegal commodity">Illegal</span>
+                          <span className="tag border-danger/40 text-danger" title="Illegal commodity">{t.ores.illegal}</span>
                         )}
                       </div>
                     </td>
@@ -178,7 +179,7 @@ export default function OreTable() {
                             : "border-edge text-muted hover:border-quant/40 hover:text-quant"
                         }`}
                       >
-                        {isExpanded ? "▲ Hide" : "▼ Sell at"}
+                        {isExpanded ? t.ores.hide : t.ores.sellAt}
                       </button>
                     </td>
                   </tr>
@@ -189,16 +190,16 @@ export default function OreTable() {
                       <td colSpan={9} className="px-0 py-0">
                         <div className="bg-quant/5 px-6 py-4">
                           <p className="mb-3 font-mono text-[11px] uppercase tracking-widest text-quant">
-                            Sell locations for {o.name} — sorted by price
+                            {t.ores.sellLocations(o.name)}
                           </p>
 
                           {sellLoading && (
-                            <p className="font-mono text-xs text-muted">Loading…</p>
+                            <p className="font-mono text-xs text-muted">{t.ores.loadingLocations}</p>
                           )}
 
                           {!sellLoading && sellLocations && sellLocations.length === 0 && (
                             <p className="font-mono text-xs text-muted">
-                              No sell locations found. May require a UEX API token for full data.
+                              {t.ores.noLocations}
                             </p>
                           )}
 
@@ -207,13 +208,13 @@ export default function OreTable() {
                               <table className="w-full text-sm">
                                 <thead>
                                   <tr className="border-b border-edge/50 text-left">
-                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted w-6">#</th>
-                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">Terminal</th>
-                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">System</th>
-                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">Location</th>
-                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted text-right">Sell price</th>
-                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted text-right">Min</th>
-                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted text-right">Max</th>
+                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted w-6">{t.ores.rank}</th>
+                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">{t.ores.terminal}</th>
+                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">{t.ores.system}</th>
+                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">{t.ores.location}</th>
+                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted text-right">{t.ores.sellPrice}</th>
+                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted text-right">{t.ores.min}</th>
+                                    <th className="pb-2 font-mono text-[10px] uppercase tracking-widest text-muted text-right">{t.ores.max}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -258,7 +259,7 @@ export default function OreTable() {
             {rows.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-4 py-10 text-center text-muted">
-                  No ores match the current filter.
+                  {t.ores.noMatch}
                 </td>
               </tr>
             )}
@@ -266,7 +267,7 @@ export default function OreTable() {
         </table>
       </div>
       <p className="mt-2 font-mono text-[10px] text-muted px-1">
-        Prices via UEX Corp API · Click "Sell at" to load sell locations · ★ = best price
+        {t.ores.footer}
       </p>
     </div>
   );

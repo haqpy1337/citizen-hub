@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import JobTimer from "./JobTimer";
 import type { Job } from "@/lib/clientTypes";
+import { useT } from "@/components/LanguageProvider";
 
 interface Props {
   job: Job;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function JobCard({ job, onChange }: Props) {
+  const { t } = useT();
   const [busy, setBusy] = useState(false);
   const router = useRouter();
 
@@ -30,7 +32,7 @@ export default function JobCard({ job, onChange }: Props) {
   }
 
   async function remove() {
-    if (!confirm("Delete this job?")) return;
+    if (!confirm(t.jobs.deleteConfirm)) return;
     setBusy(true);
     await fetch(`/api/jobs/${job.id}`, { method: "DELETE" });
     setBusy(false);
@@ -59,8 +61,8 @@ export default function JobCard({ job, onChange }: Props) {
           onClick={remove}
           disabled={busy}
           className="text-muted transition hover:text-danger"
-          aria-label="Delete job"
-          title="Delete"
+          aria-label={t.jobs.delete}
+          title={t.jobs.delete}
         >
           ✕
         </button>
@@ -101,11 +103,11 @@ export default function JobCard({ job, onChange }: Props) {
             disabled={busy}
             className="btn-ghost px-3 py-1.5 text-xs"
           >
-            ✓ Mark as collected
+            {t.jobs.markCollected}
           </button>
         )}
         {job.status === "collected" && (
-          <span className="tag border-toxic/40 text-toxic">✓ Collected</span>
+          <span className="tag border-toxic/40 text-toxic">{t.jobs.collected}</span>
         )}
         {job.status === "running" && (
           <button
@@ -113,7 +115,7 @@ export default function JobCard({ job, onChange }: Props) {
             disabled={busy}
             className="btn-danger px-3 py-1.5 text-xs"
           >
-            Cancel
+            {t.jobs.cancel}
           </button>
         )}
       </div>
