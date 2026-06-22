@@ -6,17 +6,27 @@ import JobCard from "./JobCard";
 import type { Job } from "@/lib/clientTypes";
 import { useT } from "@/components/LanguageProvider";
 
+type GroupOption = { id: string; name: string };
+
 export default function JobsBoard({ variant }: { variant: "active" | "all" }) {
   const { t } = useT();
   const [jobs, setJobs] = useState<Job[] | null>(null);
+  const [groups, setGroups] = useState<GroupOption[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/jobs", { cache: "no-store" });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
+      const [jobsRes, groupsRes] = await Promise.all([
+        fetch("/api/jobs", { cache: "no-store" }),
+        fetch("/api/groups", { cache: "no-store" }),
+      ]);
+      if (!jobsRes.ok) throw new Error();
+      const data = await jobsRes.json();
       setJobs(data.jobs);
+      if (groupsRes.ok) {
+        const gData = await groupsRes.json();
+        setGroups(Array.isArray(gData) ? gData.map((g: any) => ({ id: g.id, name: g.name })) : []);
+      }
     } catch {
       setError(t.jobs.failedToLoad);
     }
@@ -59,7 +69,7 @@ export default function JobsBoard({ variant }: { variant: "active" | "all" }) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {visible.map((job) => (
-        <JobCard key={job.id} job={job} onChange={load} />
+        <JobCard key={job.id} job={job} groups={groups} onChange={load} />
       ))}
     </div>
   );

@@ -36,6 +36,7 @@ export const jobCreateSchema = z.object({
 export const jobUpdateSchema = z.object({
   status: z.enum(["running", "done", "collected", "cancelled"]).optional(),
   note: z.string().max(500).optional(),
+  groupId: z.string().nullable().optional(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

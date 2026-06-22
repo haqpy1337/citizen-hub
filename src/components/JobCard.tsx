@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import JobTimer from "./JobTimer";
 import type { Job } from "@/lib/clientTypes";
@@ -8,27 +8,40 @@ import { useT } from "@/components/LanguageProvider";
 
 interface Props {
   job: Job;
+  groups?: { id: string; name: string }[];
   onChange: () => void;
 }
 
-export default function JobCard({ job, onChange }: Props) {
+export default function JobCard({ job, groups = [], onChange }: Props) {
   const { t } = useT();
   const [busy, setBusy] = useState(false);
+  const [groupPickerOpen, setGroupPickerOpen] = useState(false);
+  const [assigningGroup, setAssigningGroup] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  async function patch(status: Job["status"], navigate?: string) {
+  async function patch(body: Record<string, unknown>, navigate?: string) {
     setBusy(true);
     await fetch(`/api/jobs/${job.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(body),
     });
     setBusy(false);
-    if (navigate) {
-      router.push(navigate);
-    } else {
-      onChange();
-    }
+    if (navigate) router.push(navigate);
+    else onChange();
+  }
+
+  async function assignGroup(groupId: string | null) {
+    setAssigningGroup(true);
+    setGroupPickerOpen(false);
+    await fetch(`/api/jobs/${job.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ groupId }),
+    });
+    setAssigningGroup(false);
+    onChange();
   }
 
   async function remove() {
@@ -99,7 +112,7 @@ export default function JobCard({ job, onChange }: Props) {
       <div className="mt-4 flex flex-wrap gap-2">
         {job.status === "running" && (
           <button
-            onClick={() => patch("collected", "/dashboard/history")}
+            onClick={() => patch({ status: "collected" }, "/dashboard/history")}
             disabled={busy}
             className="btn-ghost px-3 py-1.5 text-xs"
           >
@@ -111,12 +124,55 @@ export default function JobCard({ job, onChange }: Props) {
         )}
         {job.status === "running" && (
           <button
-            onClick={() => patch("cancelled")}
+            onClick={() => patch({ status: "cancelled" })}
             disabled={busy}
             className="btn-danger px-3 py-1.5 text-xs"
           >
             {t.jobs.cancel}
           </button>
+        )}
+
+        {/* Group assignment */}
+        {groups.length > 0 && (
+          <div className="relative ml-auto" ref={pickerRef}>
+            <button
+              onClick={() => setGroupPickerOpen((v) => !v)}
+              disabled={assigningGroup}
+              className="btn-ghost px-3 py-1.5 text-xs flex items-center gap-1.5"
+              title={job.group ? "Change group" : "Assign to group"}
+            >
+              {assigningGroup ? (
+                <span className="text-muted">…</span>
+              ) : job.group ? (
+                <>◉ <span className="text-quant">{job.group.name}</span></>
+              ) : (
+                <span className="text-muted">+ {t.jobForm.groupOptional.replace(" (optional)", "")}</span>
+              )}
+            </button>
+
+            {groupPickerOpen && (
+              <div className="absolute bottom-full right-0 mb-1 z-30 min-w-[180px] rounded-md border border-edge bg-panel shadow-lg overflow-hidden">
+                {groups.map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => assignGroup(g.id)}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-hull transition flex items-center gap-2 ${job.group?.id === g.id ? "text-quant" : "text-ink"}`}
+                  >
+                    <span>◉</span> {g.name}
+                    {job.group?.id === g.id && <span className="ml-auto text-quant text-xs">✓</span>}
+                  </button>
+                ))}
+                {job.group && (
+                  <button
+                    onClick={() => assignGroup(null)}
+                    className="w-full px-3 py-2 text-left text-xs text-muted hover:bg-hull border-t border-edge transition"
+                  >
+                    {t.jobForm.noGroup}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </article>
