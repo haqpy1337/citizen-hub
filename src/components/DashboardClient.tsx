@@ -328,10 +328,10 @@ export default function DashboardClient({ username, activeJobs }: { username: st
   return (
     <div className="space-y-1">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <p className="eyebrow">{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
-          <h1 className="mt-1 font-display text-4xl font-bold tracking-tight">
+          <h1 className="mt-1 font-display text-3xl sm:text-4xl font-bold tracking-tight">
             {t.dashboard.greeting(username).split(username)[0]}<span className="text-quant">{username}</span>{t.dashboard.greeting(username).split(username)[1]}
           </h1>
         </div>

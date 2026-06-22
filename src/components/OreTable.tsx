@@ -125,13 +125,13 @@ export default function OreTable() {
           <thead>
             <tr className="border-b border-edge text-left">
               <Th label={t.ores.name} sortKey="name" active={sortKey} asc={asc} onSort={toggleSort} />
-              <Th label={t.ores.code} sortKey="code" active={sortKey} asc={asc} onSort={toggleSort} />
-              <Th label={t.ores.kind} sortKey="kind" active={sortKey} asc={asc} onSort={toggleSort} />
+              <Th label={t.ores.code} sortKey="code" active={sortKey} asc={asc} onSort={toggleSort} className="hidden sm:table-cell" />
+              <Th label={t.ores.kind} sortKey="kind" active={sortKey} asc={asc} onSort={toggleSort} className="hidden md:table-cell" />
               <Th label={t.ores.type} sortKey="type" active={sortKey} asc={asc} onSort={toggleSort} />
               <Th label={t.ores.sell} sortKey="priceSell" active={sortKey} asc={asc} onSort={toggleSort} align="right" />
-              <Th label={t.ores.buy} sortKey="priceBuy" active={sortKey} asc={asc} onSort={toggleSort} align="right" />
-              <Th label={t.ores.density} sortKey="weightScu" active={sortKey} asc={asc} onSort={toggleSort} align="right" />
-              <Th label={t.ores.flags} sortKey="flags" active={sortKey} asc={asc} onSort={toggleSort} align="center" />
+              <Th label={t.ores.buy} sortKey="priceBuy" active={sortKey} asc={asc} onSort={toggleSort} align="right" className="hidden sm:table-cell" />
+              <Th label={t.ores.density} sortKey="weightScu" active={sortKey} asc={asc} onSort={toggleSort} align="right" className="hidden md:table-cell" />
+              <Th label={t.ores.flags} sortKey="flags" active={sortKey} asc={asc} onSort={toggleSort} align="center" className="hidden sm:table-cell" />
               <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.ores.whereToSell}</th>
             </tr>
           </thead>
@@ -152,8 +152,8 @@ export default function OreTable() {
                         </a>
                       ) : o.name}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted">{o.code || "—"}</td>
-                    <td className="px-4 py-3 text-muted">{o.kind}</td>
+                    <td className="hidden sm:table-cell px-4 py-3 font-mono text-xs text-muted">{o.code || "—"}</td>
+                    <td className="hidden md:table-cell px-4 py-3 text-muted">{o.kind}</td>
                     <td className="px-4 py-3">
                       {o.isRefinable && <span className="tag border-quant/30 text-quant">{t.ores.raw}</span>}
                       {o.isRefined && <span className="tag border-toxic/30 text-toxic">{t.ores.refined}</span>}
@@ -163,13 +163,13 @@ export default function OreTable() {
                         <span className="text-toxic font-semibold">{bestSell.toLocaleString()}</span>
                       ) : <span className="text-muted">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono tabular-nums text-muted">
+                    <td className="hidden sm:table-cell px-4 py-3 text-right font-mono tabular-nums text-muted">
                       {bestBuy ? bestBuy.toLocaleString() : "—"}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono tabular-nums text-muted">
+                    <td className="hidden md:table-cell px-4 py-3 text-right font-mono tabular-nums text-muted">
                       {o.weightScu ? o.weightScu.toFixed(2) : "—"}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="hidden sm:table-cell px-4 py-3 text-center">
                       <div className="flex justify-center gap-1">
                         {o.isVolatileQt && (
                           <span className="tag border-amber/40 text-amber" title="Volatile during quantum travel">{t.ores.volatile}</span>
@@ -196,7 +196,7 @@ export default function OreTable() {
                   {/* Expanded sell locations */}
                   {isExpanded && (
                     <tr className="border-b border-quant/20">
-                      <td colSpan={9} className="px-0 py-0">
+                      <td colSpan={9} className="px-0 py-0" style={{ display: "table-cell" }}>
                         <div className="bg-quant/5 px-6 py-4">
                           <p className="mb-3 font-mono text-[11px] uppercase tracking-widest text-quant">
                             {t.ores.sellLocations(o.name)}
@@ -283,13 +283,13 @@ export default function OreTable() {
 }
 
 function Th({
-  label, sortKey, active, asc, onSort, align = "left",
+  label, sortKey, active, asc, onSort, align = "left", className = "",
 }: {
   label: string; sortKey: SortKey; active: SortKey; asc: boolean;
-  onSort: (k: SortKey) => void; align?: "left" | "right" | "center";
+  onSort: (k: SortKey) => void; align?: "left" | "right" | "center"; className?: string;
 }) {
   return (
-    <th className={`px-4 py-3 ${align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left"}`}>
+    <th className={`px-4 py-3 ${align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left"} ${className}`}>
       <button
         onClick={() => onSort(sortKey)}
         className={`font-mono text-[11px] uppercase tracking-widest transition ${

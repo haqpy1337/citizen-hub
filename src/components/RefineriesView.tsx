@@ -103,12 +103,12 @@ export default function RefineriesView() {
           <thead>
             <tr className="border-b border-edge text-left">
               <Th label={t.refineries.colStation} active={sortKey === "name"} asc={asc} onClick={() => toggleSort("name")} />
-              <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">
+              <th className="hidden sm:table-cell px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">
                 {t.refineries.colSystem}
               </th>
               <Th label={t.refineries.colQueue} active={sortKey === "queueSec"} asc={asc} onClick={() => toggleSort("queueSec")} align="right" />
               <Th label={t.refineries.colBestYield} active={sortKey === "bestYield"} asc={asc} onClick={() => toggleSort("bestYield")} align="right" />
-              <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">
+              <th className="hidden sm:table-cell px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">
                 {t.refineries.colOres}
               </th>
             </tr>
@@ -117,7 +117,7 @@ export default function RefineriesView() {
             {rows.map((s) => (
               <tr key={s.id} className="border-b border-edge/40 last:border-0 hover:bg-hull/50">
                 <td className="px-4 py-3 font-display text-base font-semibold text-ink">{s.name}</td>
-                <td className="px-4 py-3 text-muted">{s.system ?? "—"}</td>
+                <td className="hidden sm:table-cell px-4 py-3 text-muted">{s.system ?? "—"}</td>
                 <td className="px-4 py-3 text-right">
                   {s.queueSec != null ? (
                     <QueueDisplay sec={s.queueSec} />
@@ -128,7 +128,7 @@ export default function RefineriesView() {
                 <td className="px-4 py-3 text-right font-mono tabular-nums text-quant">
                   {s.bestYield != null ? `${s.bestYield > 0 ? "+" : ""}${s.bestYield}%` : "—"}
                 </td>
-                <td className="px-4 py-3">
+                <td className="hidden sm:table-cell px-4 py-3">
                   <div className="flex flex-wrap gap-1">
                     {s.yields.slice(0, 6).map((y) => (
                       <span key={`${s.id}-${y.name}`} className="tag">

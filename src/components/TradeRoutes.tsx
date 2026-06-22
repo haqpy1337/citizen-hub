@@ -105,14 +105,14 @@ export default function TradeRoutes() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-edge text-left">
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted w-6">{t.trade.rank}</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">{t.trade.commodity}</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">{t.trade.buyAt}</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.buyPrice}</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">{t.trade.sellAt}</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.sellPrice}</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.profitPerScu}</th>
-                <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.margin}</th>
+                <th className="px-2 sm:px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted w-6">{t.trade.rank}</th>
+                <th className="px-2 sm:px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">{t.trade.commodity}</th>
+                <th className="px-2 sm:px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">{t.trade.buyAt}</th>
+                <th className="hidden md:table-cell px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.buyPrice}</th>
+                <th className="px-2 sm:px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">{t.trade.sellAt}</th>
+                <th className="hidden md:table-cell px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.sellPrice}</th>
+                <th className="px-2 sm:px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.profitPerScu}</th>
+                <th className="hidden sm:table-cell px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">{t.trade.margin}</th>
                 {scuNum > 0 && (
                   <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted text-right">
                     {t.trade.profitMax(scuNum)}
@@ -141,10 +141,10 @@ export default function TradeRoutes() {
                     key={`${route.commodityId}-${route.buyTerminalId}-${route.sellTerminalId}`}
                     className={`border-b border-edge/40 last:border-0 ${isTop ? "bg-quant/3" : "hover:bg-hull/50"} transition`}
                   >
-                    <td className="px-4 py-3 font-mono text-xs text-muted">
+                    <td className="px-2 sm:px-4 py-3 font-mono text-xs text-muted">
                       {i === 0 ? <span className="text-toxic font-bold">★</span> : i + 1}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-3">
                       <div className="font-display font-semibold text-ink">{route.commodityName}</div>
                       <div className="flex gap-1 mt-0.5">
                         {route.commodityCode && (
@@ -155,29 +155,29 @@ export default function TradeRoutes() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="text-ink">{route.buyTerminal}</div>
-                      <div className="font-mono text-xs text-muted">{route.buySystem}{route.buyLocation !== "—" ? ` · ${route.buyLocation}` : ""}</div>
+                    <td className="px-2 sm:px-4 py-3">
+                      <div className="text-ink text-sm">{route.buyTerminal}</div>
+                      <div className="font-mono text-xs text-muted hidden sm:block">{route.buySystem}{route.buyLocation !== "—" ? ` · ${route.buyLocation}` : ""}</div>
                       {route.buyStockScu > 0 && (
                         <div className={`font-mono text-[10px] mt-0.5 ${route.buyStockScu < 10 ? "text-danger" : route.buyStockScu < 50 ? "text-amber" : "text-quant"}`}>
                           {t.trade.inStock(route.buyStockScu)}
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono tabular-nums text-muted">
+                    <td className="hidden md:table-cell px-4 py-3 text-right font-mono tabular-nums text-muted">
                       {route.buyPrice.toLocaleString()}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="text-ink">{route.sellTerminal}</div>
-                      <div className="font-mono text-xs text-muted">{route.sellSystem}{route.sellLocation !== "—" ? ` · ${route.sellLocation}` : ""}</div>
+                    <td className="px-2 sm:px-4 py-3">
+                      <div className="text-ink text-sm">{route.sellTerminal}</div>
+                      <div className="font-mono text-xs text-muted hidden sm:block">{route.sellSystem}{route.sellLocation !== "—" ? ` · ${route.sellLocation}` : ""}</div>
                     </td>
-                    <td className="px-4 py-3 text-right font-mono tabular-nums text-muted">
+                    <td className="hidden md:table-cell px-4 py-3 text-right font-mono tabular-nums text-muted">
                       {route.sellPrice.toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono tabular-nums font-semibold text-toxic">
+                    <td className="px-2 sm:px-4 py-3 text-right font-mono tabular-nums font-semibold text-toxic">
                       +{route.profitPerScu.toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono tabular-nums text-quant">
+                    <td className="hidden sm:table-cell px-4 py-3 text-right font-mono tabular-nums text-quant">
                       {route.profitMarginPct}%
                     </td>
                     {scuNum > 0 && (
