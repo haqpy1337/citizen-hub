@@ -340,6 +340,12 @@ export default function GroupDetailClient({
                         {t.groups.jobs.by} <span className="text-ink">{j.user.username}</span> · {formatDuration(j.durationSec)} · {new Date(j.startedAt).toLocaleDateString()}
                       </div>
                     </div>
+                    {jobValue != null && (
+                      <div className="text-right shrink-0">
+                        <div className="font-mono font-bold text-quant tabular-nums text-sm">~{jobValue.toLocaleString()}</div>
+                        <div className="font-mono text-[10px] text-muted uppercase tracking-wider">aUEC</div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Timer */}
