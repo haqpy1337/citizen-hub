@@ -29,7 +29,9 @@ export default async function GroupDetailPage({ params }: { params: { id: string
     include: {
       materials: { select: { name: true, quantity: true, commodityId: true, yieldPercent: true, unit: true } },
       user: { select: { id: true, username: true } },
-      earningsSplits: true,
+      earningsSplits: {
+        include: { user: { select: { id: true, username: true } } },
+      },
     },
     orderBy: { startedAt: "desc" },
     take: 50,
@@ -48,6 +50,10 @@ export default async function GroupDetailPage({ params }: { params: { id: string
         startedAt: j.startedAt.toISOString(),
         finishesAt: j.finishesAt.toISOString(),
         createdAt: j.createdAt.toISOString(),
+        earningsSplits: j.earningsSplits.map((s) => ({
+          ...s,
+          username: (s as any).user?.username ?? undefined,
+        })),
       }))}
       currentUserId={session!.userId}
     />
