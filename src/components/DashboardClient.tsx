@@ -136,7 +136,7 @@ function Tile({ meta, editing, onRemove }: { meta: ItemMeta; editing: boolean; o
         {editing && <RemoveBtn onRemove={onRemove} />}
         <Link
           href={meta.href!}
-          className="panel group relative flex flex-col items-center justify-center gap-3 p-6 text-center overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 border-dashed"
+          className="panel group relative flex flex-col items-center justify-center gap-3 p-6 text-center overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 border-dashed min-h-[160px]"
         >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
             style={{ background: "radial-gradient(ellipse at center, var(--color-quant-dim) 0%, transparent 70%)" }} />
@@ -157,7 +157,7 @@ function Tile({ meta, editing, onRemove }: { meta: ItemMeta; editing: boolean; o
       {editing && <RemoveBtn onRemove={onRemove} />}
       <Link
         href={meta.href!}
-        className="panel group relative flex flex-col gap-5 p-6 overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5"
+        className="panel group relative flex flex-col gap-5 p-6 overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 min-h-[160px]"
       >
         <div className="absolute inset-x-0 top-0 h-0.5 transition-all duration-300 group-hover:h-1" style={{ background: meta.colorVar }} />
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
