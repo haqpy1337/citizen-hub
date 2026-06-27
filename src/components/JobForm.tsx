@@ -74,6 +74,17 @@ export default function JobForm({ initialStation }: { initialStation?: string })
         setAllOres(allOres);
         setGroups(Array.isArray(groups) ? groups : []);
         if (stations.length === 0) setLiveOk(false);
+
+        if (initialStation) {
+          const matched = stations.find(
+            (s) => s.name.toLowerCase() === initialStation.toLowerCase()
+          );
+          if (matched) {
+            setStationId(String(matched.id));
+            setStationName(matched.name);
+            setSystemName(matched.system ?? "");
+          }
+        }
       })
       .catch(() => setLiveOk(false));
   }, []);

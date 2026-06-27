@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Loading screen keyframes ───────────────────────────────────────────────── */
+@keyframes ls-fade    { from { opacity: 0 } to { opacity: 1 } }
+@keyframes ls-up      { from { opacity: 0; transform: translateY(-20px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes ls-in      { from { opacity: 0; transform: translateX(520px) } to { opacity: 1; transform: translateX(0) } }
+@keyframes ls-warp    { to   { opacity: 0; transform: translateX(-1400px) scaleX(5) } }
+@keyframes ls-out     { to   { opacity: 0 } }
+@keyframes ls-ctleft  { from { opacity: 0; transform: translate(-14px,-14px) } to { opacity: 1; transform: translate(0,0) } }
+@keyframes ls-ctright { from { opacity: 0; transform: translate(14px,-14px)  } to { opacity: 1; transform: translate(0,0) } }
+@keyframes ls-cbleft  { from { opacity: 0; transform: translate(-14px,14px)  } to { opacity: 1; transform: translate(0,0) } }
+@keyframes ls-cbright { from { opacity: 0; transform: translate(14px,14px)   } to { opacity: 1; transform: translate(0,0) } }
+@keyframes ls-pulse   { 0%,100% { transform: scale(1);   opacity: .7 }
+                        50%     { transform: scale(1.5,1.4); opacity: 1 } }
+@keyframes ls-flash   { 0%  { opacity: 0 }
+                        40% { opacity: .8 }
+                        100%{ opacity: 0 } }
+
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    MOLE  —  ARGO Astronautics industrial workhorse
    Warmth: burnt orange / rust over near-black carbon

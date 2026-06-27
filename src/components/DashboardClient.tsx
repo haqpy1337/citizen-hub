@@ -4,6 +4,38 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useT } from "@/components/LanguageProvider";
 
+// ── Anime.js Progress Bar ─────────────────────────────────────────────────────
+
+function AnimatedProgressBar({ pct, ready }: { pct: number; ready: boolean }) {
+  const [displayed, setDisplayed] = useState(0);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (hasAnimated.current) {
+      setDisplayed(pct);
+      return;
+    }
+    hasAnimated.current = true;
+    const obj = { value: 0 };
+    import("animejs").then(({ default: anime }) => {
+      anime({
+        targets: obj,
+        value: pct,
+        duration: 1100,
+        easing: "easeOutCubic",
+        update: () => setDisplayed(obj.value),
+      });
+    });
+  }, [pct]);
+
+  return (
+    <div
+      className={`h-full rounded-full ${ready ? "bg-toxic" : "bg-quant"}`}
+      style={{ width: `${displayed}%` }}
+    />
+  );
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type ActiveJob = {
@@ -71,10 +103,26 @@ function saveConfig(config: StoredConfig) {
 
 function ActiveJobsSection({ jobs, t }: { jobs: ActiveJob[]; t: ReturnType<typeof useT>["t"] }) {
   const [, forceUpdate] = useState(0);
+  const cardsAnimated = useRef(false);
 
   useEffect(() => {
     const id = setInterval(() => forceUpdate((n) => n + 1), 10000);
     return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (cardsAnimated.current) return;
+    cardsAnimated.current = true;
+    import("animejs").then(({ default: anime }) => {
+      anime({
+        targets: "[data-job-card]",
+        opacity: [0, 1],
+        translateY: [12, 0],
+        delay: anime.stagger(80),
+        duration: 450,
+        easing: "easeOutQuart",
+      });
+    });
   }, []);
 
   if (jobs.length === 0) return null;
@@ -100,7 +148,7 @@ function ActiveJobsSection({ jobs, t }: { jobs: ActiveJob[]; t: ReturnType<typeo
           const timeLeft = h > 0 ? `${h}h ${m}m` : `${m}m`;
 
           return (
-            <div key={job.id} className="panel p-4 relative overflow-hidden" style={ready ? { borderColor: "rgba(90,170,48,0.4)" } : undefined}>
+            <div key={job.id} data-job-card className="panel p-4 relative overflow-hidden" style={ready ? { borderColor: "rgba(90,170,48,0.4)" } : undefined}>
               {ready && <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at top right, rgba(90,170,48,0.07) 0%, transparent 60%)" }} />}
               <div className="relative flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -112,7 +160,7 @@ function ActiveJobsSection({ jobs, t }: { jobs: ActiveJob[]; t: ReturnType<typeo
                 </span>
               </div>
               <div className="mt-3 h-1.5 overflow-hidden rounded-full border border-edge bg-hull">
-                <div className={`h-full rounded-full ${ready ? "bg-toxic" : "bg-quant"}`} style={{ width: `${pct}%` }} />
+                <AnimatedProgressBar pct={pct} ready={ready} />
               </div>
               <div className="mt-1.5 flex justify-between">
                 <span className="text-[10px] text-muted font-mono">{Math.round(pct)}{t.dashboard.complete}</span>
@@ -216,6 +264,7 @@ export default function DashboardClient({ username, activeJobs }: { username: st
   const [dragId, setDragId] = useState<ItemId | null>(null);
   const [dragOverId, setDragOverId] = useState<ItemId | null>(null);
   const dragCounter = useRef(0);
+  const tilesAnimated = useRef(false);
 
   // Build META dynamically using translations
   const META: Record<ItemId, ItemMeta> = {
@@ -261,6 +310,23 @@ export default function DashboardClient({ username, activeJobs }: { username: st
     setConfig(loadConfig());
     setHydrated(true);
   }, []);
+
+  // Tile entrance animation — fires once after hydration
+  useEffect(() => {
+    if (!hydrated || tilesAnimated.current) return;
+    tilesAnimated.current = true;
+    import("animejs").then(({ default: anime }) => {
+      anime({
+        targets: "[data-tile]",
+        opacity: [0, 1],
+        translateY: [20, 0],
+        scale: [0.96, 1],
+        delay: anime.stagger(65, { start: 60 }),
+        duration: 520,
+        easing: "easeOutExpo",
+      });
+    });
+  }, [hydrated]);
 
   const visible = config.filter((x) => x.visible);
   const hidden = config.filter((x) => !x.visible);
@@ -368,6 +434,7 @@ export default function DashboardClient({ username, activeJobs }: { username: st
             return (
               <div
                 key={item.id}
+                data-tile
                 draggable={editing}
                 onDragStart={() => onDragStart(item.id)}
                 onDragOver={(e) => onDragOver(e, item.id)}
@@ -404,6 +471,7 @@ export default function DashboardClient({ username, activeJobs }: { username: st
                 return (
                   <div
                     key={item.id}
+                    data-tile
                     draggable={editing}
                     onDragStart={() => onDragStart(item.id)}
                     onDragOver={(e) => onDragOver(e, item.id)}

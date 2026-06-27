@@ -26,5 +26,19 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     take: 100,
   });
 
-  return NextResponse.json(jobs);
+  const splitUserIds = [...new Set(jobs.flatMap((j) => j.earningsSplits.map((s) => s.userId)))];
+  const splitUsers = splitUserIds.length > 0
+    ? await prisma.user.findMany({ where: { id: { in: splitUserIds } }, select: { id: true, username: true } })
+    : [];
+  const splitUserMap = new Map(splitUsers.map((u) => [u.id, u.username]));
+
+  const enrichedJobs = jobs.map((j) => ({
+    ...j,
+    earningsSplits: j.earningsSplits.map((s) => ({
+      ...s,
+      username: splitUserMap.get(s.userId) ?? null,
+    })),
+  }));
+
+  return NextResponse.json(enrichedJobs);
 }
