@@ -61,11 +61,9 @@ const A = (d: string, del: number, fill = "forwards") =>
   ({ animation: `${d} ${fill}`, animationDelay: `${del}s`, opacity: 0 } as React.CSSProperties);
 
 export default function LoadingScreen() {
-  /* Only show on client — this is the ONE pattern that always works in Next.js App Router */
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(true);
 
   useEffect(() => {
-    setShow(true);
     const t = setTimeout(() => setShow(false), 3900);
     return () => clearTimeout(t);
   }, []);
