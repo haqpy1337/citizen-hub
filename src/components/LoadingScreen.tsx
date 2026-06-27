@@ -77,7 +77,7 @@ export default function LoadingScreen() {
       position: "fixed", inset: 0, zIndex: 9999,
       background: "#090806",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      ...A("ls-out .6s ease-in", 3.2),
+      animation: "ls-out .6s ease-in 3.2s forwards",
     }}>
 
       {/* Stars */}
