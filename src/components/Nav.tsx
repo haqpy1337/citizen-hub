@@ -13,7 +13,6 @@ const links = [
   { href: "/dashboard/ores", label: "Ore Prices" },
   { href: "/dashboard/trade", label: "Trade Routes" },
   { href: "/dashboard/refineries", label: "Refineries" },
-  { href: "/dashboard/groups", label: "Groups" },
 ];
 
 const designs: { id: Design; label: string }[] = [

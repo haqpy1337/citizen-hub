@@ -14,9 +14,7 @@ model User {
   avatarUrl    String?
   createdAt    DateTime @default(now())
 
-  jobs             RefineryJob[]
-  groupMemberships GroupMembership[]
-  createdGroups    Group[]
+  jobs RefineryJob[]
 }
 
 model RefineryJob {
@@ -36,12 +34,8 @@ model RefineryJob {
   status    String  @default("running")
   note      String?
 
-  groupId   String?
-  group     Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
-
-  materials      JobMaterial[]
-  earningsSplits EarningsSplit[]
-  createdAt      DateTime @default(now())
+  materials JobMaterial[]
+  createdAt DateTime      @default(now())
 }
 
 model JobMaterial {
@@ -54,40 +48,4 @@ model JobMaterial {
   quantity     Float
   unit         String @default("SCU")
   yieldPercent Float?
-}
-
-model Group {
-  id        String   @id @default(cuid())
-  name      String
-  creatorId String
-  creator   User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  members GroupMembership[]
-  jobs    RefineryJob[]
-}
-
-model GroupMembership {
-  id      String @id @default(cuid())
-  groupId String
-  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role    String @default("member") // creator | member
-
-  joinedAt DateTime @default(now())
-
-  @@unique([groupId, userId])
-}
-
-model EarningsSplit {
-  id           String      @id @default(cuid())
-  jobId        String
-  job          RefineryJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  userId       String
-  sharePercent Float
-  paidOut      Boolean     @default(false)
-  createdAt    DateTime    @default(now())
-
-  @@unique([jobId, userId])
 }

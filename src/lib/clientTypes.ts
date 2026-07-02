@@ -21,7 +21,6 @@ export interface Job {
   status: "running" | "done" | "collected" | "cancelled";
   note: string | null;
   materials: JobMaterial[];
-  group?: { id: string; name: string } | null;
 }
 
 export interface RefineryStation {

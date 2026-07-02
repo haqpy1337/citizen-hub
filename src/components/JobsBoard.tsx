@@ -8,28 +8,18 @@ import type { FullOre } from "@/app/api/ores/route";
 import { getClientOres } from "@/lib/clientUex";
 import { useT } from "@/components/LanguageProvider";
 
-type GroupOption = { id: string; name: string };
-
 export default function JobsBoard({ variant }: { variant: "active" | "all" }) {
   const { t } = useT();
   const [jobs, setJobs] = useState<Job[] | null>(null);
-  const [groups, setGroups] = useState<GroupOption[]>([]);
   const [ores, setOres] = useState<FullOre[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [jobsRes, groupsRes] = await Promise.all([
-        fetch("/api/jobs", { cache: "no-store" }),
-        fetch("/api/groups", { cache: "no-store" }),
-      ]);
-      if (!jobsRes.ok) throw new Error();
-      const data = await jobsRes.json();
+      const res = await fetch("/api/jobs", { cache: "no-store" });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
       setJobs(data.jobs);
-      if (groupsRes.ok) {
-        const gData = await groupsRes.json();
-        setGroups(Array.isArray(gData) ? gData.map((g: any) => ({ id: g.id, name: g.name })) : []);
-      }
     } catch {
       setError(t.jobs.failedToLoad);
     }
@@ -74,7 +64,7 @@ export default function JobsBoard({ variant }: { variant: "active" | "all" }) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {visible.map((job) => (
-        <JobCard key={job.id} job={job} groups={groups} ores={ores} onChange={load} />
+        <JobCard key={job.id} job={job} ores={ores} onChange={load} />
       ))}
     </div>
   );

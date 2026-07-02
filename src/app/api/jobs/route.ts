@@ -10,7 +10,7 @@ export async function GET() {
 
   const jobs = await prisma.refineryJob.findMany({
     where: { userId: session.userId },
-    include: { materials: true, group: { select: { id: true, name: true } } },
+    include: { materials: true },
     orderBy: { finishesAt: "asc" },
   });
   return NextResponse.json({ jobs });
@@ -44,7 +44,6 @@ export async function POST(req: Request) {
       durationSec: d.durationSec,
       finishesAt,
       note: d.note,
-      groupId: d.groupId,
       status: "running",
       materials: {
         create: d.materials.map((m) => ({

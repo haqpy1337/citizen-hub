@@ -34,8 +34,6 @@ function formatQueueShort(sec: number): string {
   return m === 0 ? `${h}h queue` : `${h}h ${m}m queue`;
 }
 
-type Group = { id: string; name: string };
-
 export default function JobForm({ initialStation }: { initialStation?: string }) {
   const router = useRouter();
   const { t } = useT();
@@ -44,7 +42,6 @@ export default function JobForm({ initialStation }: { initialStation?: string })
   const [methods, setMethods] = useState<RefineryMethod[]>([]);
   const [ores, setOres] = useState<OreCommodity[]>([]);
   const [allOres, setAllOres] = useState<FullOre[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
   const [liveOk, setLiveOk] = useState(true);
 
   const [stationId, setStationId] = useState<string>("");
@@ -53,7 +50,6 @@ export default function JobForm({ initialStation }: { initialStation?: string })
   const [method, setMethod] = useState("");
   const [duration, setDuration] = useState("");
   const [note, setNote] = useState("");
-  const [groupId, setGroupId] = useState("");
   const [materials, setMaterials] = useState<MaterialRow[]>([{ ...emptyRow }]);
 
   const [error, setError] = useState<string | null>(null);
@@ -65,14 +61,12 @@ export default function JobForm({ initialStation }: { initialStation?: string })
       getClientRefineryMethods(),
       getClientOreCommodities(),
       getClientOres(),
-      fetch("/api/groups").then((r) => r.ok ? r.json() : []),
     ])
-      .then(([stations, methods, ores, allOres, groups]) => {
+      .then(([stations, methods, ores, allOres]) => {
         setStations(stations);
         setMethods(methods);
         setOres(ores);
         setAllOres(allOres);
-        setGroups(Array.isArray(groups) ? groups : []);
         if (stations.length === 0) setLiveOk(false);
 
         if (initialStation) {
@@ -181,7 +175,6 @@ export default function JobForm({ initialStation }: { initialStation?: string })
           method: method.trim() || undefined,
           durationSec,
           note: note.trim() || undefined,
-          groupId: groupId || undefined,
           materials: parsedMaterials,
         }),
       });
@@ -264,22 +257,6 @@ export default function JobForm({ initialStation }: { initialStation?: string })
           </div>
         </div>
       </section>
-
-      {/* Group */}
-      {groups.length > 0 && (
-        <section className="panel p-5">
-          <h2 className="font-display text-lg font-semibold">{t.jobForm.groupOptional}</h2>
-          <div className="mt-4">
-            <label className="label">{t.jobForm.jobBelongsTo}</label>
-            <select className="field" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-              <option value="">{t.jobForm.noGroup}</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-          </div>
-        </section>
-      )}
 
       {/* Materials */}
       <section className="panel p-5">

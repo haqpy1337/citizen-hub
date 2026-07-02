@@ -29,14 +29,12 @@ export const jobCreateSchema = z.object({
   method: z.string().optional(),
   durationSec: z.number().int().positive("Duration must be greater than 0."),
   note: z.string().max(500).optional(),
-  groupId: z.string().optional(),
   materials: z.array(materialSchema).min(1, "At least one material required."),
 });
 
 export const jobUpdateSchema = z.object({
   status: z.enum(["running", "done", "collected", "cancelled"]).optional(),
   note: z.string().max(500).optional(),
-  groupId: z.string().nullable().optional(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
