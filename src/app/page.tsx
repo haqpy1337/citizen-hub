@@ -11,7 +11,7 @@ export default async function Home() {
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6">
       <p className="eyebrow mb-6">Star Citizen // Operations</p>
       <div className="mb-6">
-        <PrismLogo height={64} subtitle="MINER ASSISTANT" />
+        <PrismLogo height={120} />
       </div>
       <p className="mt-2 max-w-xl text-muted">
         Live quotes, yields and prices for every refinery in the Verse — plus a
