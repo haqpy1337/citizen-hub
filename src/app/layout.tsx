@@ -13,7 +13,7 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "hMA – haqpy's Miner Assistant",
-  description: "Star Citizen refinery job tracker with live UEX data.",
+  description: "Star Citizen companion with live UEX data.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

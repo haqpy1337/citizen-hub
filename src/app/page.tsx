@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import PrismLogo from "@/components/PrismLogo";
 
 export default async function Home() {
   const session = await getSession();
@@ -8,15 +9,9 @@ export default async function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6">
-      <p className="eyebrow mb-4">Star Citizen // Mining Ops</p>
-      <div className="mb-6 flex items-center gap-4">
-        <span className="font-display text-6xl font-bold text-quant md:text-8xl">hMA</span>
-        <div className="h-16 w-px bg-edge md:h-20" />
-        <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
-            haqpy's Miner<br />Assistant
-          </h1>
-        </div>
+      <p className="eyebrow mb-6">Star Citizen // Operations</p>
+      <div className="mb-6">
+        <PrismLogo height={64} subtitle="MINER ASSISTANT" />
       </div>
       <p className="mt-2 max-w-xl text-muted">
         Live quotes, yields and prices for every refinery in the Verse — plus a

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDesign, type Design } from "./ThemeProvider";
+import PrismLogo from "./PrismLogo";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
@@ -75,9 +76,8 @@ export default function Nav({ username }: { username: string }) {
   return (
     <header className="sticky top-0 z-20 border-b border-edge bg-void backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3">
-        <Link href="/dashboard" className="font-display text-lg font-bold tracking-tight shrink-0">
-          <span className="text-quant">hMA</span>
-          <span className="ml-1 hidden text-muted sm:inline text-sm font-normal">haqpy's Miner Assistant</span>
+        <Link href="/dashboard" className="shrink-0 flex items-center">
+          <PrismLogo height={28} />
         </Link>
 
         <nav className="flex flex-1 flex-wrap items-center gap-1 overflow-x-auto">
