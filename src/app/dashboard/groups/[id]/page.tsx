@@ -57,6 +57,7 @@ export default async function GroupDetailPage({ params }: { params: { id: string
         createdAt: j.createdAt.toISOString(),
         earningsSplits: j.earningsSplits.map((s) => ({
           ...s,
+          createdAt: s.createdAt.toISOString(),
           username: splitUserMap.get(s.userId),
         })),
       }))}

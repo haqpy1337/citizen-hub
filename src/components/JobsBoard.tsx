@@ -54,7 +54,7 @@ export default function JobsBoard({ variant }: { variant: "active" | "all" }) {
   const visible =
     variant === "active"
       ? jobs.filter((j) => j.status === "running")
-      : jobs.filter((j) => j.status === "running");
+      : jobs;
 
   if (visible.length === 0) {
     return (

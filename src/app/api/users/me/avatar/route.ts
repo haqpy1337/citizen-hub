@@ -30,11 +30,16 @@ export async function POST(req: Request) {
 
   const sharpLib = (await import("sharp")).default;
   const input = Buffer.from(arrayBuffer);
-  const output = await sharpLib(input)
-    .resize(128, 128, { fit: "cover", position: "attention" })
-    .flatten({ background: { r: 255, g: 255, b: 255 } })
-    .jpeg({ quality: 90 })
-    .toBuffer();
+  let output: Buffer;
+  try {
+    output = await sharpLib(input)
+      .resize(128, 128, { fit: "cover", position: "attention" })
+      .flatten({ background: { r: 255, g: 255, b: 255 } })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+  } catch {
+    return NextResponse.json({ error: "Ungültiges Bildformat" }, { status: 400 });
+  }
 
   const filename = `${session.userId}.jpg`;
   const avatarsDir = path.join(process.cwd(), "public", "avatars");

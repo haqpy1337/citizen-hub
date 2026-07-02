@@ -16,7 +16,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Only the creator can remove members" }, { status: 403 });
 
   const group = await prisma.group.findUnique({ where: { id: params.id } });
-  if (group?.creatorId === params.userId)
+  if (!group) return NextResponse.json({ error: "Group not found" }, { status: 404 });
+  if (group.creatorId === params.userId)
     return NextResponse.json({ error: "Cannot remove the group creator" }, { status: 400 });
 
   await prisma.groupMembership.delete({

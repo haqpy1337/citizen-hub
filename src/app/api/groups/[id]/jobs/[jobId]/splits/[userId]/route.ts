@@ -12,7 +12,8 @@ export async function PATCH(
   const membership = await prisma.groupMembership.findUnique({
     where: { groupId_userId: { groupId: params.id, userId: session.userId } },
   });
-  if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
+  if (!membership || membership.role !== "creator")
+    return NextResponse.json({ error: "Only the creator can mark splits as paid" }, { status: 403 });
 
   const split = await prisma.earningsSplit.findUnique({
     where: { jobId_userId: { jobId: params.jobId, userId: params.userId } },

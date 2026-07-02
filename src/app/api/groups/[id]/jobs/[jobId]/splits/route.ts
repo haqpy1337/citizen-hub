@@ -27,7 +27,7 @@ export async function POST(
     .then((ms) => ms.map((m) => m.userId));
 
   const job = await prisma.refineryJob.findFirst({
-    where: { id: params.jobId, userId: { in: memberIds } },
+    where: { id: params.jobId, groupId: params.id },
   });
   if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 

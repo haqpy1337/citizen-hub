@@ -48,12 +48,13 @@ export default function JobCard({ job, groups = [], ores = [], onChange }: Props
 
   async function patch(body: Record<string, unknown>, navigate?: string) {
     setBusy(true);
-    await fetch(`/api/jobs/${job.id}`, {
+    const res = await fetch(`/api/jobs/${job.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     setBusy(false);
+    if (!res.ok) return;
     if (navigate) router.push(navigate);
     else onChange();
   }
@@ -61,21 +62,21 @@ export default function JobCard({ job, groups = [], ores = [], onChange }: Props
   async function assignGroup(groupId: string | null) {
     setAssigningGroup(true);
     setGroupPickerOpen(false);
-    await fetch(`/api/jobs/${job.id}`, {
+    const res = await fetch(`/api/jobs/${job.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ groupId }),
     });
     setAssigningGroup(false);
-    onChange();
+    if (res.ok) onChange();
   }
 
   async function remove() {
     if (!confirm(t.jobs.deleteConfirm)) return;
     setBusy(true);
-    await fetch(`/api/jobs/${job.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/jobs/${job.id}`, { method: "DELETE" });
     setBusy(false);
-    onChange();
+    if (res.ok) onChange();
   }
 
 
