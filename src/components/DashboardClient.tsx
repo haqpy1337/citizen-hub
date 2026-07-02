@@ -83,8 +83,10 @@ function loadConfig(): StoredConfig {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_ORDER.map((id) => ({ id, visible: true }));
     const parsed: StoredConfig = JSON.parse(raw);
+    const validIds = new Set<string>(DEFAULT_ORDER);
     const stored = new Set(parsed.map((x) => x.id));
-    const merged = [...parsed];
+    // filter out stale IDs that no longer exist, add new defaults
+    const merged = parsed.filter((x) => validIds.has(x.id as ItemId));
     for (const id of DEFAULT_ORDER) {
       if (!stored.has(id)) merged.push({ id, visible: true });
     }
