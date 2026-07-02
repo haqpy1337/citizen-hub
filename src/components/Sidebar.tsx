@@ -100,18 +100,6 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
         </svg>
       ),
     },
-    {
-      href: "/dashboard/groups",
-      label: t.nav.groups,
-      icon: (
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-          <circle cx="7" cy="7" r="2.5" />
-          <circle cx="14" cy="7" r="2" />
-          <path d="M1 17c0-3 2.5-5 6-5s6 2 6 5" />
-          <path d="M14 9c2 0 4 1.5 4 4" />
-        </svg>
-      ),
-    },
   ];
 
   useEffect(() => {
