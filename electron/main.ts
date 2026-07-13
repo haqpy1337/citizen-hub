@@ -1,8 +1,8 @@
-import { app, BrowserWindow, shell, dialog } from "electron";
+import { app, BrowserWindow, shell, dialog, utilityProcess } from "electron";
+import type { UtilityProcess } from "electron";
 import { autoUpdater } from "electron-updater";
 import * as path from "path";
 import * as fs from "fs";
-import { spawn, ChildProcess } from "child_process";
 
 // Prevent crash loops from unhandled errors
 process.on("uncaughtException", (err) => {
@@ -11,7 +11,7 @@ process.on("uncaughtException", (err) => {
 });
 
 let mainWindow: BrowserWindow | null = null;
-let nextServer: ChildProcess | null = null;
+let nextServer: UtilityProcess | null = null;
 const PORT = 3421;
 
 function getAppDataPath(): string {
@@ -27,25 +27,28 @@ function startNextServer(): Promise<void> {
     const serverPath = path.join(appDir, "server.js");
 
     const dbPath = path.join(getAppDataPath(), "citizen-hub.db").replace(/\\/g, "/");
+    const logPath = path.join(app.getPath("userData"), "server.log");
+    const logStream = fs.createWriteStream(logPath, { flags: "w" });
 
-    const env: NodeJS.ProcessEnv = {
-      ...process.env,
+    const env: Record<string, string> = {
+      ...Object.fromEntries(
+        Object.entries(process.env).filter(([, v]) => v !== undefined) as [string, string][]
+      ),
       PORT: String(PORT),
       NODE_ENV: "production",
       DATABASE_URL: `file:${dbPath}`,
-      // Next.js standalone needs to know where its files are
-      __NEXT_PRIVATE_STANDALONE_CONFIG: "1",
     };
 
-    nextServer = spawn(process.execPath, [serverPath], {
+    // utilityProcess.fork uses Electron's built-in Node.js runtime
+    nextServer = utilityProcess.fork(serverPath, [], {
       env,
       cwd: appDir,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: "pipe",
     });
 
     nextServer.stdout?.on("data", (data: Buffer) => {
       const msg = data.toString();
-      // Next.js 14 outputs "started server on" or "Listening on"
+      logStream.write("[stdout] " + msg);
       if (
         msg.includes("started server") ||
         msg.includes("Listening") ||
@@ -56,14 +59,12 @@ function startNextServer(): Promise<void> {
       }
     });
 
-    // Don't suppress stderr — write to a log file instead
-    const logPath = path.join(app.getPath("userData"), "server.log");
-    const logStream = fs.createWriteStream(logPath, { flags: "a" });
-    nextServer.stderr?.pipe(logStream);
-    nextServer.stdout?.pipe(logStream);
+    nextServer.stderr?.on("data", (data: Buffer) => {
+      logStream.write("[stderr] " + data.toString());
+    });
 
-    nextServer.on("error", reject);
     nextServer.on("exit", (code) => {
+      logStream.write(`[exit] code=${code}\n`);
       if (code !== 0 && code !== null) {
         reject(new Error(`server.js exited with code ${code}`));
       }
@@ -160,7 +161,7 @@ app.whenReady().then(async () => {
 });
 
 app.on("window-all-closed", () => {
-  nextServer?.kill();
+  nextServer?.kill("SIGTERM");
   if (process.platform !== "darwin") app.quit();
 });
 
