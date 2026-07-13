@@ -36,8 +36,8 @@ function startNextServer(): Promise<void> {
       }
     });
 
-    nextServer.stderr?.on("data", (data: Buffer) => {
-      console.error("[Next]", data.toString());
+    nextServer.stderr?.on("data", (_data: Buffer) => {
+      // suppress in packaged app — no stdout pipe available
     });
 
     nextServer.on("error", reject);
@@ -118,8 +118,7 @@ app.whenReady().then(async () => {
   try {
     await startNextServer();
     mainWindow?.loadURL(`http://localhost:${PORT}`);
-  } catch (err) {
-    console.error("Failed to start Next.js server:", err);
+  } catch (_err) {
     mainWindow?.loadURL(`data:text/html,<h2 style="font-family:sans-serif;color:#fff;background:#0a0812;height:100vh;margin:0;display:flex;align-items:center;justify-content:center">Failed to start server. Please restart.</h2>`);
   }
 });
