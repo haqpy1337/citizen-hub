@@ -12,6 +12,83 @@ function useNow(intervalMs = 1000) {
   return now;
 }
 
+interface NewsItem { title: string; link: string; date: string }
+
+function NewsPanel() {
+  const [items, setItems] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    window.api.fetchNews().then(res => {
+      if (res.ok && res.items.length > 0) {
+        setItems(res.items);
+      } else {
+        setError(true);
+      }
+    }).catch(() => setError(true)).finally(() => setLoading(false));
+  }, []);
+
+  const fmtDate = (d: string) => {
+    try { return new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
+    catch { return d; }
+  };
+
+  return (
+    <div className="panel flex flex-col">
+      <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-edge">
+        <p className="label">SC News & Comm-Link</p>
+        {!loading && (
+          <button
+            onClick={() => { setLoading(true); setError(false); setItems([]);
+              window.api.fetchNews().then(r => {
+                if (r.ok) setItems(r.items); else setError(true);
+              }).finally(() => setLoading(false));
+            }}
+            className="text-[10px] font-mono text-muted hover:text-quant transition-colors"
+          >
+            ↻ Refresh
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="w-5 h-5 border-2 border-quant/30 border-t-quant rounded-full animate-spin" />
+        </div>
+      ) : error || items.length === 0 ? (
+        <div className="px-4 py-6 text-xs text-muted text-center">
+          Could not load news. <br />
+          <a
+            href="https://robertsspaceindustries.com/comm-link"
+            target="_blank"
+            rel="noreferrer"
+            className="text-quant hover:underline"
+            onClick={e => { e.preventDefault(); window.open("https://robertsspaceindustries.com/comm-link"); }}
+          >
+            Open Comm-Link ↗
+          </a>
+        </div>
+      ) : (
+        <ul className="flex flex-col divide-y divide-edge/40">
+          {items.map((item, i) => (
+            <li key={i} className="px-4 py-3 hover:bg-hull/40 transition-colors cursor-pointer group"
+              onClick={() => window.open(item.link || "https://robertsspaceindustries.com/comm-link")}
+            >
+              <p className="text-xs text-ink group-hover:text-quant transition-colors leading-snug line-clamp-2">
+                {item.title}
+              </p>
+              {item.date && (
+                <p className="text-[10px] text-muted mt-0.5 font-mono">{fmtDate(item.date)}</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function JobCard({ job, onMarkDone }: { job: Job; onMarkDone: () => void }) {
   const now = useNow();
   const secs = secondsLeft(job.finishesAt, now);
@@ -53,10 +130,7 @@ function JobCard({ job, onMarkDone }: { job: Job; onMarkDone: () => void }) {
             </span>
           )}
         </div>
-        <button
-          onClick={onMarkDone}
-          className="btn btn-primary text-xs px-3 py-1"
-        >
+        <button onClick={onMarkDone} className="btn btn-primary text-xs px-3 py-1">
           Mark Done
         </button>
       </div>
@@ -90,6 +164,7 @@ export default function Dashboard() {
   }
 
   const activeJobs = jobs.filter(j => j.status === "running");
+  const doneJobs   = jobs.filter(j => j.status === "done");
   const earliest = activeJobs.reduce<Job | null>((best, j) => {
     if (!best) return j;
     return new Date(j.finishesAt) < new Date(best.finishesAt) ? j : best;
@@ -104,18 +179,21 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      {/* Stats row */}
+      <div className="grid grid-cols-4 gap-4">
         <div className="panel p-4">
           <p className="label">Active Jobs</p>
           <p className="text-3xl font-bold text-quant mt-1">{activeJobs.length}</p>
         </div>
         <div className="panel p-4">
           <p className="label">Next Finish</p>
-          <p className="text-sm font-mono text-ink mt-1">
-            {earliest
-              ? formatDuration(secondsLeft(earliest.finishesAt, now))
-              : "—"}
+          <p className="text-sm font-mono text-ink mt-2">
+            {earliest ? formatDuration(secondsLeft(earliest.finishesAt, now)) : "—"}
           </p>
+        </div>
+        <div className="panel p-4">
+          <p className="label">Ready to Collect</p>
+          <p className="text-3xl font-bold text-emerald-400 mt-1">{doneJobs.length}</p>
         </div>
         <div className="panel p-4">
           <p className="label">Total Jobs</p>
@@ -123,27 +201,32 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="w-7 h-7 border-2 border-quant/30 border-t-quant rounded-full animate-spin" />
+      {/* Two-column: jobs left, news right */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="flex flex-col gap-4">
+          <p className="eyebrow">Active Jobs</p>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="w-7 h-7 border-2 border-quant/30 border-t-quant rounded-full animate-spin" />
+            </div>
+          ) : activeJobs.length === 0 ? (
+            <div className="panel p-10 text-center flex flex-col items-center gap-3">
+              <p className="text-muted text-sm">No active refinery jobs</p>
+              <button onClick={() => setPage("jobs")} className="btn btn-primary text-sm">
+                Start a Job
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {activeJobs.map(job => (
+                <JobCard key={job.id} job={job} onMarkDone={() => markDone(job.id)} />
+              ))}
+            </div>
+          )}
         </div>
-      ) : activeJobs.length === 0 ? (
-        <div className="panel p-12 text-center flex flex-col items-center gap-3">
-          <p className="text-muted text-sm">No active jobs</p>
-          <button onClick={() => setPage("jobs")} className="btn btn-primary text-sm">
-            Start a Job
-          </button>
-        </div>
-      ) : (
-        <div>
-          <p className="eyebrow mb-3">Active Jobs</p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {activeJobs.map(job => (
-              <JobCard key={job.id} job={job} onMarkDone={() => markDone(job.id)} />
-            ))}
-          </div>
-        </div>
-      )}
+
+        <NewsPanel />
+      </div>
     </div>
   );
 }

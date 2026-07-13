@@ -43,9 +43,13 @@ declare global {
         update(token: string, id: string, data: { status?: string; note?: string }): Promise<void>;
         delete(token: string, id: string): Promise<void>;
       };
-      onUpdateAvailable(cb: () => void): void;
-      onUpdateDownloaded(cb: () => void): void;
+      onUpdateAvailable(cb: (version: string) => void): void;
+      onUpdateDownloaded(cb: (version: string) => void): void;
+      onUpdateError(cb: (msg: string) => void): void;
+      onUpdateNotAvailable(cb: () => void): void;
       installUpdate(): Promise<void>;
+      checkForUpdates(): Promise<{ ok: boolean; error?: string }>;
+      fetchNews(): Promise<{ ok: boolean; source?: string; items: { title: string; link: string; date: string }[] }>;
     };
   }
 }

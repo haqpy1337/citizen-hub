@@ -4,6 +4,7 @@ import {
   RefineryMethod,
   RefineryStation,
   UexCommodity,
+  UexCommodityPrice,
   UexRefineryCapacity,
   UexRefineryMethod,
   UexRefineryYield,
@@ -95,17 +96,41 @@ export async function getRefineryMethods(): Promise<RefineryMethod[]> {
 
 /** All mineable raw ores with average sell price per SCU. */
 export async function getOreCommodities(): Promise<OreCommodity[]> {
-  const commodities = await uexFetch<UexCommodity>("commodities");
+  const [commodities, prices] = await Promise.all([
+    uexFetch<UexCommodity>("commodities"),
+    uexFetch<UexCommodityPrice>("commodities_prices").catch(() => [] as UexCommodityPrice[]),
+  ]);
 
-  // is_refinable === 1: raw ores that go INTO a refinery (no refined/processed duplicates)
+  // is_refinable === 1: raw ores that go INTO a refinery
   const ores = commodities.filter((c) => c.is_refinable === 1);
   const list = ores.length > 0 ? ores : commodities;
 
+  // Build average sell price per commodity from terminal-specific prices
+  // price_sell = what the NPC pays the player (i.e. player receives this amount)
+  const sellMap = new Map<number, number[]>();
+  for (const p of prices) {
+    if (p.id_commodity == null) continue;
+    const price = p.price_sell_avg ?? p.scu_sell_avg ?? p.price_sell;
+    if (price && price > 0) {
+      const arr = sellMap.get(p.id_commodity) ?? [];
+      arr.push(price);
+      sellMap.set(p.id_commodity, arr);
+    }
+  }
+
   return list
-    .map((c) => ({
-      id: c.id,
-      name: c.name,
-      pricePerScu: c.price_buy ?? c.price_sell ?? null,
-    }))
+    .map((c) => {
+      const arr = sellMap.get(c.id);
+      const fromPrices = arr?.length
+        ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)
+        : null;
+      const fromCommodity = (c.price_buy && c.price_buy > 0 ? c.price_buy : null)
+        ?? (c.price_sell && c.price_sell > 0 ? c.price_sell : null);
+      return {
+        id: c.id,
+        name: c.name,
+        pricePerScu: fromPrices ?? fromCommodity,
+      };
+    })
     .sort((a, b) => a.name.localeCompare(b.name));
 }

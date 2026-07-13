@@ -63,6 +63,18 @@ export interface UexCommodity {
   price_buy?: number;
 }
 
+export interface UexCommodityPrice {
+  id_commodity?: number;
+  id_terminal?: number;
+  terminal_name?: string;
+  /** Price the NPC pays the player (player sells → player receives this). */
+  price_sell?: number;
+  /** Price the NPC charges the player (player buys). */
+  price_buy?: number;
+  scu_sell_avg?: number;
+  price_sell_avg?: number;
+}
+
 // --- Normalized types used by the frontend --------------------------------
 
 export interface RefineryStation {

@@ -193,6 +193,37 @@ function registerIpc() {
   });
 
   ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(); });
+
+  ipcMain.handle("update:check", async () => {
+    try { await autoUpdater.checkForUpdates(); return { ok: true }; }
+    catch (e) { return { ok: false, error: String(e) }; }
+  });
+
+  ipcMain.handle("news:fetch", async () => {
+    try {
+      // RSI Comm-Link RSS feed
+      const res = await fetch("https://robertsspaceindustries.com/feed/1", {
+        signal: AbortSignal.timeout(8000),
+        headers: { "User-Agent": "CitizenHub/2.0" },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const xml = await res.text();
+      // Simple regex parse — no external dep
+      const items: { title: string; link: string; date: string }[] = [];
+      const rx = /<item>([\s\S]*?)<\/item>/g;
+      let m: RegExpExecArray | null;
+      while ((m = rx.exec(xml)) !== null && items.length < 6) {
+        const block = m[1];
+        const title = (/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/.exec(block)?.[1] ?? "").trim();
+        const link  = (/<link>(.*?)<\/link>/.exec(block)?.[1] ?? "").trim();
+        const date  = (/<pubDate>(.*?)<\/pubDate>/.exec(block)?.[1] ?? "").trim();
+        if (title) items.push({ title, link, date });
+      }
+      return { ok: true, source: "rsi", items };
+    } catch {
+      return { ok: false, items: [] };
+    }
+  });
 }
 
 // ── Window ───────────────────────────────────────────────────────────────────
@@ -227,9 +258,14 @@ async function createWindow() {
 function setupAutoUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.on("update-available", () => mainWindow?.webContents.send("update-available"));
-  autoUpdater.on("update-downloaded", () => mainWindow?.webContents.send("update-downloaded"));
-  autoUpdater.on("error", () => {});
+  autoUpdater.on("update-available", (info) =>
+    mainWindow?.webContents.send("update-available", info.version));
+  autoUpdater.on("update-downloaded", (info) =>
+    mainWindow?.webContents.send("update-downloaded", info.version));
+  autoUpdater.on("error", (err) =>
+    mainWindow?.webContents.send("update-error", err.message));
+  autoUpdater.on("update-not-available", () =>
+    mainWindow?.webContents.send("update-not-available"));
   setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 10000);
   setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000);
 }
