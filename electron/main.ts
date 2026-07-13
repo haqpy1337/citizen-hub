@@ -1,7 +1,7 @@
 import { app, BrowserWindow, shell } from "electron";
 import { autoUpdater } from "electron-updater";
 import * as path from "path";
-import * as http from "http";
+import * as fs from "fs";
 import { spawn, ChildProcess } from "child_process";
 
 let mainWindow: BrowserWindow | null = null;
@@ -87,7 +87,7 @@ async function createWindow() {
     mainWindow?.show();
   });
 
-  await mainWindow.loadURL(`http://localhost:${PORT}`);
+  mainWindow.loadURL(`about:blank`);
 }
 
 function setupAutoUpdater() {
@@ -108,13 +108,19 @@ function setupAutoUpdater() {
 }
 
 app.whenReady().then(async () => {
+  // Ensure AppData dir exists before Prisma tries to open the DB
+  fs.mkdirSync(getAppDataPath(), { recursive: true });
+
+  // Show window immediately with loading screen, start server in background
+  await createWindow();
+  if (app.isPackaged) setupAutoUpdater();
+
   try {
     await startNextServer();
-    await createWindow();
-    if (app.isPackaged) setupAutoUpdater();
+    mainWindow?.loadURL(`http://localhost:${PORT}`);
   } catch (err) {
-    console.error("Failed to start:", err);
-    app.quit();
+    console.error("Failed to start Next.js server:", err);
+    mainWindow?.loadURL(`data:text/html,<h2 style="font-family:sans-serif;color:#fff;background:#0a0812;height:100vh;margin:0;display:flex;align-items:center;justify-content:center">Failed to start server. Please restart.</h2>`);
   }
 });
 
