@@ -3,7 +3,6 @@ import { autoUpdater } from "electron-updater";
 import * as path from "path";
 import * as fs from "fs";
 import * as crypto from "crypto";
-import * as bcrypt from "bcryptjs";
 import type { Database } from "sql.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -45,6 +44,7 @@ async function initDb() {
   db = new SQL.Database(fileData);
 
   db.run("PRAGMA foreign_keys = ON");
+  db.run("PRAGMA journal_mode = WAL");
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -147,35 +147,16 @@ function rowToJob(r: Record<string, unknown>): Job {
 // ── IPC Handlers ─────────────────────────────────────────────────────────────
 
 function registerIpc() {
-  ipcMain.handle("auth:register", async (_, username: string, password: string) => {
-    if (!username?.trim() || !password) throw new Error("Username and password required");
-    if (get("SELECT id FROM users WHERE username = ?", [username.trim()])) throw new Error("Username already taken");
-    const id = uid();
-    const hash = await bcrypt.hash(password, 10);
-    run("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", [id, username.trim(), hash]);
+  // Local-only auth: auto-create a single user on first launch
+  ipcMain.handle("auth:getOrCreateLocal", () => {
+    let row = get("SELECT id, username FROM users WHERE id = 'local'");
+    if (!row) {
+      run("INSERT INTO users (id, username, password_hash) VALUES ('local', 'Pilot', '')", []);
+      row = get("SELECT id, username FROM users WHERE id = 'local'")!;
+    }
     const token = uid();
-    sessions.set(token, id);
-    return { token, user: { id, username: username.trim(), avatarUrl: null } };
-  });
-
-  ipcMain.handle("auth:login", async (_, username: string, password: string) => {
-    const row = get("SELECT * FROM users WHERE username = ?", [username?.trim()]);
-    if (!row) throw new Error("Invalid username or password");
-    const ok = await bcrypt.compare(password, row.password_hash as string);
-    if (!ok) throw new Error("Invalid username or password");
-    const token = uid();
-    sessions.set(token, row.id as string);
-    return { token, user: { id: row.id, username: row.username, avatarUrl: row.avatar_url } as User };
-  });
-
-  ipcMain.handle("auth:logout", (_, token: string) => { sessions.delete(token); });
-
-  ipcMain.handle("auth:me", (_, token: string) => {
-    const userId = sessions.get(token);
-    if (!userId) return null;
-    const row = get("SELECT id, username, avatar_url FROM users WHERE id = ?", [userId]);
-    if (!row) return null;
-    return { id: row.id, username: row.username, avatarUrl: row.avatar_url } as User;
+    sessions.set(token, "local");
+    return { token, user: { id: "local", username: row.username as string, avatarUrl: null } as User };
   });
 
   ipcMain.handle("jobs:list", (_, token: string) => {
@@ -220,7 +201,8 @@ async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280, height: 800, minWidth: 900, minHeight: 600,
     title: "Citizen Hub",
-    backgroundColor: "#090806",
+    backgroundColor: "#000000",
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

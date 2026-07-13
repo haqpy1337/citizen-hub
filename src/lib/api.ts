@@ -35,10 +35,7 @@ declare global {
   interface Window {
     api: {
       auth: {
-        register(username: string, password: string): Promise<{ token: string; user: User }>;
-        login(username: string, password: string): Promise<{ token: string; user: User }>;
-        logout(token: string): Promise<void>;
-        me(token: string): Promise<User | null>;
+        getOrCreateLocal(): Promise<{ token: string; user: User }>;
       };
       jobs: {
         list(token: string): Promise<Job[]>;
@@ -55,10 +52,7 @@ declare global {
 
 export const api = {
   auth: {
-    register: (u: string, p: string) => window.api.auth.register(u, p),
-    login: (u: string, p: string) => window.api.auth.login(u, p),
-    logout: (t: string) => window.api.auth.logout(t),
-    me: (t: string) => window.api.auth.me(t),
+    getOrCreateLocal: () => window.api.auth.getOrCreateLocal(),
   },
   jobs: {
     list: (t: string) => window.api.jobs.list(t),

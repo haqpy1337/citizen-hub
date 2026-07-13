@@ -2,12 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("api", {
   auth: {
-    register: (username: string, password: string) =>
-      ipcRenderer.invoke("auth:register", username, password),
-    login: (username: string, password: string) =>
-      ipcRenderer.invoke("auth:login", username, password),
-    logout: (token: string) => ipcRenderer.invoke("auth:logout", token),
-    me: (token: string) => ipcRenderer.invoke("auth:me", token),
+    getOrCreateLocal: () => ipcRenderer.invoke("auth:getOrCreateLocal"),
   },
   jobs: {
     list: (token: string) => ipcRenderer.invoke("jobs:list", token),
