@@ -31,6 +31,7 @@ export default function Sidebar() {
     const html = document.documentElement;
     themes.forEach(t => html.classList.remove(`theme-${t.key}`));
     html.classList.add(`theme-${key}`);
+    localStorage.setItem("ch-theme", key);
     setActiveTheme(key);
   }
 
