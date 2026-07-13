@@ -23,7 +23,7 @@ function startNextServer(): Promise<void> {
     const env = {
       ...process.env,
       PORT: String(PORT),
-      NODE_ENV: "production",
+      NODE_ENV: "production" as const,
       DATABASE_URL: `file:${path.join(getAppDataPath(), "citizen-hub.db")}`,
     };
 
