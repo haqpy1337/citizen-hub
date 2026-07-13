@@ -12,7 +12,7 @@ import { Lang } from "./lib/i18n";
 
 export type Page = "dashboard" | "jobs" | "history" | "ores" | "refineries";
 
-interface AuthCtx { user: User | null; token: string | null }
+export interface AuthCtx { user: User | null; token: string | null }
 export const AuthContext = createContext<AuthCtx>(null!);
 export const useAuth = () => useContext(AuthContext);
 

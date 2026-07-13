@@ -105,7 +105,7 @@ export async function getOreCommodities(): Promise<OreCommodity[]> {
     .map((c) => ({
       id: c.id,
       name: c.name,
-      pricePerScu: c.price_sell ?? null,
+      pricePerScu: c.price_buy ?? c.price_sell ?? null,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }

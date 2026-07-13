@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { usePage, useAuth, useLang } from "../App";
+import { usePage, useLang } from "../App";
 import CrestLogo from "./CrestLogo";
 
 const themes = [
-  { key: "mole",    color: "#f97316", title: "Mole" },
+  { key: "mole",    color: "#f97316", title: "Mole"    },
   { key: "cockpit", color: "#22c55e", title: "Cockpit" },
-  { key: "origin",  color: "#7dd3fc", title: "Origin" },
-  { key: "gatac",   color: "#a855f7", title: "Gatac" },
-  { key: "hornet",  color: "#3b82f6", title: "Hornet" },
+  { key: "origin",  color: "#7dd3fc", title: "Origin"  },
+  { key: "gatac",   color: "#a855f7", title: "Gatac"   },
+  { key: "hornet",  color: "#3b82f6", title: "Hornet"  },
 ];
 
 const navItems = [
@@ -20,12 +20,10 @@ const navItems = [
 
 export default function Sidebar() {
   const { page, setPage } = usePage();
-  const { user, logout } = useAuth();
   const { lang, setLang } = useLang();
-  const [activeTheme, setActiveTheme] = useState<string>(() => {
-    const cls = document.documentElement.className;
-    return themes.find(t => cls.includes(`theme-${t.key}`))?.key ?? "mole";
-  });
+  const [activeTheme, setActiveTheme] = useState<string>(() =>
+    localStorage.getItem("ch-theme") ?? "mole"
+  );
 
   function applyTheme(key: string) {
     const html = document.documentElement;
@@ -94,7 +92,7 @@ export default function Sidebar() {
                   "px-2 py-0.5 text-xs font-mono uppercase rounded border transition-all",
                   lang === l
                     ? "border-quant text-quant bg-quant/10"
-                    : "border-edge text-muted hover:text-ink hover:border-edge/80",
+                    : "border-edge text-muted hover:text-ink",
                 ].join(" ")}
               >
                 {l}
@@ -102,26 +100,6 @@ export default function Sidebar() {
             ))}
           </div>
         </div>
-
-        {user && (
-          <div className="flex items-center gap-2 pt-1 border-t border-edge">
-            {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
-            ) : (
-              <div className="w-6 h-6 rounded-full bg-hull flex items-center justify-center text-[10px] text-muted shrink-0">
-                {user.username[0]?.toUpperCase()}
-              </div>
-            )}
-            <span className="text-xs text-ink truncate flex-1 font-mono">{user.username}</span>
-          </div>
-        )}
-
-        <button
-          onClick={logout}
-          className="w-full text-left text-xs font-mono uppercase tracking-wider text-muted hover:text-danger transition-colors"
-        >
-          Logout
-        </button>
       </div>
     </aside>
   );
