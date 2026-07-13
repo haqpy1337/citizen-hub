@@ -12,7 +12,7 @@ const rajdhani = Rajdhani({
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "hMA – haqpy's Miner Assistant",
+  title: "Citizen Hub – haqpy",
   description: "Star Citizen companion with live UEX data.",
 };
 

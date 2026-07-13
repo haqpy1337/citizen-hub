@@ -19,7 +19,7 @@ export const translations = {
     },
     // Auth
     auth: {
-      back: "← haqpy's Miner Assistant",
+      back: "← Citizen Hub",
       createAccount: "Create account",
       signIn: "Sign in",
       setupSubtitle: "Set up your personal mining logbook.",
@@ -313,7 +313,7 @@ export const translations = {
       mining: "Mining",
     },
     auth: {
-      back: "← haqpy's Miner Assistant",
+      back: "← Citizen Hub",
       createAccount: "Konto erstellen",
       signIn: "Anmelden",
       setupSubtitle: "Richte dein persönliches Mining-Logbuch ein.",

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { translations, type Lang } from "@/lib/i18n";
-import PrismLogo from "@/components/PrismLogo";
+import CrestLogo from "@/components/CrestLogo";
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
@@ -84,7 +84,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
 
       <div className="panel p-7">
         <div className="mb-6 flex items-center gap-4">
-          <PrismLogo height={36} />
+          <CrestLogo height={36} />
           <div className="h-8 w-px bg-edge" />
           <h1 className="font-display text-2xl font-bold tracking-tight">
             {isRegister ? t.createAccount : t.signIn}

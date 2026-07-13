@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDesign, type Design } from "./ThemeProvider";
-import PrismLogo from "./PrismLogo";
+import CrestLogo from "./CrestLogo";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
@@ -76,7 +76,7 @@ export default function Nav({ username }: { username: string }) {
     <header className="sticky top-0 z-20 border-b border-edge bg-void backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3">
         <Link href="/dashboard" className="shrink-0 flex items-center">
-          <PrismLogo height={28} />
+          <CrestLogo height={28} />
         </Link>
 
         <nav className="flex flex-1 flex-wrap items-center gap-1 overflow-x-auto">

@@ -7,7 +7,7 @@ import { useDesign, type Design } from "./ThemeProvider";
 import Avatar from "./Avatar";
 import { useT } from "@/components/LanguageProvider";
 import type { Lang } from "@/lib/i18n";
-import PrismLogo from "./PrismLogo";
+import CrestLogo from "./CrestLogo";
 
 const designs: { id: Design; label: string; desc: string }[] = [
   { id: "mole",    label: "Mole",         desc: "ARGO industrial" },
@@ -146,7 +146,7 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
       {/* Logo */}
       <div className="px-5 py-5 border-b border-edge">
         <Link href="/dashboard" className="flex items-center gap-2.5 group">
-          <PrismLogo height={32} />
+          <CrestLogo height={32} />
         </Link>
       </div>
 
@@ -313,7 +313,7 @@ export default function Sidebar({ username, avatarUrl }: { username: string; ava
           </svg>
         </button>
         <Link href="/dashboard" className="flex items-center gap-2 flex-1">
-          <PrismLogo height={24} />
+          <CrestLogo height={24} />
         </Link>
         <span className="font-mono text-xs text-muted">{username}</span>
       </header>
