@@ -66,49 +66,47 @@ export default function BootScreen({ onComplete }: Props) {
 
   // Intro animation + sequential checks
   useEffect(() => {
-    // Each promise resolves exactly when its row's anime begin callback fires —
-    // i.e., the instant the row starts animating into view.
-    const resolvers: Array<() => void> = [];
-    const rowVisible: Array<Promise<void>> = CHECKS.map(
-      () => new Promise<void>(resolve => resolvers.push(resolve))
-    );
+    // Exact ms from timeline start when each row's animation begins.
+    // Calculated from the chain of .add() offsets below:
+    //   divider ends at 3380ms → rows use stagger(100) with -=100 → row 0 at 3280ms
+    const ROW_START_MS = CHECKS.map((_, i) => 3280 + i * 100);
 
-    const tl = anime.timeline({ easing: "easeOutExpo" });
-    tl
-      .add({ targets: ".boot-grid",     opacity: [0, 1], duration: 700 })
-      .add({ targets: ".boot-corner-h", scaleX:  [0, 1], duration: 350, delay: anime.stagger(60), easing: "easeOutQuad" }, "-=300")
-      .add({ targets: ".boot-corner-v", scaleY:  [0, 1], duration: 350, delay: anime.stagger(60), easing: "easeOutQuad" }, "-=400")
-      .add({ targets: ".boot-ring",     strokeDashoffset: [anime.setDashoffset, 0], opacity: [0, 1], duration: 700, delay: anime.stagger(120), easing: "easeInOutSine" }, "-=200")
-      .add({ targets: ".boot-star",     opacity: [0, 1], scale: [0.2, 1], duration: 500, easing: "easeOutBack" }, "-=300")
-      .add({ targets: ".boot-dot",      scale: [0, 1], opacity: [0, 1], duration: 300, easing: "easeOutBack" }, "-=150")
-      .add({ targets: ".boot-citizen",  opacity: [0, 1], translateX: [-24, 0], duration: 500 }, "-=150")
-      .add({ targets: ".boot-hub",      opacity: [0, 1], translateX: [-16, 0], duration: 400 }, "-=350")
-      .add({ targets: ".boot-divider",  scaleX:  [0, 1], duration: 500, easing: "easeOutQuad" }, "-=150");
+    // Capture the exact moment the timeline fires its first tick.
+    // We use the TIMELINE-level begin (not per-child) because that's guaranteed.
+    let tlStartAt = 0;
+    let resolveTlStart!: () => void;
+    const tlStarted = new Promise<void>(r => { resolveTlStart = r; });
 
-    // One .add() per row so each gets its own begin callback.
-    // Offset math preserves the original stagger(100) timing:
-    //   row 0: -=100 (overlaps last 100ms of divider)
-    //   rows 1-3: -=200 each (starts 100ms after previous row's start, since duration=300)
-    CHECKS.forEach((_, i) => {
-      tl.add({
-        targets: `.boot-row-${i}`,
-        opacity: [0, 1],
-        translateY: [8, 0],
-        duration: 300,
-        easing: "easeOutExpo",
-        begin: () => resolvers[i]?.(),
-      }, i === 0 ? "-=100" : "-=200");
+    const tl = anime.timeline({
+      easing: "easeOutExpo",
+      begin: () => { tlStartAt = performance.now(); resolveTlStart(); },
     });
 
-    tl.add({ targets: ".boot-bar-track", opacity: [0, 1], duration: 300 });
+    tl
+      .add({ targets: ".boot-grid",      opacity: [0, 1], duration: 700 })
+      .add({ targets: ".boot-corner-h",  scaleX:  [0, 1], duration: 350, delay: anime.stagger(60), easing: "easeOutQuad" }, "-=300")
+      .add({ targets: ".boot-corner-v",  scaleY:  [0, 1], duration: 350, delay: anime.stagger(60), easing: "easeOutQuad" }, "-=400")
+      .add({ targets: ".boot-ring",      strokeDashoffset: [anime.setDashoffset, 0], opacity: [0, 1], duration: 700, delay: anime.stagger(120), easing: "easeInOutSine" }, "-=200")
+      .add({ targets: ".boot-star",      opacity: [0, 1], scale: [0.2, 1], duration: 500, easing: "easeOutBack" }, "-=300")
+      .add({ targets: ".boot-dot",       scale: [0, 1], opacity: [0, 1], duration: 300, easing: "easeOutBack" }, "-=150")
+      .add({ targets: ".boot-citizen",   opacity: [0, 1], translateX: [-24, 0], duration: 500 }, "-=150")
+      .add({ targets: ".boot-hub",       opacity: [0, 1], translateX: [-16, 0], duration: 400 }, "-=350")
+      .add({ targets: ".boot-divider",   scaleX:  [0, 1], duration: 500, easing: "easeOutQuad" }, "-=150")
+      .add({ targets: ".boot-row",       opacity: [0, 1], translateY: [8, 0], duration: 300, delay: anime.stagger(100) }, "-=100")
+      .add({ targets: ".boot-bar-track", opacity: [0, 1], duration: 300 });
 
     let cancelled = false;
     (async () => {
+      // Wait for the timeline to actually start (fires on the first rAF tick, ~16ms)
+      await tlStarted;
+
       for (let i = 0; i < CHECKS.length; i++) {
         if (cancelled) return;
 
-        // Wait until anime signals this row is visible, then start the check immediately.
-        await rowVisible[i];
+        // Wait precisely until this row's animation begins in the timeline.
+        // If a previous slow check already pushed us past this point, skip the wait.
+        const wait = ROW_START_MS[i] - (performance.now() - tlStartAt);
+        if (wait > 0) await new Promise(r => setTimeout(r, wait));
         if (cancelled) return;
 
         setStatuses(prev => { const n = [...prev]; n[i] = "running"; return n; });
@@ -125,8 +123,7 @@ export default function BootScreen({ onComplete }: Props) {
       }
 
       await new Promise(r => setTimeout(r, 400));
-      if (cancelled) return;
-      setReady(true);
+      if (!cancelled) setReady(true);
     })();
 
     return () => { cancelled = true; tl.pause(); };
@@ -227,7 +224,7 @@ export default function BootScreen({ onComplete }: Props) {
 
         <div className="w-full flex flex-col gap-2.5">
           {CHECKS.map((c, i) => (
-            <div key={i} className={`boot-row boot-row-${i} opacity-0 flex justify-between items-center text-xs font-mono`}>
+            <div key={i} className="boot-row opacity-0 flex justify-between items-center text-xs font-mono">
               <span className="text-emerald-500/50 tracking-wider">{c.label}</span>
               <span className={statusColor(statuses[i])}>{statusText(statuses[i])}</span>
             </div>

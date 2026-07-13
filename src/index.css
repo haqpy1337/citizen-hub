@@ -6,35 +6,35 @@
    MOLE  —  ARGO Astronautics MOLE mining barge
    Feeling: deep-space industrial. Welded carbon, burn-scarred ore bays.
    Colors:  near-black carbon body, molten-iron orange accent
-   Shape:   top-right bevel — heavy hull plate stamped from sheet metal
+   Shape:   large top-right bevel — heavy hull plate stamped from metal
    Grid:    coarse riveted-plate square grid (40 px)
-   Sidebar: thick left gutter bar in orange
+   Sidebar: thick orange left-rail gutter
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 :root,
 html.theme-mole {
   color-scheme: dark;
-  --color-void:       #080604;
-  --color-hull:       #130f0b;
-  --color-panel:      #1d1812;
-  --color-edge:       #352c20;
-  --color-steel:      #4a3d2d;
-  --color-ink:        #f0e0c8;
-  --color-muted:      #7a6850;
+  --color-void:       #060402;
+  --color-hull:       #110d08;
+  --color-panel:      #1a1410;
+  --color-edge:       #3a2e20;
+  --color-steel:      #503e2c;
+  --color-ink:        #f4dfc0;
+  --color-muted:      #806848;
   --color-quant:      #e05010;
-  --color-quant-dim:  rgba(224,80,16,0.15);
+  --color-quant-dim:  rgba(224,80,16,0.18);
   --color-amber:      #d08000;
   --color-toxic:      #60aa20;
   --color-danger:     #e02010;
-  --grid-color:       rgba(224,80,16,0.055);
+  --grid-color:       rgba(224,80,16,0.08);
   --shadow-panel:
-    4px 0 0 0 rgba(224,80,16,0.6) inset,
-    0 0 0 1px rgba(224,80,16,0.1) inset,
-    0 10px 40px rgba(0,0,0,0.95),
+    6px 0 0 0 rgba(224,80,16,0.8) inset,
+    0 0 0 1px rgba(224,80,16,0.12) inset,
+    0 12px 48px rgba(0,0,0,0.98),
     0 2px 8px rgba(0,0,0,0.7);
-  --shadow-glow:      0 0 0 1px rgba(224,80,16,0.7), 0 0 24px rgba(224,80,16,0.3);
-  --panel-clip:       polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+  --shadow-glow:      0 0 0 1px rgba(224,80,16,0.8), 0 0 28px rgba(224,80,16,0.35);
+  --panel-clip:       polygon(0 0, calc(100% - 36px) 0, 100% 36px, 100% 100%, 0 100%);
   --panel-radius:     0;
-  --panel-left:       4px solid rgba(224,80,16,0.75);
+  --panel-left:       6px solid rgba(224,80,16,0.85);
   --panel-accent-top: transparent;
 }
 html:not([class*="theme-"]) body,
@@ -47,34 +47,36 @@ html.theme-mole body {
 html:not([class*="theme-"]) .field,
 html.theme-mole .field {
   border-radius: 0;
-  border-left: 4px solid rgba(224,80,16,0.5);
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  border-left: 6px solid rgba(224,80,16,0.6);
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
 }
 html:not([class*="theme-"]) .tag,
 html.theme-mole .tag {
   border-radius: 0;
-  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
-  border-color: rgba(224,80,16,0.4);
-  letter-spacing: 0.12em;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  border-color: rgba(224,80,16,0.5);
+  letter-spacing: 0.14em;
+  color: #e05010;
 }
 html:not([class*="theme-"]) .btn,
 html.theme-mole .btn {
   border-radius: 0;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   font-weight: 700;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
 }
 html:not([class*="theme-"]) .btn-primary,
 html.theme-mole .btn-primary {
   border-right: 3px solid rgba(224,80,16,0.9);
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
 }
 html:not([class*="theme-"]) .label,
-html.theme-mole .label  { letter-spacing: 0.22em; }
-/* Sidebar: bold orange left-rail */
+html.theme-mole .label  { letter-spacing: 0.24em; color: rgba(224,80,16,0.7); }
+/* Sidebar: thick orange left-rail */
 html:not([class*="theme-"]) aside,
 html.theme-mole aside {
-  border-right: 1px solid #352c20;
-  box-shadow: 4px 0 20px rgba(0,0,0,0.6);
+  border-right: 1px solid #3a2e20;
+  border-left: 4px solid rgba(224,80,16,0.6);
+  box-shadow: 4px 0 24px rgba(0,0,0,0.7);
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -113,11 +115,11 @@ html.theme-cockpit {
 }
 html.theme-cockpit body {
   font-family: 'Courier New', 'Consolas', monospace;
-  /* CRT scanlines */
+  /* CRT scanlines — clearly visible phosphor rows */
   background-image: repeating-linear-gradient(
     to bottom,
-    rgba(80,232,40,0.025) 0px,
-    rgba(80,232,40,0.025) 2px,
+    rgba(80,232,40,0.06) 0px,
+    rgba(80,232,40,0.06) 2px,
     transparent 2px,
     transparent 5px
   );
@@ -127,6 +129,7 @@ html.theme-cockpit .panel {
   box-shadow: var(--shadow-panel);
   position: relative;
   overflow: hidden;
+  font-family: 'Courier New', 'Consolas', monospace;
 }
 html.theme-cockpit .panel::after {
   content: '';
@@ -134,7 +137,7 @@ html.theme-cockpit .panel::after {
   inset: 0;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(80,232,40,0.018) 0px, rgba(80,232,40,0.018) 1px,
+    rgba(80,232,40,0.03) 0px, rgba(80,232,40,0.03) 1px,
     transparent 1px, transparent 4px
   );
   pointer-events: none;
@@ -261,7 +264,7 @@ html.theme-gatac {
     0 0 80px rgba(184,72,255,0.05),
     0 20px 50px rgba(0,0,0,0.98);
   --shadow-glow:      0 0 0 1px rgba(184,72,255,0.5), 0 0 32px rgba(184,72,255,0.25);
-  --panel-clip:       polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  --panel-clip:       polygon(28px 0, 100% 0, calc(100% - 28px) 100%, 0 100%);
   --panel-radius:     0;
   --panel-left:       none;
   --panel-accent-top: transparent;
@@ -280,25 +283,25 @@ html.theme-gatac .field {
   border-radius: 0;
   border: none;
   border-right: 2px solid rgba(184,72,255,0.35);
-  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  padding-left: 18px;
-  padding-right: 18px;
+  clip-path: polygon(18px 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
+  padding-left: 24px;
+  padding-right: 24px;
   background: rgba(184,72,255,0.06);
 }
 html.theme-gatac .tag {
   border-radius: 0;
-  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
-  border-color: rgba(184,72,255,0.35);
-  padding-left: 14px;
-  padding-right: 14px;
-  color: #b848ff;
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  border-color: rgba(184,72,255,0.4);
+  padding-left: 18px;
+  padding-right: 18px;
+  color: #c060ff;
 }
 html.theme-gatac .btn {
   border-radius: 0;
   letter-spacing: 0.1em;
-  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
-  padding-left: 24px;
-  padding-right: 24px;
+  clip-path: polygon(20px 0, 100% 0, calc(100% - 20px) 100%, 0 100%);
+  padding-left: 30px;
+  padding-right: 30px;
 }
 html.theme-gatac .btn-primary {
   background: rgba(184,72,255,0.2);
@@ -344,38 +347,34 @@ html.theme-hornet {
     0 10px 40px rgba(0,0,0,0.9),
     -2px 4px 0 rgba(0,0,0,0.4);
   --shadow-glow:      0 0 0 1px rgba(40,152,216,0.6), 0 0 24px rgba(40,152,216,0.25);
-  --panel-clip:       polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px));
+  --panel-clip:       polygon(0 0, calc(100% - 38px) 0, 100% 38px, 100% 100%, 38px 100%, 0 calc(100% - 38px));
   --panel-radius:     0;
   --panel-left:       none;
   --panel-accent-top: rgba(40,152,216,0.8);
 }
 html.theme-hornet body {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 7px,
-    rgba(40,152,216,0.04) 7px,
-    rgba(40,152,216,0.04) 8px
-  );
+  background-image:
+    repeating-linear-gradient(-45deg, transparent, transparent 9px, rgba(40,152,216,0.07) 9px, rgba(40,152,216,0.07) 10px),
+    repeating-linear-gradient( 45deg, transparent, transparent 9px, rgba(40,152,216,0.04) 9px, rgba(40,152,216,0.04) 10px);
 }
 html.theme-hornet .field {
   border-radius: 0;
-  border-top: 2px solid rgba(40,152,216,0.3);
+  border-top: 2px solid rgba(40,152,216,0.4);
   border-left: none;
-  border-bottom: 1px solid rgba(40,152,216,0.15);
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  border-bottom: 1px solid rgba(40,152,216,0.2);
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
 }
 html.theme-hornet .tag {
   border-radius: 0;
-  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
-  border-color: rgba(40,152,216,0.35);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  border-color: rgba(40,152,216,0.4);
   color: #2898d8;
   letter-spacing: 0.15em;
 }
 html.theme-hornet .btn {
   border-radius: 0;
   letter-spacing: 0.14em;
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
 }
 html.theme-hornet .btn-primary {
   border-top: 2px solid rgba(40,152,216,0.9);
