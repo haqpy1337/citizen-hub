@@ -202,6 +202,11 @@ function registerIpc() {
 
   ipcMain.handle("app:version", () => app.getVersion());
 
+  ipcMain.handle("db:ping", () => {
+    const row = get<{ result: number }>("SELECT 1 AS result");
+    return row?.result === 1;
+  });
+
   ipcMain.handle("news:fetch", async () => {
     try {
       // RSI Comm-Link RSS feed

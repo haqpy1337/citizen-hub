@@ -9,20 +9,23 @@ type UpdateState = "checking" | "uptodate" | "available" | "downloaded" | "error
 
 interface Check {
   label: string;
-  minMs: number;
   run: () => Promise<boolean>;
 }
 
-// Real data calls — populate UEX cache so pages load instantly
+// All checks are real operations — no artificial delays.
+// Progress bar stays at each step until the actual work finishes.
 const CHECKS: Check[] = [
   {
     label: "LOCAL DATABASE",
-    minMs: 400,
-    run: async () => true,
+    minMs: 0,
+    run: async () => {
+      try { return await window.api.dbPing(); }
+      catch { return false; }
+    },
   },
   {
     label: "UEX CORP API",
-    minMs: 200,
+    minMs: 0,
     run: async () => {
       try { const r = await getOreCommodities(); return r.length > 0; }
       catch { return false; }
@@ -30,7 +33,7 @@ const CHECKS: Check[] = [
   },
   {
     label: "REFINERY DATA",
-    minMs: 200,
+    minMs: 0,
     run: async () => {
       try {
         const [s, m] = await Promise.all([getRefineryStations(), getRefineryMethods()]);
@@ -40,8 +43,11 @@ const CHECKS: Check[] = [
   },
   {
     label: "CITIZEN HUB v2",
-    minMs: 300,
-    run: async () => true,
+    minMs: 0,
+    run: async () => {
+      try { await window.api.getVersion(); return true; }
+      catch { return false; }
+    },
   },
 ];
 
@@ -90,10 +96,7 @@ export default function BootScreen({ onComplete }: Props) {
         const check = CHECKS[i];
         setStatuses(prev => { const n = [...prev]; n[i] = "running"; return n; });
 
-        const [result] = await Promise.all([
-          check.run(),
-          new Promise(r => setTimeout(r, check.minMs)),
-        ]);
+        const result = await check.run();
         if (cancelled) return;
 
         setStatuses(prev => { const n = [...prev]; n[i] = result ? "ok" : "fail"; return n; });

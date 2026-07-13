@@ -51,6 +51,7 @@ declare global {
       checkForUpdates(): Promise<{ ok: boolean; error?: string }>;
       fetchNews(): Promise<{ ok: boolean; source?: string; items: { title: string; link: string; date: string }[] }>;
       getVersion(): Promise<string>;
+      dbPing(): Promise<boolean>;
     };
   }
 }
