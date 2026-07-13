@@ -88,22 +88,28 @@ export default function BootScreen({ onComplete }: Props) {
 
     let cancelled = false;
     (async () => {
-      await new Promise(r => setTimeout(r, 1800));
+      // Fire all checks immediately so network time runs in parallel with the animation.
+      // Results are awaited later, after the rows have animated in (~3600 ms).
+      const pending = CHECKS.map(c => c.run().catch(() => false));
+
+      // Wait for the boot-row animation to finish before showing any status.
+      // boot-row starts at ~3520 ms in the timeline; give the last row 200 ms to settle.
+      await new Promise(r => setTimeout(r, 3800));
       if (cancelled) return;
 
       for (let i = 0; i < CHECKS.length; i++) {
         if (cancelled) return;
-        const check = CHECKS[i];
+        // Show "LOADING" while waiting for this check's result
         setStatuses(prev => { const n = [...prev]; n[i] = "running"; return n; });
 
-        const result = await check.run();
+        const result = await pending[i];
         if (cancelled) return;
 
         setStatuses(prev => { const n = [...prev]; n[i] = result ? "ok" : "fail"; return n; });
         setProgress(Math.round(((i + 1) / CHECKS.length) * 100));
 
         if (i < CHECKS.length - 1) {
-          await new Promise(r => setTimeout(r, 180));
+          await new Promise(r => setTimeout(r, 200));
           if (cancelled) return;
         }
       }

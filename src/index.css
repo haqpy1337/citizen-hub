@@ -2,381 +2,409 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Loading screen keyframes ───────────────────────────────────────────────── */
-@keyframes ls-fade    { from { opacity: 0 } to { opacity: 1 } }
-@keyframes ls-up      { from { opacity: 0; transform: translateY(-20px) } to { opacity: 1; transform: translateY(0) } }
-@keyframes ls-in      { from { opacity: 0; transform: translateX(520px) } to { opacity: 1; transform: translateX(0) } }
-@keyframes ls-warp    { to   { opacity: 0; transform: translateX(-1400px) scaleX(5) } }
-@keyframes ls-out     { to   { opacity: 0 } }
-@keyframes ls-ctleft  { from { opacity: 0; transform: translate(-14px,-14px) } to { opacity: 1; transform: translate(0,0) } }
-@keyframes ls-ctright { from { opacity: 0; transform: translate(14px,-14px)  } to { opacity: 1; transform: translate(0,0) } }
-@keyframes ls-cbleft  { from { opacity: 0; transform: translate(-14px,14px)  } to { opacity: 1; transform: translate(0,0) } }
-@keyframes ls-cbright { from { opacity: 0; transform: translate(14px,14px)   } to { opacity: 1; transform: translate(0,0) } }
-@keyframes ls-pulse   { 0%,100% { transform: scale(1);   opacity: .7 }
-                        50%     { transform: scale(1.5,1.4); opacity: 1 } }
-@keyframes ls-flash   { 0%  { opacity: 0 }
-                        40% { opacity: .8 }
-                        100%{ opacity: 0 } }
-
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   MOLE  —  ARGO Astronautics industrial workhorse
-   Warmth: burnt orange / rust over near-black carbon
-   Shape:  top-right bevel (heavy hull plate)
-   Grid:   coarse orange square grid (40 px)
+   MOLE  —  ARGO Astronautics MOLE mining barge
+   Feeling: deep-space industrial. Welded carbon, burn-scarred ore bays.
+   Colors:  near-black carbon body, molten-iron orange accent
+   Shape:   top-right bevel — heavy hull plate stamped from sheet metal
+   Grid:    coarse riveted-plate square grid (40 px)
+   Sidebar: thick left gutter bar in orange
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-:root {
+:root,
+html.theme-mole {
   color-scheme: dark;
-  --color-void:          #090806;
-  --color-hull:          #141210;
-  --color-panel:         #211e1a;
-  --color-edge:          #3a342d;
-  --color-steel:         #4a4440;
-  --color-ink:           #ede4d4;
-  --color-muted:         #6a6058;
-  --color-quant:         #d94a0a;
-  --color-quant-dim:     rgba(217,74,10,0.14);
-  --color-amber:         #e07800;
-  --color-toxic:         #5aaa30;
-  --color-danger:        #e02010;
-  --grid-color:          rgba(217,74,10,0.06);
-  --shadow-panel:        3px 0 0 0 rgba(217,74,10,0.55) inset,
-                         0 0 0 1px rgba(217,74,10,0.12) inset,
-                         0 8px 32px rgba(0,0,0,0.9),
-                         0 2px 8px rgba(0,0,0,0.6);
-  --shadow-glow:         0 0 0 1px rgba(217,74,10,0.6), 0 0 20px rgba(217,74,10,0.25);
-  --panel-accent-top:    transparent;
-  --panel-clip:          polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
-  --panel-radius:        0;
-  --panel-left:          3px solid rgba(217,74,10,0.7);
+  --color-void:       #080604;
+  --color-hull:       #130f0b;
+  --color-panel:      #1d1812;
+  --color-edge:       #352c20;
+  --color-steel:      #4a3d2d;
+  --color-ink:        #f0e0c8;
+  --color-muted:      #7a6850;
+  --color-quant:      #e05010;
+  --color-quant-dim:  rgba(224,80,16,0.15);
+  --color-amber:      #d08000;
+  --color-toxic:      #60aa20;
+  --color-danger:     #e02010;
+  --grid-color:       rgba(224,80,16,0.055);
+  --shadow-panel:
+    4px 0 0 0 rgba(224,80,16,0.6) inset,
+    0 0 0 1px rgba(224,80,16,0.1) inset,
+    0 10px 40px rgba(0,0,0,0.95),
+    0 2px 8px rgba(0,0,0,0.7);
+  --shadow-glow:      0 0 0 1px rgba(224,80,16,0.7), 0 0 24px rgba(224,80,16,0.3);
+  --panel-clip:       polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+  --panel-radius:     0;
+  --panel-left:       4px solid rgba(224,80,16,0.75);
+  --panel-accent-top: transparent;
 }
-html:not([class*="theme-"]) .field  {
-  border-radius: 0;
-  border-left: 3px solid rgba(217,74,10,0.45);
-  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
-}
-html:not([class*="theme-"]) .tag    {
-  border-radius: 0;
-  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
-}
-html:not([class*="theme-"]) .btn    { border-radius: 0; letter-spacing: 0.14em; }
-html:not([class*="theme-"]) .btn-primary { border-right: 2px solid rgba(217,74,10,0.9); }
-html:not([class*="theme-"]) .label  { letter-spacing: 0.2em; }
-html:not([class*="theme-"]) body    {
+html:not([class*="theme-"]) body,
+html.theme-mole body {
   background-image:
     linear-gradient(var(--grid-color) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
   background-size: 40px 40px;
 }
+html:not([class*="theme-"]) .field,
+html.theme-mole .field {
+  border-radius: 0;
+  border-left: 4px solid rgba(224,80,16,0.5);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+html:not([class*="theme-"]) .tag,
+html.theme-mole .tag {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+  border-color: rgba(224,80,16,0.4);
+  letter-spacing: 0.12em;
+}
+html:not([class*="theme-"]) .btn,
+html.theme-mole .btn {
+  border-radius: 0;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+}
+html:not([class*="theme-"]) .btn-primary,
+html.theme-mole .btn-primary {
+  border-right: 3px solid rgba(224,80,16,0.9);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+html:not([class*="theme-"]) .label,
+html.theme-mole .label  { letter-spacing: 0.22em; }
+/* Sidebar: bold orange left-rail */
+html:not([class*="theme-"]) aside,
+html.theme-mole aside {
+  border-right: 1px solid #352c20;
+  box-shadow: 4px 0 20px rgba(0,0,0,0.6);
+}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   COCKPIT  —  RSI Aurora retro-HUD / terminal
-   Warmth: amber-green phosphor on near-black
-   Shape:  perfect rectangle + inner scan-line border, no clip
-   Grid:   horizontal scanlines (2 px bands, 4 px gap)
+   COCKPIT  —  RSI Aurora MR flight deck / retro terminal
+   Feeling: 1980s phosphor CRT, cramped pilot seat, amber-green screen.
+   Colors:  pitch black, vivid phosphor green, amber warnings
+   Shape:   sharp rectangles, zero rounding — terminal window aesthetic
+   Grid:    horizontal CRT scanlines (3px solid / 2px gap)
+   Font:    full monospace — even body text and labels
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-cockpit {
   color-scheme: dark;
-  --color-void:          #040805;
-  --color-hull:          #080f09;
-  --color-panel:         #0b160c;
-  --color-edge:          #163018;
-  --color-steel:         #1e4820;
-  --color-ink:           #a8e890;
-  --color-muted:         #4a7840;
-  --color-quant:         #60e840;
-  --color-quant-dim:     #247010;
-  --color-amber:         #c8e040;
-  --color-toxic:         #40e880;
-  --color-danger:        #e84040;
-  --grid-color:          rgba(96,232,64,0.06);
-  --shadow-panel:        0 0 0 1px rgba(96,232,64,0.15) inset,
-                         0 0 0 3px rgba(96,232,64,0.05) inset,
-                         0 4px 32px rgba(0,0,0,0.9),
-                         0 0 60px rgba(96,232,64,0.03);
-  --shadow-glow:         0 0 0 1px rgba(96,232,64,0.5), 0 0 16px rgba(96,232,64,0.3);
-  --panel-accent-top:    rgba(96,232,64,0.4);
-  --panel-clip:          none;
-  --panel-radius:        0;
-  --panel-left:          1px solid rgba(96,232,64,0.25);
+  --color-void:       #010402;
+  --color-hull:       #030a04;
+  --color-panel:      #060f07;
+  --color-edge:       #0e2810;
+  --color-steel:      #164818;
+  --color-ink:        #88e070;
+  --color-muted:      #3a6030;
+  --color-quant:      #50e828;
+  --color-quant-dim:  rgba(80,232,40,0.12);
+  --color-amber:      #d8c020;
+  --color-toxic:      #30e870;
+  --color-danger:     #e04030;
+  --grid-color:       rgba(80,232,40,0.04);
+  --shadow-panel:
+    0 0 0 1px rgba(80,232,40,0.2) inset,
+    0 0 0 3px rgba(80,232,40,0.05) inset,
+    0 0 60px rgba(80,232,40,0.04),
+    0 4px 32px rgba(0,0,0,0.98);
+  --shadow-glow:      0 0 0 1px rgba(80,232,40,0.6), 0 0 20px rgba(80,232,40,0.35);
+  --panel-clip:       none;
+  --panel-radius:     0;
+  --panel-left:       1px solid rgba(80,232,40,0.3);
+  --panel-accent-top: rgba(80,232,40,0.5);
 }
 html.theme-cockpit body {
   font-family: 'Courier New', 'Consolas', monospace;
+  /* CRT scanlines */
   background-image: repeating-linear-gradient(
     to bottom,
-    transparent 0px,
-    transparent 3px,
-    rgba(96,232,64,0.025) 3px,
-    rgba(96,232,64,0.025) 4px
+    rgba(80,232,40,0.025) 0px,
+    rgba(80,232,40,0.025) 2px,
+    transparent 2px,
+    transparent 5px
   );
-  background-size: 100% 4px;
+  background-size: 100% 5px;
 }
-html.theme-cockpit .field  {
+html.theme-cockpit .panel {
+  box-shadow: var(--shadow-panel);
+  position: relative;
+  overflow: hidden;
+}
+html.theme-cockpit .panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(80,232,40,0.018) 0px, rgba(80,232,40,0.018) 1px,
+    transparent 1px, transparent 4px
+  );
+  pointer-events: none;
+}
+html.theme-cockpit .field {
   border-radius: 0;
-  border: 1px solid rgba(96,232,64,0.25);
-  border-left: 1px solid rgba(96,232,64,0.25);
+  border: 1px solid rgba(80,232,40,0.3);
+  font-family: 'Courier New', monospace;
+  background: rgba(80,232,40,0.04);
+}
+html.theme-cockpit .field:focus { box-shadow: 0 0 0 1px rgba(80,232,40,0.6), 0 0 16px rgba(80,232,40,0.2); }
+html.theme-cockpit .tag {
+  border-radius: 0;
+  border: 1px solid rgba(80,232,40,0.4);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.2em;
+}
+html.theme-cockpit .btn         { border-radius: 0; font-family: 'Courier New', monospace; letter-spacing: 0.2em; }
+html.theme-cockpit .btn-primary { border: 1px solid rgba(80,232,40,0.9); box-shadow: 0 0 18px rgba(80,232,40,0.25), inset 0 0 12px rgba(80,232,40,0.08); }
+html.theme-cockpit .label       { letter-spacing: 0.35em; font-family: 'Courier New', monospace; }
+html.theme-cockpit .eyebrow     { font-family: 'Courier New', monospace; letter-spacing: 0.3em; }
+/* Sidebar: green top accent bar, terminal feel */
+html.theme-cockpit aside {
+  border-right: 1px solid rgba(80,232,40,0.2);
+  box-shadow: 2px 0 30px rgba(80,232,40,0.04);
   font-family: 'Courier New', monospace;
 }
-html.theme-cockpit .tag    {
-  border-radius: 0;
-  border: 1px solid rgba(96,232,64,0.3);
-  font-family: 'Courier New', monospace;
-  letter-spacing: 0.15em;
-}
-html.theme-cockpit .btn    { border-radius: 0; font-family: 'Courier New', monospace; letter-spacing: 0.15em; }
-html.theme-cockpit .btn-primary { border: 1px solid rgba(96,232,64,0.8); box-shadow: 0 0 12px rgba(96,232,64,0.2); }
-html.theme-cockpit .label  { letter-spacing: 0.3em; font-family: 'Courier New', monospace; }
-html.theme-cockpit .eyebrow { font-family: 'Courier New', monospace; }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   ORIGIN  —  Origin Jumpworks 890 Jump luxury yacht
-   Warmth: deep navy / charcoal with ice-blue glow + gold trim
-   Shape:  all 8 corners chamfered — gemstone precision
-   Grid:   very fine diamond grid (18 px, rotated 45°)
+   ORIGIN  —  Origin Jumpworks 890 Jump luxury superyacht
+   Feeling: Michelin-star penthouse suite above a gas giant.
+            Marble, platinum, ice-white with sapphire lighting.
+   Colors:  pure white panels, warm off-white body, deep sapphire accent
+   Shape:   fully rounded cards, no hard edges, gossamer shadows
+   Grid:    invisible — only subtle dot matrix
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-origin {
   color-scheme: light;
-  --color-void:          #eef0f2;
-  --color-hull:          #f8f9fa;
-  --color-panel:         #ffffff;
-  --color-edge:          #d4d8de;
-  --color-steel:         #a8b0bc;
-  --color-ink:           #1a1e24;
-  --color-muted:         #6a7480;
-  --color-quant:         #1a7ab0;
-  --color-quant-dim:     #c0ddf0;
-  --color-amber:         #c07800;
-  --color-toxic:         #208050;
-  --color-danger:        #c02020;
-  --grid-color:          rgba(26,122,176,0.06);
-  --shadow-panel:        0 0 0 1px rgba(26,122,176,0.08) inset,
-                         0 1px 0 #ffffff,
-                         0 2px 8px rgba(0,0,0,0.08),
-                         0 8px 24px rgba(0,0,0,0.06);
-  --shadow-glow:         0 0 0 2px rgba(26,122,176,0.4), 0 0 16px rgba(26,122,176,0.15);
-  --panel-accent-top:    transparent;
-  --panel-clip:          none;
-  --panel-radius:        0.75rem;
-  --panel-left:          none;
+  --color-void:       #f0f2f5;
+  --color-hull:       #f8f9fb;
+  --color-panel:      #ffffff;
+  --color-edge:       #dde2e8;
+  --color-steel:      #b0bac8;
+  --color-ink:        #14181e;
+  --color-muted:      #6a7480;
+  --color-quant:      #0e6faa;
+  --color-quant-dim:  rgba(14,111,170,0.1);
+  --color-amber:      #a07000;
+  --color-toxic:      #187840;
+  --color-danger:     #b81818;
+  --grid-color:       rgba(14,111,170,0.04);
+  --shadow-panel:
+    0 0 0 1px rgba(0,0,0,0.06),
+    0 2px 6px rgba(0,0,0,0.05),
+    0 8px 32px rgba(0,0,0,0.07),
+    0 1px 0 #ffffff inset;
+  --shadow-glow:      0 0 0 2px rgba(14,111,170,0.5), 0 0 20px rgba(14,111,170,0.2);
+  --panel-clip:       none;
+  --panel-radius:     1rem;
+  --panel-left:       none;
+  --panel-accent-top: transparent;
 }
 html.theme-origin body {
-  background-image:
-    linear-gradient(var(--grid-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(circle, rgba(14,111,170,0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 html.theme-origin .panel {
-  border: 1px solid #d4d8de;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05);
+  border: 1px solid #e0e5ea;
+  box-shadow: var(--shadow-panel);
 }
-html.theme-origin .field  {
-  border-radius: 0.5rem;
-  border: 1px solid #c8cdd4;
-  background: #f4f6f8;
+html.theme-origin .field {
+  border-radius: 0.75rem;
+  border: 1px solid #d0d8e0;
+  background: #f5f7fa;
+  color: #14181e;
 }
-html.theme-origin .field:focus { border-color: #1a7ab0; }
-html.theme-origin .tag    {
+html.theme-origin .field:focus { border-color: #0e6faa; background: #fff; }
+html.theme-origin .tag {
   border-radius: 9999px;
-  border-color: #c0ccd8;
-  background: #eef4f8;
-  color: #1a7ab0;
+  border-color: #c8d4e0;
+  background: #eef4fa;
+  color: #0e6faa;
+  font-weight: 600;
 }
-html.theme-origin .btn         { border-radius: 0.5rem; letter-spacing: 0.05em; }
-html.theme-origin .btn-primary { background: #1a7ab0; color: #fff; }
-html.theme-origin .btn-ghost   { border-color: #c8cdd4; color: #1a1e24; }
-html.theme-origin .label       { letter-spacing: 0.15em; color: #6a7480; }
+html.theme-origin .btn         { border-radius: 0.75rem; letter-spacing: 0.06em; font-weight: 600; }
+html.theme-origin .btn-primary { background: #0e6faa; color: #fff; box-shadow: 0 4px 16px rgba(14,111,170,0.3); }
+html.theme-origin .btn-ghost   { border-color: #d0d8e0; color: #14181e; }
+html.theme-origin .btn-ghost:hover { border-color: #0e6faa; color: #0e6faa; background: rgba(14,111,170,0.06); }
+html.theme-origin .label       { letter-spacing: 0.14em; color: #8a96a4; font-weight: 600; }
+html.theme-origin .eyebrow     { letter-spacing: 0.18em; color: #0e6faa; }
+/* Sidebar: light card, clean separator */
+html.theme-origin aside {
+  background: #ffffff;
+  border-right: 1px solid #e0e5ea;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.06);
+}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   GATAC  —  Gatac Manufacture alien/organic aesthetic
-   Warmth: deep void-black with violet-magenta bioluminescence
-   Shape:  parallelogram — left side slanted (truly alien geometry)
-   Grid:   diagonal 45° grid (30 px)
+   GATAC  —  Gatac Manufacture Railen / Syulen alien tech
+   Feeling: bioluminescent deep-space organism. Void-dark, purple veins,
+            asymmetric geometry — not built, GROWN.
+   Colors:  absolute void black, violet-magenta bioluminescence
+   Shape:   parallelogram slant — geometry that defies human convention
+   Grid:    diagonal 45° bio-lattice
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-gatac {
   color-scheme: dark;
-  --color-void:          #09070f;
-  --color-hull:          #100d1c;
-  --color-panel:         #140f22;
-  --color-edge:          #2a1850;
-  --color-steel:         #3a2268;
-  --color-ink:           #e8d8ff;
-  --color-muted:         #6850a0;
-  --color-quant:         #c060ff;
-  --color-quant-dim:     #601888;
-  --color-amber:         #f0a000;
-  --color-toxic:         #c060ff;
-  --color-danger:        #ff4060;
-  --grid-color:          rgba(192,96,255,0.06);
-  --shadow-panel:        0 0 0 1px rgba(192,96,255,0.08) inset,
-                         -3px 0 0 rgba(192,96,255,0.35) inset,
-                         0 20px 50px rgba(0,0,0,0.9),
-                         0 0 80px rgba(192,96,255,0.04);
-  --shadow-glow:         0 0 0 1px rgba(192,96,255,0.4), 0 0 30px rgba(192,96,255,0.2);
-  --panel-accent-top:    transparent;
-  --panel-clip:          polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  --panel-radius:        0;
-  --panel-left:          none;
+  --color-void:       #060410;
+  --color-hull:       #0c0820;
+  --color-panel:      #100c28;
+  --color-edge:       #221440;
+  --color-steel:      #302060;
+  --color-ink:        #ead8ff;
+  --color-muted:      #5840a0;
+  --color-quant:      #b848ff;
+  --color-quant-dim:  rgba(184,72,255,0.14);
+  --color-amber:      #f0a800;
+  --color-toxic:      #b848ff;
+  --color-danger:     #ff3060;
+  --grid-color:       rgba(184,72,255,0.06);
+  --shadow-panel:
+    -4px 0 0 rgba(184,72,255,0.4) inset,
+    0 0 0 1px rgba(184,72,255,0.08) inset,
+    0 0 80px rgba(184,72,255,0.05),
+    0 20px 50px rgba(0,0,0,0.98);
+  --shadow-glow:      0 0 0 1px rgba(184,72,255,0.5), 0 0 32px rgba(184,72,255,0.25);
+  --panel-clip:       polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  --panel-radius:     0;
+  --panel-left:       none;
+  --panel-accent-top: transparent;
 }
 html.theme-gatac body {
   background-image:
-    linear-gradient(45deg, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(45deg,  var(--grid-color) 1px, transparent 1px),
     linear-gradient(-45deg, var(--grid-color) 1px, transparent 1px);
-  background-size: 30px 30px;
+  background-size: 28px 28px;
 }
-html.theme-gatac .panel { padding-left: 1.25rem; padding-right: 1.25rem; }
-html.theme-gatac .field  {
+html.theme-gatac .panel {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+html.theme-gatac .field {
   border-radius: 0;
-  border-left: none;
-  border-right: 2px solid rgba(192,96,255,0.3);
+  border: none;
+  border-right: 2px solid rgba(184,72,255,0.35);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  padding-left: 18px;
+  padding-right: 18px;
+  background: rgba(184,72,255,0.06);
+}
+html.theme-gatac .tag {
+  border-radius: 0;
   clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  border-color: rgba(184,72,255,0.35);
   padding-left: 14px;
   padding-right: 14px;
+  color: #b848ff;
 }
-html.theme-gatac .tag    {
+html.theme-gatac .btn {
   border-radius: 0;
-  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
-  border-color: rgba(192,96,255,0.3);
-  padding-left: 12px;
-  padding-right: 12px;
+  letter-spacing: 0.1em;
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  padding-left: 24px;
+  padding-right: 24px;
 }
-html.theme-gatac .btn    {
-  border-radius: 0;
-  letter-spacing: 0.08em;
-  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  padding-left: 22px;
-  padding-right: 22px;
+html.theme-gatac .btn-primary {
+  background: rgba(184,72,255,0.2);
+  border: 1px solid rgba(184,72,255,0.6);
+  color: #e0a0ff;
+  box-shadow: 0 0 20px rgba(184,72,255,0.2);
 }
-html.theme-gatac .btn-primary { border-right: 2px solid rgba(192,96,255,0.8); }
-html.theme-gatac .label  { letter-spacing: 0.15em; color: rgba(192,96,255,0.7); }
+html.theme-gatac .label  { letter-spacing: 0.14em; color: rgba(184,72,255,0.7); }
+html.theme-gatac .eyebrow { color: rgba(184,72,255,0.6); letter-spacing: 0.22em; }
+/* Sidebar: asymmetric — right border slants via clip */
+html.theme-gatac aside {
+  border-right: none;
+  box-shadow: 4px 0 30px rgba(184,72,255,0.08), 2px 0 0 rgba(184,72,255,0.25);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 100%, 0 100%);
+}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   HORNET  —  Anvil Aerospace F7C military fighter
-   Warmth: gunmetal grey with electric-blue highlights
-   Shape:  opposite diagonal cuts (top-right + bottom-left — swept wing)
-   Grid:   diagonal hatch lines (-45°, tight 10 px)
+   HORNET  —  Anvil Aerospace F7C-M Super Hornet
+   Feeling: carrier-deck MILSPEC. Gunmetal grey, HUD blue, weapons-hot.
+            Every surface has a purpose. Zero decoration.
+   Colors:  gunmetal / deep navy, electric targeting blue
+   Shape:   swept-wing — top-right AND bottom-left bevels (fighter profile)
+   Grid:    tactical cross-hatch (-45°, tight 10 px)
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-hornet {
   color-scheme: dark;
-  --color-void:          #0a0c10;
-  --color-hull:          #121620;
-  --color-panel:         #181d28;
-  --color-edge:          #262e40;
-  --color-steel:         #364456;
-  --color-ink:           #d0e4f4;
-  --color-muted:         #506480;
-  --color-quant:         #40a8e0;
-  --color-quant-dim:     #185880;
-  --color-amber:         #58c8f8;
-  --color-toxic:         #48c878;
-  --color-danger:        #e04040;
-  --grid-color:          rgba(64,168,224,0.07);
-  --shadow-panel:        0 2px 0 rgba(64,168,224,0.35) inset,
-                         0 0 0 1px rgba(64,168,224,0.07) inset,
-                         0 8px 32px rgba(0,0,0,0.85),
-                         -2px 2px 8px rgba(0,0,0,0.5);
-  --shadow-glow:         0 0 0 1px rgba(64,168,224,0.5), 0 0 22px rgba(64,168,224,0.22);
-  --panel-accent-top:    rgba(64,168,224,0.7);
-  --panel-clip:          polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
-  --panel-radius:        0;
-  --panel-left:          none;
+  --color-void:       #06080e;
+  --color-hull:       #0e1220;
+  --color-panel:      #141826;
+  --color-edge:       #202840;
+  --color-steel:      #2e3a54;
+  --color-ink:        #c8d8f0;
+  --color-muted:      #486080;
+  --color-quant:      #2898d8;
+  --color-quant-dim:  rgba(40,152,216,0.15);
+  --color-amber:      #40b8f0;
+  --color-toxic:      #38c870;
+  --color-danger:     #e03030;
+  --grid-color:       rgba(40,152,216,0.06);
+  --shadow-panel:
+    0 3px 0 rgba(40,152,216,0.5) inset,
+    0 0 0 1px rgba(40,152,216,0.08) inset,
+    0 10px 40px rgba(0,0,0,0.9),
+    -2px 4px 0 rgba(0,0,0,0.4);
+  --shadow-glow:      0 0 0 1px rgba(40,152,216,0.6), 0 0 24px rgba(40,152,216,0.25);
+  --panel-clip:       polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px));
+  --panel-radius:     0;
+  --panel-left:       none;
+  --panel-accent-top: rgba(40,152,216,0.8);
 }
 html.theme-hornet body {
   background-image: repeating-linear-gradient(
     -45deg,
     transparent,
-    transparent 8px,
-    rgba(64,168,224,0.035) 8px,
-    rgba(64,168,224,0.035) 9px
+    transparent 7px,
+    rgba(40,152,216,0.04) 7px,
+    rgba(40,152,216,0.04) 8px
   );
-  background-size: auto;
 }
-html.theme-hornet .field  {
+html.theme-hornet .field {
   border-radius: 0;
-  border-top: 1px solid rgba(64,168,224,0.2);
+  border-top: 2px solid rgba(40,152,216,0.3);
   border-left: none;
-  border-bottom: 2px solid rgba(64,168,224,0.15);
+  border-bottom: 1px solid rgba(40,152,216,0.15);
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
 }
-html.theme-hornet .tag    {
+html.theme-hornet .tag {
   border-radius: 0;
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
-  border-color: rgba(64,168,224,0.3);
+  border-color: rgba(40,152,216,0.35);
+  color: #2898d8;
+  letter-spacing: 0.15em;
 }
-html.theme-hornet .btn    {
+html.theme-hornet .btn {
   border-radius: 0;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
 }
-html.theme-hornet .btn-primary { border-top: 2px solid rgba(64,168,224,0.9); }
-html.theme-hornet .label  { letter-spacing: 0.18em; }
+html.theme-hornet .btn-primary {
+  border-top: 2px solid rgba(40,152,216,0.9);
+  background: rgba(40,152,216,0.18);
+  color: #c8d8f0;
+}
+html.theme-hornet .btn-primary:hover { background: rgba(40,152,216,0.3); }
+html.theme-hornet .label  { letter-spacing: 0.22em; color: rgba(40,152,216,0.7); }
+html.theme-hornet .eyebrow { letter-spacing: 0.28em; }
+/* Sidebar: top accent stripe, military column */
+html.theme-hornet aside {
+  border-right: 1px solid #202840;
+  border-top: 3px solid rgba(40,152,216,0.7);
+  box-shadow: 3px 0 16px rgba(0,0,0,0.7);
+}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   ODIN TROOPER  —  Aegis Odin armored carrier
-   Warmth: military olive-black + Odin orange-red warning
-   Shape:  bottom-right bevel (armour plate, angled stern)
-   Grid:   radar dot-matrix (radial-gradient circles, 22 px)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-html.theme-odin {
-  color-scheme: dark;
-  --color-void:          #080a06;
-  --color-hull:          #0f1209;
-  --color-panel:         #161a10;
-  --color-edge:          #2a3018;
-  --color-steel:         #3c4828;
-  --color-ink:           #d0d8a8;
-  --color-muted:         #586040;
-  --color-quant:         #d84000;
-  --color-quant-dim:     #802000;
-  --color-amber:         #c04000;
-  --color-toxic:         #68a010;
-  --color-danger:        #e01010;
-  --grid-color:          rgba(216,64,0,0.08);
-  --shadow-panel:        0 0 0 1px rgba(216,64,0,0.12) inset,
-                         0 -3px 0 rgba(216,64,0,0.5) inset,
-                         0 10px 36px rgba(0,0,0,0.9),
-                         2px 4px 0 rgba(0,0,0,0.5);
-  --shadow-glow:         0 0 0 1px rgba(216,64,0,0.5), 0 0 22px rgba(216,64,0,0.18);
-  --panel-accent-top:    transparent;
-  --panel-clip:          polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
-  --panel-radius:        0;
-  --panel-left:          4px solid rgba(216,64,0,0.8);
-}
-html.theme-odin body {
-  background-image: radial-gradient(circle, rgba(216,64,0,0.12) 1px, transparent 1px);
-  background-size: 22px 22px;
-}
-html.theme-odin .field  {
-  border-radius: 0;
-  border-left: 3px solid rgba(216,64,0,0.4);
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
-}
-html.theme-odin .tag    {
-  border-radius: 0;
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
-  border-color: rgba(216,64,0,0.4);
-}
-html.theme-odin .btn    { border-radius: 0; letter-spacing: 0.16em; }
-html.theme-odin .btn-primary {
-  border-bottom: 2px solid rgba(216,64,0,0.9);
-  border-right: 2px solid rgba(216,64,0,0.6);
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
-}
-html.theme-odin .btn-ghost {
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
-}
-html.theme-odin .label  { letter-spacing: 0.22em; }
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   BASE STYLES
+   BASE STYLES  (shared component tokens)
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html, body {
   background-color: var(--color-void);
   color: var(--color-ink);
-  transition: background-color 0.25s, color 0.25s;
+  transition: background-color 0.3s, color 0.3s;
 }
 body {
   font-family: theme("fontFamily.body");
-  background-image: linear-gradient(var(--grid-color) 1px, transparent 1px),
-                    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
   background-size: 44px 44px;
 }
 
@@ -393,8 +421,7 @@ body {
     @apply font-mono text-[11px] uppercase tracking-[0.25em] text-muted;
   }
   .field {
-    @apply w-full rounded-md border border-edge bg-hull px-3 py-2 text-sm text-ink
-      outline-none transition;
+    @apply w-full rounded-md border border-edge bg-hull px-3 py-2 text-sm text-ink outline-none transition;
   }
   .field::placeholder { color: var(--color-muted); opacity: 0.6; }
   .field:focus {

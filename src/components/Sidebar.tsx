@@ -3,11 +3,11 @@ import { usePage, useLang } from "../App";
 import CrestLogo from "./CrestLogo";
 
 const themes = [
-  { key: "mole",    color: "#f97316", title: "Mole"    },
-  { key: "cockpit", color: "#22c55e", title: "Cockpit" },
-  { key: "origin",  color: "#7dd3fc", title: "Origin"  },
-  { key: "gatac",   color: "#a855f7", title: "Gatac"   },
-  { key: "hornet",  color: "#3b82f6", title: "Hornet"  },
+  { key: "mole",    color: "#e05010", title: "Mole — ARGO Industrial"    },
+  { key: "cockpit", color: "#50e828", title: "Cockpit — RSI Terminal"    },
+  { key: "origin",  color: "#0e6faa", title: "Origin — Luxury Yacht"    },
+  { key: "gatac",   color: "#b848ff", title: "Gatac — Alien Tech"        },
+  { key: "hornet",  color: "#2898d8", title: "Hornet — Anvil Military"   },
 ];
 
 const navItems = [
