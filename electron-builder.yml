@@ -1,0 +1,51 @@
+appId: com.haqpy.citizen-hub
+productName: Citizen Hub
+copyright: Copyright © 2025 haqpy
+
+directories:
+  output: dist-app
+  buildResources: build-resources
+
+files:
+  - dist-electron/**
+  - "!**/*.ts"
+
+extraResources:
+  - from: .next/standalone
+    to: app
+    filter:
+      - "**/*"
+  - from: .next/static
+    to: app/.next/static
+    filter:
+      - "**/*"
+  - from: public
+    to: app/public
+    filter:
+      - "**/*"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build-resources/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Citizen Hub
+  installerIcon: build-resources/icon.ico
+  uninstallerIcon: build-resources/icon.ico
+  installerHeaderIcon: build-resources/icon.ico
+  deleteAppDataOnUninstall: false
+  language: "1031"
+
+publish:
+  provider: github
+  owner: haqpy1337
+  repo: hMA
+  releaseType: release
