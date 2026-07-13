@@ -51,6 +51,8 @@ declare global {
       checkForUpdates(): Promise<{ ok: boolean; error?: string }>;
       fetchNews(): Promise<{ ok: boolean; source?: string; items: { title: string; link: string; date: string }[] }>;
       getVersion(): Promise<string>;
+      getZoom(): Promise<number>;
+      setZoom(factor: number): Promise<void>;
       dbPing(): Promise<boolean>;
     };
   }

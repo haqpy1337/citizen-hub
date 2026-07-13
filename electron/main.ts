@@ -18,6 +18,20 @@ const sessions = new Map<string, string>(); // token → userId
 let db: Database;
 let dbPath: string;
 
+// ── Settings (persisted JSON) ─────────────────────────────────────────────────
+
+interface AppSettings { zoom?: number }
+let settingsPath: string;
+let settings: AppSettings = {};
+
+function loadSettings() {
+  settingsPath = path.join(app.getPath("userData"), "settings.json");
+  try { settings = JSON.parse(fs.readFileSync(settingsPath, "utf8")); } catch { settings = {}; }
+}
+function saveSettings() {
+  try { fs.writeFileSync(settingsPath, JSON.stringify(settings)); } catch {}
+}
+
 // ── Paths ────────────────────────────────────────────────────────────────────
 
 function dataDir() {
@@ -202,6 +216,13 @@ function registerIpc() {
 
   ipcMain.handle("app:version", () => app.getVersion());
 
+  ipcMain.handle("app:getZoom", () => settings.zoom ?? 1);
+  ipcMain.handle("app:setZoom", (_e, factor: number) => {
+    settings.zoom = Math.max(0.5, Math.min(2, factor));
+    saveSettings();
+    mainWindow?.webContents.setZoomFactor(settings.zoom);
+  });
+
   ipcMain.handle("db:ping", () => {
     const row = get<{ result: number }>("SELECT 1 AS result");
     return row?.result === 1;
@@ -251,6 +272,9 @@ async function createWindow() {
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: "deny" }; });
+  mainWindow.webContents.on("did-finish-load", () => {
+    if (settings.zoom && settings.zoom !== 1) mainWindow?.webContents.setZoomFactor(settings.zoom);
+  });
   mainWindow.once("ready-to-show", () => mainWindow?.show());
 
   if (!app.isPackaged) {
@@ -288,6 +312,7 @@ process.on("uncaughtException", (err) => {
 
 app.whenReady().then(async () => {
   try {
+    loadSettings();
     await initDb();
     registerIpc();
     await createWindow();
