@@ -4,6 +4,7 @@ import anime from "animejs";
 interface Props { onComplete: () => void }
 
 type CheckStatus = "pending" | "running" | "ok" | "fail";
+type UpdateState = "checking" | "uptodate" | "available" | "downloaded" | "error";
 
 interface Check {
   label: string;
@@ -26,9 +27,7 @@ const CHECKS: Check[] = [
           signal: AbortSignal.timeout(5000),
         });
         return r.ok;
-      } catch {
-        return false;
-      }
+      } catch { return false; }
     },
   },
   {
@@ -40,9 +39,7 @@ const CHECKS: Check[] = [
           signal: AbortSignal.timeout(5000),
         });
         return r.ok;
-      } catch {
-        return false;
-      }
+      } catch { return false; }
     },
   },
   {
@@ -54,57 +51,41 @@ const CHECKS: Check[] = [
 
 export default function BootScreen({ onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [statuses, setStatuses] = useState<CheckStatus[]>(CHECKS.map(() => "pending"));
-  const [progress, setProgress] = useState(0);
+  const [statuses, setStatuses]   = useState<CheckStatus[]>(CHECKS.map(() => "pending"));
+  const [progress, setProgress]   = useState(0);
+  const [ready, setReady]         = useState(false);          // all checks done
+  const [version, setVersion]     = useState<string | null>(null);
+  const [updateState, setUpdateState] = useState<UpdateState>("checking");
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+
+  // Listen for update events from main process
+  useEffect(() => {
+    window.api.onUpdateAvailable((v) => { setUpdateVersion(v); setUpdateState("available"); });
+    window.api.onUpdateDownloaded((v) => { setUpdateVersion(v); setUpdateState("downloaded"); });
+    window.api.onUpdateError(() => setUpdateState("error"));
+    window.api.onUpdateNotAvailable(() => setUpdateState("uptodate"));
+  }, []);
 
   useEffect(() => {
+    // Fetch version
+    window.api.getVersion().then(setVersion).catch(() => {});
+
     // Phase 1: intro animation
     const tl = anime.timeline({ easing: "easeOutExpo" });
     tl
       .add({ targets: ".boot-grid", opacity: [0, 1], duration: 700 })
-      .add({
-        targets: ".boot-corner-h",
-        scaleX: [0, 1],
-        duration: 350,
-        delay: anime.stagger(60),
-        easing: "easeOutQuad",
-      }, "-=300")
-      .add({
-        targets: ".boot-corner-v",
-        scaleY: [0, 1],
-        duration: 350,
-        delay: anime.stagger(60),
-        easing: "easeOutQuad",
-      }, "-=400")
-      .add({
-        targets: ".boot-ring",
-        strokeDashoffset: [anime.setDashoffset, 0],
-        opacity: [0, 1],
-        duration: 700,
-        delay: anime.stagger(120),
-        easing: "easeInOutSine",
-      }, "-=200")
-      .add({
-        targets: ".boot-star",
-        opacity: [0, 1],
-        scale: [0.2, 1],
-        duration: 500,
-        easing: "easeOutBack",
-      }, "-=300")
+      .add({ targets: ".boot-corner-h", scaleX: [0, 1], duration: 350, delay: anime.stagger(60), easing: "easeOutQuad" }, "-=300")
+      .add({ targets: ".boot-corner-v", scaleY: [0, 1], duration: 350, delay: anime.stagger(60), easing: "easeOutQuad" }, "-=400")
+      .add({ targets: ".boot-ring", strokeDashoffset: [anime.setDashoffset, 0], opacity: [0, 1], duration: 700, delay: anime.stagger(120), easing: "easeInOutSine" }, "-=200")
+      .add({ targets: ".boot-star", opacity: [0, 1], scale: [0.2, 1], duration: 500, easing: "easeOutBack" }, "-=300")
       .add({ targets: ".boot-dot", scale: [0, 1], opacity: [0, 1], duration: 300, easing: "easeOutBack" }, "-=150")
       .add({ targets: ".boot-citizen", opacity: [0, 1], translateX: [-24, 0], duration: 500 }, "-=150")
-      .add({ targets: ".boot-hub",     opacity: [0, 1], translateX: [-16, 0], duration: 400 }, "-=350")
+      .add({ targets: ".boot-hub", opacity: [0, 1], translateX: [-16, 0], duration: 400 }, "-=350")
       .add({ targets: ".boot-divider", scaleX: [0, 1], duration: 500, easing: "easeOutQuad" }, "-=150")
-      .add({
-        targets: ".boot-row",
-        opacity: [0, 1],
-        translateY: [8, 0],
-        duration: 300,
-        delay: anime.stagger(100),
-      }, "-=100")
+      .add({ targets: ".boot-row", opacity: [0, 1], translateY: [8, 0], duration: 300, delay: anime.stagger(100) }, "-=100")
       .add({ targets: ".boot-bar-track", opacity: [0, 1], duration: 300 });
 
-    // Phase 2: run checks sequentially after intro (≈2s)
+    // Phase 2: sequential checks
     let cancelled = false;
     const runChecks = async () => {
       await new Promise(r => setTimeout(r, 1800));
@@ -113,52 +94,51 @@ export default function BootScreen({ onComplete }: Props) {
       for (let i = 0; i < CHECKS.length; i++) {
         if (cancelled) return;
         const check = CHECKS[i];
-
-        // Mark as running
         setStatuses(prev => { const n = [...prev]; n[i] = "running"; return n; });
-
-        // Run real check + enforce minimum display time
         const [result] = await Promise.all([
           check.run(),
           new Promise(r => setTimeout(r, check.minMs)),
         ]);
         if (cancelled) return;
-
         setStatuses(prev => { const n = [...prev]; n[i] = result ? "ok" : "fail"; return n; });
-
-        // Update progress bar
-        const pct = Math.round(((i + 1) / CHECKS.length) * 100);
-        setProgress(pct);
-
-        // Small pause between checks
+        setProgress(Math.round(((i + 1) / CHECKS.length) * 100));
         await new Promise(r => setTimeout(r, 300));
         if (cancelled) return;
       }
 
-      // All done — wait a beat, then flash & exit
-      await new Promise(r => setTimeout(r, 600));
+      // Show START button + footer
+      await new Promise(r => setTimeout(r, 400));
       if (cancelled) return;
-
+      setReady(true);
       anime({
-        targets: ".boot-flash",
-        opacity: [0, 0.5, 0],
-        duration: 400,
-        easing: "easeInOutSine",
-        complete: () => {
-          if (cancelled) return;
-          anime({
-            targets: containerRef.current,
-            opacity: [1, 0],
-            duration: 350,
-            complete: onComplete,
-          });
-        },
+        targets: ".boot-ready",
+        opacity: [0, 1],
+        translateY: [12, 0],
+        duration: 500,
+        easing: "easeOutExpo",
       });
     };
 
     runChecks();
     return () => { cancelled = true; tl.pause(); };
-  }, [onComplete]);
+  }, []);
+
+  function handleStart() {
+    anime({
+      targets: ".boot-flash",
+      opacity: [0, 0.5, 0],
+      duration: 400,
+      easing: "easeInOutSine",
+      complete: () => {
+        anime({
+          targets: containerRef.current,
+          opacity: [1, 0],
+          duration: 350,
+          complete: onComplete,
+        });
+      },
+    });
+  }
 
   const statusColor = (s: CheckStatus) => {
     if (s === "pending") return "text-emerald-500/25";
@@ -177,7 +157,7 @@ export default function BootScreen({ onComplete }: Props) {
   return (
     <div ref={containerRef} className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden select-none">
 
-      {/* Animated grid */}
+      {/* Grid */}
       <div className="boot-grid absolute inset-0 opacity-0 pointer-events-none" style={{
         backgroundImage: `linear-gradient(rgba(16,185,129,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(16,185,129,.05) 1px,transparent 1px)`,
         backgroundSize: "44px 44px",
@@ -185,34 +165,31 @@ export default function BootScreen({ onComplete }: Props) {
 
       {/* Scan line */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div style={{ animation: "scanline 2.5s linear .4s forwards", position:"absolute", width:"100%", height:"1px", background:"linear-gradient(90deg,transparent,rgba(16,185,129,.4),transparent)", top:0 }} />
+        <div style={{ animation: "scanline 2.5s linear .4s forwards", position: "absolute", width: "100%", height: "1px", background: "linear-gradient(90deg,transparent,rgba(16,185,129,.4),transparent)", top: 0 }} />
       </div>
 
-      {/* Corners — top-left */}
+      {/* Corners */}
       <div className="absolute top-6 left-6 pointer-events-none">
         <span className="boot-corner-h block h-px w-10 bg-emerald-500 origin-left" />
         <span className="boot-corner-v block w-px h-10 bg-emerald-500 origin-top -mt-px" />
       </div>
-      {/* top-right */}
       <div className="absolute top-6 right-6 pointer-events-none flex flex-col items-end">
         <span className="boot-corner-h block h-px w-10 bg-emerald-500 origin-right" />
         <span className="boot-corner-v block w-px h-10 bg-emerald-500 origin-top -mt-px" />
       </div>
-      {/* bottom-left */}
       <div className="absolute bottom-6 left-6 pointer-events-none flex flex-col-reverse">
         <span className="boot-corner-h block h-px w-10 bg-emerald-500 origin-left" />
         <span className="boot-corner-v block w-px h-10 bg-emerald-500 origin-bottom -mb-px" />
       </div>
-      {/* bottom-right */}
       <div className="absolute bottom-6 right-6 pointer-events-none flex flex-col-reverse items-end">
         <span className="boot-corner-h block h-px w-10 bg-emerald-500 origin-right" />
         <span className="boot-corner-v block w-px h-10 bg-emerald-500 origin-bottom -mb-px" />
       </div>
 
-      {/* Center */}
+      {/* Center content */}
       <div className="relative flex flex-col items-center gap-7 w-72">
 
-        {/* Compass logo */}
+        {/* Logo */}
         <svg width="110" height="110" viewBox="0 0 110 110" fill="none">
           <circle className="boot-ring" cx="55" cy="55" r="50" stroke="#10b981" strokeWidth="0.7" opacity="0.2" />
           <circle className="boot-ring" cx="55" cy="55" r="38" stroke="#10b981" strokeWidth="1"   opacity="0.45" />
@@ -233,10 +210,9 @@ export default function BootScreen({ onComplete }: Props) {
           <div className="boot-hub opacity-0 text-emerald-400 text-sm font-semibold mt-0.5" style={{ letterSpacing: "0.65em" }}>HUB</div>
         </div>
 
-        {/* Divider */}
         <div className="boot-divider w-full h-px bg-emerald-500/20 origin-left" />
 
-        {/* Status checks */}
+        {/* Checks */}
         <div className="w-full flex flex-col gap-2.5">
           {CHECKS.map((c, i) => (
             <div key={i} className="boot-row opacity-0 flex justify-between items-center text-xs font-mono">
@@ -246,7 +222,7 @@ export default function BootScreen({ onComplete }: Props) {
           ))}
         </div>
 
-        {/* Progress bar — driven by real check progress */}
+        {/* Progress bar */}
         <div className="boot-bar-track w-full opacity-0">
           <div className="relative w-full h-px bg-emerald-900/50 overflow-hidden">
             <div
@@ -259,9 +235,24 @@ export default function BootScreen({ onComplete }: Props) {
             <span>{progress}%</span>
           </div>
         </div>
+
+        {/* START button — appears after all checks */}
+        <div className="boot-ready opacity-0 w-full flex flex-col items-center gap-2">
+          <button
+            onClick={handleStart}
+            className="w-full py-2.5 text-sm font-mono font-semibold tracking-[0.25em] uppercase border border-emerald-500/60 text-emerald-400 rounded hover:bg-emerald-500/10 hover:border-emerald-400 transition-all active:scale-95"
+          >
+            — ENTER —
+          </button>
+        </div>
       </div>
 
-      {/* Flash overlay */}
+      {/* Bottom bar: version + update status */}
+      <div className="boot-ready opacity-0 absolute bottom-8 left-0 right-0 flex items-center justify-between px-10 text-[10px] font-mono text-emerald-500/40">
+        <span>v{version ?? "…"}</span>
+        <UpdateFooter state={updateState} version={updateVersion} onInstall={handleStart} />
+      </div>
+
       <div className="boot-flash fixed inset-0 bg-emerald-400 opacity-0 pointer-events-none" />
 
       <style>{`
@@ -274,4 +265,24 @@ export default function BootScreen({ onComplete }: Props) {
       `}</style>
     </div>
   );
+}
+
+function UpdateFooter({ state, version, onInstall }: {
+  state: UpdateState;
+  version: string | null;
+  onInstall: () => void;
+}) {
+  if (state === "checking")   return <span className="animate-pulse">CHECKING FOR UPDATES…</span>;
+  if (state === "uptodate")   return <span className="text-emerald-500/30">UP TO DATE</span>;
+  if (state === "error")      return <span className="text-red-400/60">UPDATE CHECK FAILED</span>;
+  if (state === "available")  return <span className="text-emerald-400/70 animate-pulse">DOWNLOADING v{version}…</span>;
+  if (state === "downloaded") return (
+    <button
+      onClick={e => { e.stopPropagation(); onInstall(); }}
+      className="text-emerald-400 border border-emerald-500/40 px-3 py-0.5 rounded hover:bg-emerald-500/10 transition-colors"
+    >
+      v{version} READY — INSTALL &amp; RESTART
+    </button>
+  );
+  return null;
 }

@@ -199,6 +199,8 @@ function registerIpc() {
     catch (e) { return { ok: false, error: String(e) }; }
   });
 
+  ipcMain.handle("app:version", () => app.getVersion());
+
   ipcMain.handle("news:fetch", async () => {
     try {
       // RSI Comm-Link RSS feed

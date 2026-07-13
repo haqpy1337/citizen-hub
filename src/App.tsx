@@ -7,7 +7,6 @@ import HistoryPage from "./pages/History";
 import OresPage from "./pages/Ores";
 import RefineriesPage from "./pages/Refineries";
 import Sidebar from "./components/Sidebar";
-import UpdateBanner from "./components/UpdateBanner";
 import { Lang } from "./lib/i18n";
 
 export type Page = "dashboard" | "jobs" | "history" | "ores" | "refineries";
@@ -69,7 +68,6 @@ export default function App() {
               {pageMap[page]}
             </main>
           </div>
-          <UpdateBanner />
         </PageContext.Provider>
       </AuthContext.Provider>
     </LangContext.Provider>

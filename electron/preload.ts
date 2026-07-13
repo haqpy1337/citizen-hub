@@ -24,4 +24,5 @@ contextBridge.exposeInMainWorld("api", {
   installUpdate: () => ipcRenderer.invoke("install-update"),
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   fetchNews: () => ipcRenderer.invoke("news:fetch"),
+  getVersion: () => ipcRenderer.invoke("app:version"),
 });

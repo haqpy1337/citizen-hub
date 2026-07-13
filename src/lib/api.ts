@@ -50,6 +50,7 @@ declare global {
       installUpdate(): Promise<void>;
       checkForUpdates(): Promise<{ ok: boolean; error?: string }>;
       fetchNews(): Promise<{ ok: boolean; source?: string; items: { title: string; link: string; date: string }[] }>;
+      getVersion(): Promise<string>;
     };
   }
 }
