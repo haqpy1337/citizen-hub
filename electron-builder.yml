@@ -9,6 +9,7 @@ directories:
 files:
   - dist-electron/**
   - "!**/*.ts"
+  - "!**/*.map"
 
 extraResources:
   - from: .next/standalone
@@ -23,6 +24,11 @@ extraResources:
     to: app/public
     filter:
       - "**/*"
+
+asarUnpack:
+  - "**/*.node"
+  - "**/node_modules/@prisma/engines/**"
+  - "**/node_modules/.prisma/**"
 
 win:
   target:
@@ -43,6 +49,9 @@ nsis:
   installerHeaderIcon: build-resources/icon.ico
   deleteAppDataOnUninstall: false
   language: "1031"
+  installerLanguages:
+    - en_US
+    - de_DE
 
 publish:
   provider: github
