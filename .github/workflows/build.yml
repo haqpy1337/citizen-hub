@@ -25,8 +25,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Rebuild native modules for Electron
         run: npx electron-builder install-app-deps
+        env:
+          GYP_MSVS_VERSION: "2022"
 
       - name: Build renderer (Vite)
         run: npx vite build
