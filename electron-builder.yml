@@ -26,8 +26,7 @@ files:
   - "!node_modules/png-to-ico/**"
 
 asarUnpack:
-  - "**/*.node"
-  - "**/better-sqlite3/**"
+  - "**/sql.js/dist/sql-wasm.wasm"
 
 win:
   target:
