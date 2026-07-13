@@ -8,27 +8,26 @@ directories:
 
 files:
   - dist-electron/**
+  - dist-renderer/**
+  - node_modules/**
   - "!**/*.ts"
   - "!**/*.map"
-
-extraResources:
-  - from: .next/standalone
-    to: app
-    filter:
-      - "**/*"
-  - from: .next/static
-    to: app/.next/static
-    filter:
-      - "**/*"
-  - from: public
-    to: app/public
-    filter:
-      - "**/*"
+  - "!node_modules/@types/**"
+  - "!node_modules/typescript/**"
+  - "!node_modules/vite/**"
+  - "!node_modules/@vitejs/**"
+  - "!node_modules/electron-builder/**"
+  - "!node_modules/tailwindcss/**"
+  - "!node_modules/postcss/**"
+  - "!node_modules/autoprefixer/**"
+  - "!node_modules/concurrently/**"
+  - "!node_modules/wait-on/**"
+  - "!node_modules/sharp/**"
+  - "!node_modules/png-to-ico/**"
 
 asarUnpack:
   - "**/*.node"
-  - "**/node_modules/@prisma/engines/**"
-  - "**/node_modules/.prisma/**"
+  - "**/better-sqlite3/**"
 
 win:
   target:
@@ -48,7 +47,6 @@ nsis:
   uninstallerIcon: build-resources/icon.ico
   installerHeaderIcon: build-resources/icon.ico
   deleteAppDataOnUninstall: false
-  language: "1031"
   installerLanguages:
     - en_US
     - de_DE

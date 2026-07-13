@@ -1,0 +1,424 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Loading screen keyframes ───────────────────────────────────────────────── */
+@keyframes ls-fade    { from { opacity: 0 } to { opacity: 1 } }
+@keyframes ls-up      { from { opacity: 0; transform: translateY(-20px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes ls-in      { from { opacity: 0; transform: translateX(520px) } to { opacity: 1; transform: translateX(0) } }
+@keyframes ls-warp    { to   { opacity: 0; transform: translateX(-1400px) scaleX(5) } }
+@keyframes ls-out     { to   { opacity: 0 } }
+@keyframes ls-ctleft  { from { opacity: 0; transform: translate(-14px,-14px) } to { opacity: 1; transform: translate(0,0) } }
+@keyframes ls-ctright { from { opacity: 0; transform: translate(14px,-14px)  } to { opacity: 1; transform: translate(0,0) } }
+@keyframes ls-cbleft  { from { opacity: 0; transform: translate(-14px,14px)  } to { opacity: 1; transform: translate(0,0) } }
+@keyframes ls-cbright { from { opacity: 0; transform: translate(14px,14px)   } to { opacity: 1; transform: translate(0,0) } }
+@keyframes ls-pulse   { 0%,100% { transform: scale(1);   opacity: .7 }
+                        50%     { transform: scale(1.5,1.4); opacity: 1 } }
+@keyframes ls-flash   { 0%  { opacity: 0 }
+                        40% { opacity: .8 }
+                        100%{ opacity: 0 } }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MOLE  —  ARGO Astronautics industrial workhorse
+   Warmth: burnt orange / rust over near-black carbon
+   Shape:  top-right bevel (heavy hull plate)
+   Grid:   coarse orange square grid (40 px)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+:root {
+  color-scheme: dark;
+  --color-void:          #090806;
+  --color-hull:          #141210;
+  --color-panel:         #211e1a;
+  --color-edge:          #3a342d;
+  --color-steel:         #4a4440;
+  --color-ink:           #ede4d4;
+  --color-muted:         #6a6058;
+  --color-quant:         #d94a0a;
+  --color-quant-dim:     rgba(217,74,10,0.14);
+  --color-amber:         #e07800;
+  --color-toxic:         #5aaa30;
+  --color-danger:        #e02010;
+  --grid-color:          rgba(217,74,10,0.06);
+  --shadow-panel:        3px 0 0 0 rgba(217,74,10,0.55) inset,
+                         0 0 0 1px rgba(217,74,10,0.12) inset,
+                         0 8px 32px rgba(0,0,0,0.9),
+                         0 2px 8px rgba(0,0,0,0.6);
+  --shadow-glow:         0 0 0 1px rgba(217,74,10,0.6), 0 0 20px rgba(217,74,10,0.25);
+  --panel-accent-top:    transparent;
+  --panel-clip:          polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+  --panel-radius:        0;
+  --panel-left:          3px solid rgba(217,74,10,0.7);
+}
+html:not([class*="theme-"]) .field  {
+  border-radius: 0;
+  border-left: 3px solid rgba(217,74,10,0.45);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+html:not([class*="theme-"]) .tag    {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+}
+html:not([class*="theme-"]) .btn    { border-radius: 0; letter-spacing: 0.14em; }
+html:not([class*="theme-"]) .btn-primary { border-right: 2px solid rgba(217,74,10,0.9); }
+html:not([class*="theme-"]) .label  { letter-spacing: 0.2em; }
+html:not([class*="theme-"]) body    {
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   COCKPIT  —  RSI Aurora retro-HUD / terminal
+   Warmth: amber-green phosphor on near-black
+   Shape:  perfect rectangle + inner scan-line border, no clip
+   Grid:   horizontal scanlines (2 px bands, 4 px gap)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html.theme-cockpit {
+  color-scheme: dark;
+  --color-void:          #040805;
+  --color-hull:          #080f09;
+  --color-panel:         #0b160c;
+  --color-edge:          #163018;
+  --color-steel:         #1e4820;
+  --color-ink:           #a8e890;
+  --color-muted:         #4a7840;
+  --color-quant:         #60e840;
+  --color-quant-dim:     #247010;
+  --color-amber:         #c8e040;
+  --color-toxic:         #40e880;
+  --color-danger:        #e84040;
+  --grid-color:          rgba(96,232,64,0.06);
+  --shadow-panel:        0 0 0 1px rgba(96,232,64,0.15) inset,
+                         0 0 0 3px rgba(96,232,64,0.05) inset,
+                         0 4px 32px rgba(0,0,0,0.9),
+                         0 0 60px rgba(96,232,64,0.03);
+  --shadow-glow:         0 0 0 1px rgba(96,232,64,0.5), 0 0 16px rgba(96,232,64,0.3);
+  --panel-accent-top:    rgba(96,232,64,0.4);
+  --panel-clip:          none;
+  --panel-radius:        0;
+  --panel-left:          1px solid rgba(96,232,64,0.25);
+}
+html.theme-cockpit body {
+  font-family: 'Courier New', 'Consolas', monospace;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(96,232,64,0.025) 3px,
+    rgba(96,232,64,0.025) 4px
+  );
+  background-size: 100% 4px;
+}
+html.theme-cockpit .field  {
+  border-radius: 0;
+  border: 1px solid rgba(96,232,64,0.25);
+  border-left: 1px solid rgba(96,232,64,0.25);
+  font-family: 'Courier New', monospace;
+}
+html.theme-cockpit .tag    {
+  border-radius: 0;
+  border: 1px solid rgba(96,232,64,0.3);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.15em;
+}
+html.theme-cockpit .btn    { border-radius: 0; font-family: 'Courier New', monospace; letter-spacing: 0.15em; }
+html.theme-cockpit .btn-primary { border: 1px solid rgba(96,232,64,0.8); box-shadow: 0 0 12px rgba(96,232,64,0.2); }
+html.theme-cockpit .label  { letter-spacing: 0.3em; font-family: 'Courier New', monospace; }
+html.theme-cockpit .eyebrow { font-family: 'Courier New', monospace; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ORIGIN  —  Origin Jumpworks 890 Jump luxury yacht
+   Warmth: deep navy / charcoal with ice-blue glow + gold trim
+   Shape:  all 8 corners chamfered — gemstone precision
+   Grid:   very fine diamond grid (18 px, rotated 45°)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html.theme-origin {
+  color-scheme: light;
+  --color-void:          #eef0f2;
+  --color-hull:          #f8f9fa;
+  --color-panel:         #ffffff;
+  --color-edge:          #d4d8de;
+  --color-steel:         #a8b0bc;
+  --color-ink:           #1a1e24;
+  --color-muted:         #6a7480;
+  --color-quant:         #1a7ab0;
+  --color-quant-dim:     #c0ddf0;
+  --color-amber:         #c07800;
+  --color-toxic:         #208050;
+  --color-danger:        #c02020;
+  --grid-color:          rgba(26,122,176,0.06);
+  --shadow-panel:        0 0 0 1px rgba(26,122,176,0.08) inset,
+                         0 1px 0 #ffffff,
+                         0 2px 8px rgba(0,0,0,0.08),
+                         0 8px 24px rgba(0,0,0,0.06);
+  --shadow-glow:         0 0 0 2px rgba(26,122,176,0.4), 0 0 16px rgba(26,122,176,0.15);
+  --panel-accent-top:    transparent;
+  --panel-clip:          none;
+  --panel-radius:        0.75rem;
+  --panel-left:          none;
+}
+html.theme-origin body {
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+html.theme-origin .panel {
+  border: 1px solid #d4d8de;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05);
+}
+html.theme-origin .field  {
+  border-radius: 0.5rem;
+  border: 1px solid #c8cdd4;
+  background: #f4f6f8;
+}
+html.theme-origin .field:focus { border-color: #1a7ab0; }
+html.theme-origin .tag    {
+  border-radius: 9999px;
+  border-color: #c0ccd8;
+  background: #eef4f8;
+  color: #1a7ab0;
+}
+html.theme-origin .btn         { border-radius: 0.5rem; letter-spacing: 0.05em; }
+html.theme-origin .btn-primary { background: #1a7ab0; color: #fff; }
+html.theme-origin .btn-ghost   { border-color: #c8cdd4; color: #1a1e24; }
+html.theme-origin .label       { letter-spacing: 0.15em; color: #6a7480; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GATAC  —  Gatac Manufacture alien/organic aesthetic
+   Warmth: deep void-black with violet-magenta bioluminescence
+   Shape:  parallelogram — left side slanted (truly alien geometry)
+   Grid:   diagonal 45° grid (30 px)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html.theme-gatac {
+  color-scheme: dark;
+  --color-void:          #09070f;
+  --color-hull:          #100d1c;
+  --color-panel:         #140f22;
+  --color-edge:          #2a1850;
+  --color-steel:         #3a2268;
+  --color-ink:           #e8d8ff;
+  --color-muted:         #6850a0;
+  --color-quant:         #c060ff;
+  --color-quant-dim:     #601888;
+  --color-amber:         #f0a000;
+  --color-toxic:         #c060ff;
+  --color-danger:        #ff4060;
+  --grid-color:          rgba(192,96,255,0.06);
+  --shadow-panel:        0 0 0 1px rgba(192,96,255,0.08) inset,
+                         -3px 0 0 rgba(192,96,255,0.35) inset,
+                         0 20px 50px rgba(0,0,0,0.9),
+                         0 0 80px rgba(192,96,255,0.04);
+  --shadow-glow:         0 0 0 1px rgba(192,96,255,0.4), 0 0 30px rgba(192,96,255,0.2);
+  --panel-accent-top:    transparent;
+  --panel-clip:          polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  --panel-radius:        0;
+  --panel-left:          none;
+}
+html.theme-gatac body {
+  background-image:
+    linear-gradient(45deg, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(-45deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+html.theme-gatac .panel { padding-left: 1.25rem; padding-right: 1.25rem; }
+html.theme-gatac .field  {
+  border-radius: 0;
+  border-left: none;
+  border-right: 2px solid rgba(192,96,255,0.3);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  padding-left: 14px;
+  padding-right: 14px;
+}
+html.theme-gatac .tag    {
+  border-radius: 0;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  border-color: rgba(192,96,255,0.3);
+  padding-left: 12px;
+  padding-right: 12px;
+}
+html.theme-gatac .btn    {
+  border-radius: 0;
+  letter-spacing: 0.08em;
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  padding-left: 22px;
+  padding-right: 22px;
+}
+html.theme-gatac .btn-primary { border-right: 2px solid rgba(192,96,255,0.8); }
+html.theme-gatac .label  { letter-spacing: 0.15em; color: rgba(192,96,255,0.7); }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HORNET  —  Anvil Aerospace F7C military fighter
+   Warmth: gunmetal grey with electric-blue highlights
+   Shape:  opposite diagonal cuts (top-right + bottom-left — swept wing)
+   Grid:   diagonal hatch lines (-45°, tight 10 px)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html.theme-hornet {
+  color-scheme: dark;
+  --color-void:          #0a0c10;
+  --color-hull:          #121620;
+  --color-panel:         #181d28;
+  --color-edge:          #262e40;
+  --color-steel:         #364456;
+  --color-ink:           #d0e4f4;
+  --color-muted:         #506480;
+  --color-quant:         #40a8e0;
+  --color-quant-dim:     #185880;
+  --color-amber:         #58c8f8;
+  --color-toxic:         #48c878;
+  --color-danger:        #e04040;
+  --grid-color:          rgba(64,168,224,0.07);
+  --shadow-panel:        0 2px 0 rgba(64,168,224,0.35) inset,
+                         0 0 0 1px rgba(64,168,224,0.07) inset,
+                         0 8px 32px rgba(0,0,0,0.85),
+                         -2px 2px 8px rgba(0,0,0,0.5);
+  --shadow-glow:         0 0 0 1px rgba(64,168,224,0.5), 0 0 22px rgba(64,168,224,0.22);
+  --panel-accent-top:    rgba(64,168,224,0.7);
+  --panel-clip:          polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+  --panel-radius:        0;
+  --panel-left:          none;
+}
+html.theme-hornet body {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(64,168,224,0.035) 8px,
+    rgba(64,168,224,0.035) 9px
+  );
+  background-size: auto;
+}
+html.theme-hornet .field  {
+  border-radius: 0;
+  border-top: 1px solid rgba(64,168,224,0.2);
+  border-left: none;
+  border-bottom: 2px solid rgba(64,168,224,0.15);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+html.theme-hornet .tag    {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  border-color: rgba(64,168,224,0.3);
+}
+html.theme-hornet .btn    {
+  border-radius: 0;
+  letter-spacing: 0.1em;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+html.theme-hornet .btn-primary { border-top: 2px solid rgba(64,168,224,0.9); }
+html.theme-hornet .label  { letter-spacing: 0.18em; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ODIN TROOPER  —  Aegis Odin armored carrier
+   Warmth: military olive-black + Odin orange-red warning
+   Shape:  bottom-right bevel (armour plate, angled stern)
+   Grid:   radar dot-matrix (radial-gradient circles, 22 px)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html.theme-odin {
+  color-scheme: dark;
+  --color-void:          #080a06;
+  --color-hull:          #0f1209;
+  --color-panel:         #161a10;
+  --color-edge:          #2a3018;
+  --color-steel:         #3c4828;
+  --color-ink:           #d0d8a8;
+  --color-muted:         #586040;
+  --color-quant:         #d84000;
+  --color-quant-dim:     #802000;
+  --color-amber:         #c04000;
+  --color-toxic:         #68a010;
+  --color-danger:        #e01010;
+  --grid-color:          rgba(216,64,0,0.08);
+  --shadow-panel:        0 0 0 1px rgba(216,64,0,0.12) inset,
+                         0 -3px 0 rgba(216,64,0,0.5) inset,
+                         0 10px 36px rgba(0,0,0,0.9),
+                         2px 4px 0 rgba(0,0,0,0.5);
+  --shadow-glow:         0 0 0 1px rgba(216,64,0,0.5), 0 0 22px rgba(216,64,0,0.18);
+  --panel-accent-top:    transparent;
+  --panel-clip:          polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+  --panel-radius:        0;
+  --panel-left:          4px solid rgba(216,64,0,0.8);
+}
+html.theme-odin body {
+  background-image: radial-gradient(circle, rgba(216,64,0,0.12) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+html.theme-odin .field  {
+  border-radius: 0;
+  border-left: 3px solid rgba(216,64,0,0.4);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+}
+html.theme-odin .tag    {
+  border-radius: 0;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
+  border-color: rgba(216,64,0,0.4);
+}
+html.theme-odin .btn    { border-radius: 0; letter-spacing: 0.16em; }
+html.theme-odin .btn-primary {
+  border-bottom: 2px solid rgba(216,64,0,0.9);
+  border-right: 2px solid rgba(216,64,0,0.6);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+html.theme-odin .btn-ghost {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+html.theme-odin .label  { letter-spacing: 0.22em; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BASE STYLES
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+html, body {
+  background-color: var(--color-void);
+  color: var(--color-ink);
+  transition: background-color 0.25s, color 0.25s;
+}
+body {
+  font-family: theme("fontFamily.body");
+  background-image: linear-gradient(var(--grid-color) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+@layer components {
+  .panel {
+    @apply border border-edge bg-panel;
+    border-radius: var(--panel-radius, 0.5rem);
+    border-left: var(--panel-left);
+    border-top: 2px solid var(--panel-accent-top);
+    clip-path: var(--panel-clip, none);
+    box-shadow: var(--shadow-panel);
+  }
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.25em] text-muted;
+  }
+  .field {
+    @apply w-full rounded-md border border-edge bg-hull px-3 py-2 text-sm text-ink
+      outline-none transition;
+  }
+  .field::placeholder { color: var(--color-muted); opacity: 0.6; }
+  .field:focus {
+    border-color: var(--color-quant);
+    box-shadow: var(--shadow-glow);
+  }
+  .label {
+    @apply mb-1 block font-mono text-[11px] uppercase tracking-widest text-muted;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2
+      font-display text-sm font-semibold uppercase tracking-wider transition
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary  { @apply btn bg-quant text-void hover:opacity-85; }
+  .btn-ghost    { @apply btn border border-edge text-ink hover:border-quant hover:text-quant; }
+  .btn-danger   { @apply btn border text-danger; border-color: rgba(239,68,68,0.4); }
+  .btn-danger:hover { background-color: rgba(239,68,68,0.1); }
+  .tag {
+    @apply inline-flex items-center rounded-full border border-edge px-2 py-0.5
+      font-mono text-[11px] uppercase tracking-wider text-muted;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
