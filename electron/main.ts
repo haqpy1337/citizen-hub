@@ -269,7 +269,8 @@ function setupAutoUpdater() {
     mainWindow?.webContents.send("update-error", err.message));
   autoUpdater.on("update-not-available", () =>
     mainWindow?.webContents.send("update-not-available"));
-  setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 10000);
+  // Check quickly so result is visible on boot screen
+  setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 3000);
   setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000);
 }
 

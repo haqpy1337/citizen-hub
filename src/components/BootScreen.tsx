@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import anime from "animejs";
-import { getOreCommodities } from "../lib/uex/endpoints";
-import { getRefineryStations, getRefineryMethods } from "../lib/uex/endpoints";
+import { getOreCommodities, getRefineryStations, getRefineryMethods } from "../lib/uex/endpoints";
 
 interface Props { onComplete: () => void }
 
@@ -10,12 +9,11 @@ type UpdateState = "checking" | "uptodate" | "available" | "downloaded" | "error
 
 interface Check {
   label: string;
-  /** Minimum display time in ms — so UI doesn't flash too fast on fast connections */
   minMs: number;
   run: () => Promise<boolean>;
 }
 
-// These calls populate the in-memory UEX cache so pages load instantly afterward.
+// Real data calls — populate UEX cache so pages load instantly
 const CHECKS: Check[] = [
   {
     label: "LOCAL DATABASE",
@@ -26,10 +24,8 @@ const CHECKS: Check[] = [
     label: "UEX CORP API",
     minMs: 200,
     run: async () => {
-      try {
-        const ores = await getOreCommodities();
-        return ores.length > 0;
-      } catch { return false; }
+      try { const r = await getOreCommodities(); return r.length > 0; }
+      catch { return false; }
     },
   },
   {
@@ -37,11 +33,8 @@ const CHECKS: Check[] = [
     minMs: 200,
     run: async () => {
       try {
-        const [stations, methods] = await Promise.all([
-          getRefineryStations(),
-          getRefineryMethods(),
-        ]);
-        return stations.length > 0 || methods.length > 0;
+        const [s, m] = await Promise.all([getRefineryStations(), getRefineryMethods()]);
+        return s.length > 0 || m.length > 0;
       } catch { return false; }
     },
   },
@@ -54,50 +47,49 @@ const CHECKS: Check[] = [
 
 export default function BootScreen({ onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [statuses, setStatuses]   = useState<CheckStatus[]>(CHECKS.map(() => "pending"));
-  const [progress, setProgress]   = useState(0);
-  const [ready, setReady]         = useState(false);
-  const [version, setVersion]     = useState<string | null>(null);
+  const [statuses, setStatuses]       = useState<CheckStatus[]>(CHECKS.map(() => "pending"));
+  const [progress, setProgress]       = useState(0);
+  const [ready, setReady]             = useState(false);
+  const [version, setVersion]         = useState<string>("…");
   const [updateState, setUpdateState] = useState<UpdateState>("checking");
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
 
+  // Register update listeners immediately on mount
   useEffect(() => {
     window.api.onUpdateAvailable((v) => { setUpdateVersion(v); setUpdateState("available"); });
     window.api.onUpdateDownloaded((v) => { setUpdateVersion(v); setUpdateState("downloaded"); });
     window.api.onUpdateError(() => setUpdateState("error"));
     window.api.onUpdateNotAvailable(() => setUpdateState("uptodate"));
+
+    window.api.getVersion().then(v => setVersion(v)).catch(() => {});
   }, []);
 
+  // Intro animation + sequential checks
   useEffect(() => {
-    window.api.getVersion().then(setVersion).catch(() => {});
-
     const tl = anime.timeline({ easing: "easeOutExpo" });
     tl
-      .add({ targets: ".boot-grid", opacity: [0, 1], duration: 700 })
-      .add({ targets: ".boot-corner-h", scaleX: [0, 1], duration: 350, delay: anime.stagger(60), easing: "easeOutQuad" }, "-=300")
-      .add({ targets: ".boot-corner-v", scaleY: [0, 1], duration: 350, delay: anime.stagger(60), easing: "easeOutQuad" }, "-=400")
-      .add({ targets: ".boot-ring", strokeDashoffset: [anime.setDashoffset, 0], opacity: [0, 1], duration: 700, delay: anime.stagger(120), easing: "easeInOutSine" }, "-=200")
-      .add({ targets: ".boot-star", opacity: [0, 1], scale: [0.2, 1], duration: 500, easing: "easeOutBack" }, "-=300")
-      .add({ targets: ".boot-dot", scale: [0, 1], opacity: [0, 1], duration: 300, easing: "easeOutBack" }, "-=150")
-      .add({ targets: ".boot-citizen", opacity: [0, 1], translateX: [-24, 0], duration: 500 }, "-=150")
-      .add({ targets: ".boot-hub", opacity: [0, 1], translateX: [-16, 0], duration: 400 }, "-=350")
-      .add({ targets: ".boot-divider", scaleX: [0, 1], duration: 500, easing: "easeOutQuad" }, "-=150")
-      .add({ targets: ".boot-row", opacity: [0, 1], translateY: [8, 0], duration: 300, delay: anime.stagger(100) }, "-=100")
+      .add({ targets: ".boot-grid",     opacity: [0, 1], duration: 700 })
+      .add({ targets: ".boot-corner-h", scaleX:  [0, 1], duration: 350, delay: anime.stagger(60), easing: "easeOutQuad" }, "-=300")
+      .add({ targets: ".boot-corner-v", scaleY:  [0, 1], duration: 350, delay: anime.stagger(60), easing: "easeOutQuad" }, "-=400")
+      .add({ targets: ".boot-ring",     strokeDashoffset: [anime.setDashoffset, 0], opacity: [0, 1], duration: 700, delay: anime.stagger(120), easing: "easeInOutSine" }, "-=200")
+      .add({ targets: ".boot-star",     opacity: [0, 1], scale: [0.2, 1], duration: 500, easing: "easeOutBack" }, "-=300")
+      .add({ targets: ".boot-dot",      scale: [0, 1], opacity: [0, 1], duration: 300, easing: "easeOutBack" }, "-=150")
+      .add({ targets: ".boot-citizen",  opacity: [0, 1], translateX: [-24, 0], duration: 500 }, "-=150")
+      .add({ targets: ".boot-hub",      opacity: [0, 1], translateX: [-16, 0], duration: 400 }, "-=350")
+      .add({ targets: ".boot-divider",  scaleX:  [0, 1], duration: 500, easing: "easeOutQuad" }, "-=150")
+      .add({ targets: ".boot-row",      opacity: [0, 1], translateY: [8, 0], duration: 300, delay: anime.stagger(100) }, "-=100")
       .add({ targets: ".boot-bar-track", opacity: [0, 1], duration: 300 });
 
     let cancelled = false;
-    const runChecks = async () => {
-      // Wait for intro animation
+    (async () => {
       await new Promise(r => setTimeout(r, 1800));
       if (cancelled) return;
 
       for (let i = 0; i < CHECKS.length; i++) {
         if (cancelled) return;
         const check = CHECKS[i];
-
         setStatuses(prev => { const n = [...prev]; n[i] = "running"; return n; });
 
-        // Run check + enforce minimum display time in parallel
         const [result] = await Promise.all([
           check.run(),
           new Promise(r => setTimeout(r, check.minMs)),
@@ -108,36 +100,40 @@ export default function BootScreen({ onComplete }: Props) {
         setProgress(Math.round(((i + 1) / CHECKS.length) * 100));
 
         if (i < CHECKS.length - 1) {
-          await new Promise(r => setTimeout(r, 200));
+          await new Promise(r => setTimeout(r, 180));
           if (cancelled) return;
         }
       }
 
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 350));
       if (cancelled) return;
       setReady(true);
-      anime({
-        targets: ".boot-ready",
-        opacity: [0, 1],
-        translateY: [12, 0],
-        duration: 500,
-        easing: "easeOutExpo",
-      });
-    };
+    })();
 
-    runChecks();
     return () => { cancelled = true; tl.pause(); };
   }, []);
+
+  // Animate ENTER button + footer in when ready becomes true
+  useEffect(() => {
+    if (!ready) return;
+    anime({
+      targets: [".boot-enter", ".boot-footer"],
+      opacity:    [0, 1],
+      translateY: [14, 0],
+      duration: 600,
+      easing: "easeOutExpo",
+      delay: anime.stagger(80),
+    });
+  }, [ready]);
 
   function handleStart() {
     anime({
       targets: ".boot-flash",
-      opacity: [0, 0.5, 0],
+      opacity: [0, 0.6, 0],
       duration: 400,
       easing: "easeInOutSine",
-      complete: () => {
-        anime({ targets: containerRef.current, opacity: [1, 0], duration: 350, complete: onComplete });
-      },
+      complete: () =>
+        anime({ targets: containerRef.current, opacity: [1, 0], duration: 350, complete: onComplete }),
     });
   }
 
@@ -147,7 +143,6 @@ export default function BootScreen({ onComplete }: Props) {
     if (s === "ok")      return "text-emerald-400";
     return "text-red-400";
   };
-
   const statusText = (s: CheckStatus) => {
     if (s === "pending") return "· · ·";
     if (s === "running") return "LOADING";
@@ -156,13 +151,15 @@ export default function BootScreen({ onComplete }: Props) {
   };
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden select-none">
+    <div ref={containerRef} className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center overflow-hidden select-none">
 
+      {/* Grid */}
       <div className="boot-grid absolute inset-0 opacity-0 pointer-events-none" style={{
         backgroundImage: `linear-gradient(rgba(16,185,129,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(16,185,129,.05) 1px,transparent 1px)`,
         backgroundSize: "44px 44px",
       }} />
 
+      {/* Scan line */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div style={{ animation: "scanline 2.5s linear .4s forwards", position: "absolute", width: "100%", height: "1px", background: "linear-gradient(90deg,transparent,rgba(16,185,129,.4),transparent)", top: 0 }} />
       </div>
@@ -185,16 +182,17 @@ export default function BootScreen({ onComplete }: Props) {
         <span className="boot-corner-v block w-px h-10 bg-emerald-500 origin-bottom -mb-px" />
       </div>
 
-      <div className="relative flex flex-col items-center gap-7 w-72">
+      {/* ─── Center panel — fixed height so nothing shifts ─── */}
+      <div className="relative flex flex-col items-center w-72" style={{ gap: "1.75rem" }}>
 
         <svg width="110" height="110" viewBox="0 0 110 110" fill="none">
           <circle className="boot-ring" cx="55" cy="55" r="50" stroke="#10b981" strokeWidth="0.7" opacity="0.2" />
           <circle className="boot-ring" cx="55" cy="55" r="38" stroke="#10b981" strokeWidth="1"   opacity="0.45" />
           <circle className="boot-ring" cx="55" cy="55" r="26" stroke="#10b981" strokeWidth="1.2" opacity="0.7" />
-          <line className="boot-ring" x1="55" y1="2"   x2="55" y2="14"  stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
-          <line className="boot-ring" x1="55" y1="96"  x2="55" y2="108" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
-          <line className="boot-ring" x1="2"  y1="55"  x2="14" y2="55"  stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
-          <line className="boot-ring" x1="96" y1="55"  x2="108" y2="55" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
+          <line className="boot-ring" x1="55" y1="2"   x2="55"  y2="14"  stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
+          <line className="boot-ring" x1="55" y1="96"  x2="55"  y2="108" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
+          <line className="boot-ring" x1="2"  y1="55"  x2="14"  y2="55"  stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
+          <line className="boot-ring" x1="96" y1="55"  x2="108" y2="55"  stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
           <path className="boot-star" d="M55 26 L59 50 L83 55 L59 60 L55 84 L51 60 L27 55 L51 50 Z"
             fill="rgba(16,185,129,0.12)" stroke="#10b981" strokeWidth="1.4" strokeLinejoin="round" />
           <circle className="boot-dot" cx="55" cy="55" r="5" fill="#10b981" />
@@ -225,31 +223,32 @@ export default function BootScreen({ onComplete }: Props) {
             />
           </div>
           <div className="flex justify-between mt-1 text-[9px] font-mono text-emerald-500/30">
-            <span>INIT</span>
-            <span>{progress}%</span>
+            <span>INIT</span><span>{progress}%</span>
           </div>
         </div>
 
-        {/* START — appears after checks */}
-        {ready && (
-          <div className="boot-ready opacity-0 w-full flex flex-col items-center gap-2">
-            <button
-              onClick={handleStart}
-              className="w-full py-2.5 text-sm font-mono font-semibold tracking-[0.25em] uppercase border border-emerald-500/60 text-emerald-400 rounded hover:bg-emerald-500/10 hover:border-emerald-400 transition-all active:scale-95"
-            >
-              — ENTER —
-            </button>
-          </div>
-        )}
+        {/* ENTER button — always rendered, invisible until ready */}
+        <div
+          className="boot-enter w-full"
+          style={{ opacity: 0, pointerEvents: ready ? "auto" : "none" }}
+        >
+          <button
+            onClick={handleStart}
+            className="w-full py-2.5 text-sm font-mono font-semibold tracking-[0.25em] uppercase border border-emerald-500/60 text-emerald-400 rounded hover:bg-emerald-500/10 hover:border-emerald-400 transition-all active:scale-95"
+          >
+            — ENTER —
+          </button>
+        </div>
       </div>
 
-      {/* Bottom bar: version + update */}
-      {ready && (
-        <div className="boot-ready opacity-0 absolute bottom-8 left-0 right-0 flex items-center justify-between px-10 text-[10px] font-mono text-emerald-500/40">
-          <span>v{version ?? "…"}</span>
-          <UpdateFooter state={updateState} version={updateVersion} onInstall={handleStart} />
-        </div>
-      )}
+      {/* ─── Footer bar ─── */}
+      <div
+        className="boot-footer absolute bottom-7 left-0 right-0 flex items-center justify-between px-10"
+        style={{ opacity: 0 }}
+      >
+        <span className="text-sm font-mono text-emerald-400/60 tracking-widest">v{version}</span>
+        <UpdateFooter state={updateState} version={updateVersion} onInstall={handleStart} />
+      </div>
 
       <div className="boot-flash fixed inset-0 bg-emerald-400 opacity-0 pointer-events-none" />
 
@@ -266,18 +265,16 @@ export default function BootScreen({ onComplete }: Props) {
 }
 
 function UpdateFooter({ state, version, onInstall }: {
-  state: UpdateState;
-  version: string | null;
-  onInstall: () => void;
+  state: UpdateState; version: string | null; onInstall: () => void;
 }) {
-  if (state === "checking")   return <span className="animate-pulse">CHECKING FOR UPDATES…</span>;
-  if (state === "uptodate")   return <span className="text-emerald-500/30">UP TO DATE</span>;
-  if (state === "error")      return <span className="text-red-400/60">UPDATE CHECK FAILED</span>;
-  if (state === "available")  return <span className="text-emerald-400/70 animate-pulse">DOWNLOADING v{version}…</span>;
+  if (state === "checking")  return <span className="text-xs font-mono text-emerald-500/30 animate-pulse tracking-wider">CHECKING FOR UPDATES…</span>;
+  if (state === "uptodate")  return <span className="text-xs font-mono text-emerald-500/25 tracking-wider">UP TO DATE</span>;
+  if (state === "error")     return <span className="text-xs font-mono text-red-400/50 tracking-wider">UPDATE CHECK FAILED</span>;
+  if (state === "available") return <span className="text-xs font-mono text-emerald-400/70 animate-pulse tracking-wider">DOWNLOADING v{version}…</span>;
   if (state === "downloaded") return (
     <button
       onClick={e => { e.stopPropagation(); onInstall(); }}
-      className="text-emerald-300 border border-emerald-500/50 px-3 py-0.5 rounded hover:bg-emerald-500/10 transition-colors animate-pulse"
+      className="text-xs font-mono text-emerald-300 border border-emerald-500/50 px-3 py-1 rounded hover:bg-emerald-500/10 transition-colors animate-pulse tracking-wider"
     >
       v{version} READY — INSTALL &amp; RESTART
     </button>

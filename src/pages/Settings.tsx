@@ -39,7 +39,10 @@ export default function Settings() {
 
   return (
     <div className="flex flex-col gap-8 max-w-lg">
-      <h1 className="eyebrow">Settings</h1>
+      <div className="flex items-end justify-between">
+        <h1 className="eyebrow">Settings</h1>
+        <span className="text-base font-mono text-quant tracking-widest pb-0.5">v{appVersion ?? "…"}</span>
+      </div>
 
       {/* Display */}
       <section className="flex flex-col gap-4">
