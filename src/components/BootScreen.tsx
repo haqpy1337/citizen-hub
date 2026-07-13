@@ -86,19 +86,25 @@ export default function BootScreen({ onComplete }: Props) {
       .add({ targets: ".boot-row",      opacity: [0, 1], translateY: [8, 0], duration: 300, delay: anime.stagger(100) }, "-=100")
       .add({ targets: ".boot-bar-track", opacity: [0, 1], duration: 300 });
 
+    // Timestamps (ms from mount) when each boot-row becomes visible.
+    // Matches the anime timeline: rows animate in starting at ~3700 ms,
+    // with a 100 ms stagger between each row.
+    const ROW_VISIBLE_AT = CHECKS.map((_, i) => 3700 + i * 100);
+    const mountedAt = Date.now();
+
     let cancelled = false;
     (async () => {
-      // Wait for all boot-row elements to be fully visible.
-      // The last boot-row finishes animating at ~3700 ms in the timeline.
-      await new Promise(r => setTimeout(r, 3800));
-      if (cancelled) return;
-
-      // Sequential checks — each one runs fully before the next starts.
-      // The "LOADING" state stays visible for the exact real duration of each operation.
       for (let i = 0; i < CHECKS.length; i++) {
         if (cancelled) return;
-        setStatuses(prev => { const n = [...prev]; n[i] = "running"; return n; });
 
+        // Wait until this row is visible — or skip wait if a slow previous
+        // check already pushed us past that point.
+        const delay = ROW_VISIBLE_AT[i] - (Date.now() - mountedAt);
+        if (delay > 0) await new Promise(r => setTimeout(r, delay));
+        if (cancelled) return;
+
+        // Row is now visible — start its check immediately
+        setStatuses(prev => { const n = [...prev]; n[i] = "running"; return n; });
         const result = await CHECKS[i].run();
         if (cancelled) return;
 
@@ -106,7 +112,7 @@ export default function BootScreen({ onComplete }: Props) {
         setProgress(Math.round(((i + 1) / CHECKS.length) * 100));
 
         if (i < CHECKS.length - 1) {
-          await new Promise(r => setTimeout(r, 200));
+          await new Promise(r => setTimeout(r, 180));
           if (cancelled) return;
         }
       }
