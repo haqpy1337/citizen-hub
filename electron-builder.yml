@@ -56,5 +56,5 @@ nsis:
 publish:
   provider: github
   owner: haqpy1337
-  repo: hMA
+  repo: citizen-hub
   releaseType: release
