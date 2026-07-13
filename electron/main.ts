@@ -206,8 +206,8 @@ function registerIpc() {
     run("DELETE FROM refinery_jobs WHERE id=? AND user_id=?", [id, userId]);
   });
 
-  // isSilent=true: NSIS runs with /S flag — no setup wizard shown
-  ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(true); });
+  // isSilent=true: NSIS /S flag (no wizard), isForceRunAfter=true: relaunch app after install
+  ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(true, true); });
 
   ipcMain.handle("update:check", async () => {
     try { await autoUpdater.checkForUpdates(); return { ok: true }; }

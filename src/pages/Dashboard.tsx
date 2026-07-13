@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth, usePage } from "../App";
 import { api, Job } from "../lib/api";
 import { formatDuration, secondsLeft } from "../lib/format";
@@ -14,25 +14,48 @@ function useNow(intervalMs = 1000) {
 
 interface NewsItem { title: string; link: string; date: string }
 
+const AUTO_ADVANCE_MS = 8000;
+
 function NewsPanel() {
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [idx, setIdx] = useState(0);
+  // autoKey resets whenever the user manually navigates, restarting the auto-advance interval
+  const [autoKey, setAutoKey] = useState(0);
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
 
-  useEffect(() => {
+  function fetchNews() {
+    setLoading(true); setError(false); setItems([]); setIdx(0);
     window.api.fetchNews().then(res => {
-      if (res.ok && res.items.length > 0) {
-        setItems(res.items);
-      } else {
-        setError(true);
-      }
+      if (res.ok && res.items.length > 0) setItems(res.items);
+      else setError(true);
     }).catch(() => setError(true)).finally(() => setLoading(false));
-  }, []);
+  }
+
+  useEffect(() => { fetchNews(); }, []);
+
+  // Auto-advance carousel; restarts when autoKey changes (manual navigation)
+  useEffect(() => {
+    if (items.length <= 1) return;
+    const id = setInterval(() => {
+      setIdx(i => (i + 1) % itemsRef.current.length);
+    }, AUTO_ADVANCE_MS);
+    return () => clearInterval(id);
+  }, [items.length, autoKey]);
+
+  function nav(dir: 1 | -1) {
+    setIdx(i => (i + dir + items.length) % items.length);
+    setAutoKey(k => k + 1); // restart auto-advance timer from zero
+  }
 
   const fmtDate = (d: string) => {
     try { return new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
     catch { return d; }
   };
+
+  const cur = items[idx] ?? null;
 
   return (
     <div className="panel flex flex-col">
@@ -40,11 +63,7 @@ function NewsPanel() {
         <p className="label">SC News & Comm-Link</p>
         {!loading && (
           <button
-            onClick={() => { setLoading(true); setError(false); setItems([]);
-              window.api.fetchNews().then(r => {
-                if (r.ok) setItems(r.items); else setError(true);
-              }).finally(() => setLoading(false));
-            }}
+            onClick={fetchNews}
             className="text-[10px] font-mono text-muted hover:text-quant transition-colors"
           >
             ↻ Refresh
@@ -56,34 +75,62 @@ function NewsPanel() {
         <div className="flex justify-center py-8">
           <div className="w-5 h-5 border-2 border-quant/30 border-t-quant rounded-full animate-spin" />
         </div>
-      ) : error || items.length === 0 ? (
+      ) : error || !cur ? (
         <div className="px-4 py-6 text-xs text-muted text-center">
-          Could not load news. <br />
-          <a
-            href="https://robertsspaceindustries.com/comm-link"
-            target="_blank"
-            rel="noreferrer"
+          Could not load news.{" "}
+          <button
             className="text-quant hover:underline"
-            onClick={e => { e.preventDefault(); window.open("https://robertsspaceindustries.com/comm-link"); }}
+            onClick={() => window.open("https://robertsspaceindustries.com/comm-link")}
           >
             Open Comm-Link ↗
-          </a>
+          </button>
         </div>
       ) : (
-        <ul className="flex flex-col divide-y divide-edge/40">
-          {items.map((item, i) => (
-            <li key={i} className="px-4 py-3 hover:bg-hull/40 transition-colors cursor-pointer group"
-              onClick={() => window.open(item.link || "https://robertsspaceindustries.com/comm-link")}
+        <div className="flex flex-col flex-1">
+          {/* Post content */}
+          <div className="flex flex-col gap-3 px-4 py-5 flex-1">
+            <p className="text-sm font-semibold text-ink leading-snug">{cur.title}</p>
+            {cur.date && (
+              <p className="text-[10px] text-muted font-mono">{fmtDate(cur.date)}</p>
+            )}
+            <button
+              onClick={() => window.open(cur.link || "https://robertsspaceindustries.com/comm-link")}
+              className="self-start text-xs text-quant hover:underline font-mono mt-auto"
             >
-              <p className="text-xs text-ink group-hover:text-quant transition-colors leading-snug line-clamp-2">
-                {item.title}
-              </p>
-              {item.date && (
-                <p className="text-[10px] text-muted mt-0.5 font-mono">{fmtDate(item.date)}</p>
-              )}
-            </li>
-          ))}
-        </ul>
+              Open in browser ↗
+            </button>
+          </div>
+
+          {/* Navigation bar */}
+          <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
+            <button
+              onClick={() => nav(-1)}
+              className="text-xs font-mono text-muted hover:text-quant transition-colors px-2 py-1 disabled:opacity-30"
+              disabled={items.length <= 1}
+            >
+              ← Prev
+            </button>
+
+            {/* Dot indicators */}
+            <div className="flex gap-1.5 items-center">
+              {items.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setIdx(i); setAutoKey(k => k + 1); }}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? "bg-quant scale-125" : "bg-muted/40 hover:bg-muted"}`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={() => nav(1)}
+              className="text-xs font-mono text-muted hover:text-quant transition-colors px-2 py-1 disabled:opacity-30"
+              disabled={items.length <= 1}
+            >
+              Next →
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

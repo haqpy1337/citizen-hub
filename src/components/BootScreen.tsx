@@ -12,12 +12,9 @@ interface Check {
   run: () => Promise<boolean>;
 }
 
-// All checks are real operations — no artificial delays.
-// Progress bar stays at each step until the actual work finishes.
 const CHECKS: Check[] = [
   {
     label: "LOCAL DATABASE",
-    minMs: 0,
     run: async () => {
       try { return await window.api.dbPing(); }
       catch { return false; }
@@ -25,7 +22,6 @@ const CHECKS: Check[] = [
   },
   {
     label: "UEX CORP API",
-    minMs: 0,
     run: async () => {
       try { const r = await getOreCommodities(); return r.length > 0; }
       catch { return false; }
@@ -33,7 +29,6 @@ const CHECKS: Check[] = [
   },
   {
     label: "REFINERY DATA",
-    minMs: 0,
     run: async () => {
       try {
         const [s, m] = await Promise.all([getRefineryStations(), getRefineryMethods()]);
@@ -43,7 +38,6 @@ const CHECKS: Check[] = [
   },
   {
     label: "CITIZEN HUB v2",
-    minMs: 0,
     run: async () => {
       try { await window.api.getVersion(); return true; }
       catch { return false; }
@@ -72,6 +66,13 @@ export default function BootScreen({ onComplete }: Props) {
 
   // Intro animation + sequential checks
   useEffect(() => {
+    // Each promise resolves exactly when its row's anime begin callback fires —
+    // i.e., the instant the row starts animating into view.
+    const resolvers: Array<() => void> = [];
+    const rowVisible: Array<Promise<void>> = CHECKS.map(
+      () => new Promise<void>(resolve => resolvers.push(resolve))
+    );
+
     const tl = anime.timeline({ easing: "easeOutExpo" });
     tl
       .add({ targets: ".boot-grid",     opacity: [0, 1], duration: 700 })
@@ -82,28 +83,34 @@ export default function BootScreen({ onComplete }: Props) {
       .add({ targets: ".boot-dot",      scale: [0, 1], opacity: [0, 1], duration: 300, easing: "easeOutBack" }, "-=150")
       .add({ targets: ".boot-citizen",  opacity: [0, 1], translateX: [-24, 0], duration: 500 }, "-=150")
       .add({ targets: ".boot-hub",      opacity: [0, 1], translateX: [-16, 0], duration: 400 }, "-=350")
-      .add({ targets: ".boot-divider",  scaleX:  [0, 1], duration: 500, easing: "easeOutQuad" }, "-=150")
-      .add({ targets: ".boot-row",      opacity: [0, 1], translateY: [8, 0], duration: 300, delay: anime.stagger(100) }, "-=100")
-      .add({ targets: ".boot-bar-track", opacity: [0, 1], duration: 300 });
+      .add({ targets: ".boot-divider",  scaleX:  [0, 1], duration: 500, easing: "easeOutQuad" }, "-=150");
 
-    // Timestamps (ms from mount) when each boot-row becomes visible.
-    // Matches the anime timeline: rows animate in starting at ~3700 ms,
-    // with a 100 ms stagger between each row.
-    const ROW_VISIBLE_AT = CHECKS.map((_, i) => 3700 + i * 100);
-    const mountedAt = Date.now();
+    // One .add() per row so each gets its own begin callback.
+    // Offset math preserves the original stagger(100) timing:
+    //   row 0: -=100 (overlaps last 100ms of divider)
+    //   rows 1-3: -=200 each (starts 100ms after previous row's start, since duration=300)
+    CHECKS.forEach((_, i) => {
+      tl.add({
+        targets: `.boot-row-${i}`,
+        opacity: [0, 1],
+        translateY: [8, 0],
+        duration: 300,
+        easing: "easeOutExpo",
+        begin: () => resolvers[i]?.(),
+      }, i === 0 ? "-=100" : "-=200");
+    });
+
+    tl.add({ targets: ".boot-bar-track", opacity: [0, 1], duration: 300 });
 
     let cancelled = false;
     (async () => {
       for (let i = 0; i < CHECKS.length; i++) {
         if (cancelled) return;
 
-        // Wait until this row is visible — or skip wait if a slow previous
-        // check already pushed us past that point.
-        const delay = ROW_VISIBLE_AT[i] - (Date.now() - mountedAt);
-        if (delay > 0) await new Promise(r => setTimeout(r, delay));
+        // Wait until anime signals this row is visible, then start the check immediately.
+        await rowVisible[i];
         if (cancelled) return;
 
-        // Row is now visible — start its check immediately
         setStatuses(prev => { const n = [...prev]; n[i] = "running"; return n; });
         const result = await CHECKS[i].run();
         if (cancelled) return;
@@ -220,7 +227,7 @@ export default function BootScreen({ onComplete }: Props) {
 
         <div className="w-full flex flex-col gap-2.5">
           {CHECKS.map((c, i) => (
-            <div key={i} className="boot-row opacity-0 flex justify-between items-center text-xs font-mono">
+            <div key={i} className={`boot-row boot-row-${i} opacity-0 flex justify-between items-center text-xs font-mono`}>
               <span className="text-emerald-500/50 tracking-wider">{c.label}</span>
               <span className={statusColor(statuses[i])}>{statusText(statuses[i])}</span>
             </div>
