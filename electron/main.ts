@@ -192,7 +192,8 @@ function registerIpc() {
     run("DELETE FROM refinery_jobs WHERE id=? AND user_id=?", [id, userId]);
   });
 
-  ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(); });
+  // isSilent=true: NSIS runs with /S flag — no setup wizard shown
+  ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(true); });
 
   ipcMain.handle("update:check", async () => {
     try { await autoUpdater.checkForUpdates(); return { ok: true }; }

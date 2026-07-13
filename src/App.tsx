@@ -6,10 +6,11 @@ import JobsPage from "./pages/Jobs";
 import HistoryPage from "./pages/History";
 import OresPage from "./pages/Ores";
 import RefineriesPage from "./pages/Refineries";
+import SettingsPage from "./pages/Settings";
 import Sidebar from "./components/Sidebar";
 import { Lang } from "./lib/i18n";
 
-export type Page = "dashboard" | "jobs" | "history" | "ores" | "refineries";
+export type Page = "dashboard" | "jobs" | "history" | "ores" | "refineries" | "settings";
 
 export interface AuthCtx { user: User | null; token: string | null }
 export const AuthContext = createContext<AuthCtx>(null!);
@@ -56,6 +57,7 @@ export default function App() {
     history: <HistoryPage />,
     ores: <OresPage />,
     refineries: <RefineriesPage />,
+    settings: <SettingsPage />,
   };
 
   return (

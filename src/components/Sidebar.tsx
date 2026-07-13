@@ -62,6 +62,20 @@ export default function Sidebar() {
         ))}
       </nav>
 
+      {/* Settings link */}
+      <button
+        onClick={() => setPage("settings")}
+        className={[
+          "mx-3 mb-1 text-left flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-mono uppercase tracking-wider transition-all border",
+          page === "settings"
+            ? "bg-hull text-quant border-edge"
+            : "text-muted hover:text-ink hover:bg-hull/60 border-transparent",
+        ].join(" ")}
+      >
+        <span className="flex-1">Settings</span>
+        {page === "settings" && <span className="h-1.5 w-1.5 rounded-full bg-quant shrink-0" />}
+      </button>
+
       <div className="border-t border-edge px-4 py-4 flex flex-col gap-3">
         <div>
           <p className="text-[9px] font-mono uppercase tracking-widest text-muted/50 mb-2">Theme</p>
