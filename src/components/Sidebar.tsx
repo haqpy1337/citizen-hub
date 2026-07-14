@@ -5,12 +5,22 @@ import SettingsModal from "./SettingsModal";
 import anime from "animejs";
 
 const themes = [
-  { key: "mole",    color: "#e05010", title: "Mole",    sub: "ARGO Industrial", titleBg: "#1a1410" },
-  { key: "cockpit", color: "#50e828", title: "Cockpit", sub: "RSI Terminal",    titleBg: "#060f07" },
-  { key: "origin",  color: "#0e6faa", title: "Origin",  sub: "890 Jump Luxury", titleBg: "#ffffff" },
-  { key: "gatac",   color: "#b848ff", title: "Gatac",   sub: "Alien Tech",      titleBg: "#100c28" },
-  { key: "hornet",  color: "#2898d8", title: "Hornet",  sub: "Anvil Military",  titleBg: "#141826" },
+  { key: "mole",    color: "#e05010", title: "Mole",    sub: "ARGO Industrial", titleBg: "#060402" },
+  { key: "cockpit", color: "#50e828", title: "Cockpit", sub: "RSI Terminal",    titleBg: "#010402" },
+  { key: "origin",  color: "#0e6faa", title: "Origin",  sub: "890 Jump Luxury", titleBg: "#f0f2f5" },
+  { key: "gatac",   color: "#b848ff", title: "Gatac",   sub: "Alien Tech",      titleBg: "#060410" },
+  { key: "hornet",  color: "#2898d8", title: "Hornet",  sub: "Anvil Military",  titleBg: "#06080e" },
 ];
+
+function GearIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
+      strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
 
 const NAV_ITEMS = [
   { label: "Dashboard",     key: "dashboard"    },
@@ -226,7 +236,9 @@ export default function Sidebar() {
               onClick={() => setSettingsOpen(o => !o)}
               className="w-full flex items-center gap-2 px-2 py-1.5 text-muted hover:text-quant transition-colors text-xs font-mono"
             >
-              <span ref={gearIconRef} className="text-base leading-none shrink-0" style={{ display: "inline-block" }}>⚙</span>
+              <span ref={gearIconRef} className="shrink-0" style={{ display: "inline-flex", width: 15, height: 15 }}>
+                <GearIcon className="w-full h-full" />
+              </span>
               <span className="uppercase tracking-wide text-[10px] truncate">Settings</span>
             </button>
           </div>

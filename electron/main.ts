@@ -64,7 +64,27 @@ async function initDb() {
   const SQL = await initSqlJs({ locateFile: () => wasmPath });
 
   dbPath = path.join(dataDir(), "citizen-hub.db");
-  const fileData = fs.existsSync(dbPath) ? fs.readFileSync(dbPath) : null;
+
+  // Try to open existing DB; recover from corruption by renaming and starting fresh
+  let fileData: Buffer | null = null;
+  if (fs.existsSync(dbPath)) {
+    try {
+      fileData = fs.readFileSync(dbPath);
+      // Quick sanity check: SQLite magic bytes
+      if (fileData.length < 16 || fileData.toString("utf8", 0, 6) !== "SQLite") {
+        throw new Error("Not a valid SQLite file");
+      }
+    } catch {
+      const backup = dbPath + ".bak." + Date.now();
+      try { fs.renameSync(dbPath, backup); } catch {}
+      fileData = null;
+    }
+  }
+  // Also remove any leftover WAL/SHM files from old runs
+  for (const ext of ["-wal", "-shm"]) {
+    const f = dbPath + ext;
+    try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch {}
+  }
   db = new SQL.Database(fileData);
 
   db.run("PRAGMA foreign_keys = ON");
@@ -397,8 +417,16 @@ app.on("second-instance", () => {
 });
 
 process.on("uncaughtException", (err) => {
-  dialog.showErrorBox("Citizen Hub – Error", String(err));
-  app.exit(1);
+  // Only crash for startup errors; runtime errors (network, etc.) are logged but non-fatal
+  const msg = String(err);
+  console.error("[uncaughtException]", msg);
+  if (msg.includes("SQLITE") || msg.includes("Cannot read") || msg.includes("Cannot set")) {
+    dialog.showErrorBox("Citizen Hub – Fatal Error", msg);
+    app.exit(1);
+  }
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[unhandledRejection]", reason);
 });
 
 app.whenReady().then(async () => {

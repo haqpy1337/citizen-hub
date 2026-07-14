@@ -38,13 +38,13 @@ export default function Refineries() {
 
               <div className="grid grid-cols-2 gap-3 pt-1 border-t border-edge">
                 <div>
-                  <p className="label mb-1">Queue</p>
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted mb-1">Queue</p>
                   <p className="text-sm font-mono text-ink">
                     {station.queueSec != null ? formatDuration(station.queueSec) : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="label mb-1">Best Yield</p>
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted mb-1">Best Yield</p>
                   <p className={[
                     "text-sm font-mono",
                     station.bestYield != null && station.bestYield >= 0
@@ -61,7 +61,7 @@ export default function Refineries() {
 
               {station.yields.length > 0 && (
                 <div className="flex flex-col gap-1 pt-1 border-t border-edge">
-                  <p className="label mb-1">Yields</p>
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted mb-1">Yields</p>
                   <div className="flex flex-wrap gap-1.5">
                     {station.yields.map((y, i) => (
                       <span

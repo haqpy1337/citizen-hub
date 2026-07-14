@@ -127,7 +127,7 @@ export default function Jobs() {
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="panel p-5 flex flex-col gap-4">
-            <p className="label">Station</p>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-muted/70">Station</p>
             <select
               className="field"
               value={stationId ?? ""}
@@ -141,7 +141,7 @@ export default function Jobs() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="label">Station Name</label>
+                <label className="text-[10px] font-mono uppercase tracking-widest text-muted">Station Name</label>
                 <input
                   className="field"
                   value={stationName}
@@ -151,7 +151,7 @@ export default function Jobs() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="label">System</label>
+                <label className="text-[10px] font-mono uppercase tracking-widest text-muted">System</label>
                 <input
                   className="field"
                   value={systemName}
@@ -162,7 +162,7 @@ export default function Jobs() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="label">Refinery Method</label>
+              <label className="text-[10px] font-mono uppercase tracking-widest text-muted">Refinery Method</label>
               <select className="field" value={method} onChange={e => setMethod(e.target.value)}>
                 <option value="">— Select method —</option>
                 {methods.map(m => (
@@ -173,11 +173,11 @@ export default function Jobs() {
           </div>
 
           <div className="panel p-5 flex flex-col gap-4">
-            <p className="label">Materials</p>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-muted/70">Materials</p>
             {materials.map(mat => (
               <div key={mat._key} className="grid grid-cols-[1fr_80px_80px_80px_32px] gap-2 items-end">
                 <div className="flex flex-col gap-1">
-                  <label className="label">Ore</label>
+                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted">Ore</label>
                   <input
                     list={`ore-list-${mat._key}`}
                     className="field"
@@ -196,7 +196,7 @@ export default function Jobs() {
                   </datalist>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="label">Qty</label>
+                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted">Qty</label>
                   <input
                     type="number"
                     className="field"
@@ -207,7 +207,7 @@ export default function Jobs() {
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="label">Unit</label>
+                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted">Unit</label>
                   <select className="field" value={mat.unit} onChange={e => updateMaterial(mat._key, { unit: e.target.value })}>
                     <option>SCU</option>
                     <option>cSCU</option>
@@ -215,7 +215,7 @@ export default function Jobs() {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="label">Yield %</label>
+                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted">Yield %</label>
                   <input
                     type="number"
                     className="field"
@@ -248,7 +248,7 @@ export default function Jobs() {
 
           <div className="panel p-5 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="label">Duration</label>
+              <label className="text-[10px] font-mono uppercase tracking-widest text-muted">Duration</label>
               <input
                 className="field"
                 value={durationInput}
@@ -266,7 +266,7 @@ export default function Jobs() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="label">Note (optional)</label>
+              <label className="text-[10px] font-mono uppercase tracking-widest text-muted">Note (optional)</label>
               <textarea
                 className="field resize-none"
                 rows={2}
