@@ -361,6 +361,64 @@ function registerIpc() {
 
     return { ok: false, items: [] };
   });
+
+  // "This Week in Star Citizen" — scrapes latest article from transmission page
+  ipcMain.handle("twisk:fetch", async () => {
+    type TwiskItem = { title: string; link: string; date: string; imageUrl: string | null; description: string };
+
+    // 1. Load the transmission index page to find the latest TWISK article link
+    const indexHtml = await netGet("https://robertsspaceindustries.com/en/comm-link/transmission/");
+    if (!indexHtml) return { ok: false, item: null };
+
+    // Find TWISK article links — look for "this-week-in-star-citizen" slugs
+    const slugRe = /href="(\/en\/comm-link\/[^"]*this-week-in-star-citizen[^"]*)"/gi;
+    const slugs: string[] = [];
+    let sm: RegExpExecArray | null;
+    while ((sm = slugRe.exec(indexHtml)) !== null) {
+      const s = sm[1].split("?")[0];
+      if (!slugs.includes(s)) slugs.push(s);
+    }
+
+    // Also try generic article links from this page and pick newest-looking one
+    if (slugs.length === 0) {
+      const genericRe = /href="(\/en\/comm-link\/transmission\/\d+[^"]*)"/gi;
+      let gm: RegExpExecArray | null;
+      while ((gm = genericRe.exec(indexHtml)) !== null) {
+        const s = gm[1].split("?")[0];
+        if (!slugs.includes(s)) slugs.push(s);
+      }
+    }
+
+    if (slugs.length === 0) return { ok: false, item: null };
+
+    // 2. Load the first (newest) article
+    const articleUrl = slugs[0].startsWith("http") ? slugs[0] : `https://robertsspaceindustries.com${slugs[0]}`;
+    const articleHtml = await netGet(articleUrl);
+    if (!articleHtml) return { ok: false, item: null };
+
+    // Extract title
+    const titleM = articleHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
+      || articleHtml.match(/<title>([\s\S]*?)<\/title>/i);
+    const title = titleM ? titleM[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim() : "This Week in Star Citizen";
+
+    // Extract date
+    const dateM = articleHtml.match(/datetime="([^"]+)"/i)
+      || articleHtml.match(/"datePublished"\s*:\s*"([^"]+)"/i);
+    const date = dateM ? dateM[1] : "";
+
+    // Extract featured image
+    const imgM = articleHtml.match(/<meta property="og:image" content="([^"]+)"/i)
+      || articleHtml.match(/class="[^"]*hero[^"]*"[^>]*src="([^"]+)"/i);
+    const imageUrl = imgM ? imgM[1] : null;
+
+    // Extract description/summary (og:description or first paragraph)
+    const descM = articleHtml.match(/<meta[^>]+name="description"[^>]+content="([^"]+)"/i)
+      || articleHtml.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i);
+    const description = descM ? descM[1].trim() : "";
+
+    const item: TwiskItem = { title, link: articleUrl, date, imageUrl, description };
+    return { ok: true, item };
+  });
 }
 
 // ── Window ───────────────────────────────────────────────────────────────────

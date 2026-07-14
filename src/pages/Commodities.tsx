@@ -350,21 +350,21 @@ export default function Commodities() {
               </div>
             ) : (
               <>
-                {/* Best buy / best sell cards */}
+                {/* Best cards — Buy left, Sell right */}
                 <div className="flex gap-2 shrink-0">
-                  <BestCard
-                    mode="sell"
-                    loc={bestSellLoc}
-                    price={priceData.bestSell}
-                    active={tableMode === "sell"}
-                    onClick={() => toggleMode("sell")}
-                  />
                   <BestCard
                     mode="buy"
                     loc={bestBuyLoc}
                     price={priceData.bestBuy}
                     active={tableMode === "buy"}
                     onClick={() => toggleMode("buy")}
+                  />
+                  <BestCard
+                    mode="sell"
+                    loc={bestSellLoc}
+                    price={priceData.bestSell}
+                    active={tableMode === "sell"}
+                    onClick={() => toggleMode("sell")}
                   />
                 </div>
 
@@ -374,10 +374,14 @@ export default function Commodities() {
                     {tableMode === "sell" ? "Sell Locations" : tableMode === "buy" ? "Buy Locations" : "All Locations"}
                   </p>
                   <div className="flex gap-1 ml-auto">
-                    {(["all", "sell", "buy"] as const).map(m => (
+                    {(["all", "buy", "sell"] as const).map(m => (
                       <button key={m} onClick={() => setTableMode(m)}
-                        className={["text-[10px] font-mono px-2 py-0.5 border transition-all",
-                          tableMode === m ? "border-quant text-quant bg-quant/10" : "border-edge text-muted hover:text-ink"
+                        className={["text-[10px] font-mono px-2.5 py-1 border transition-all font-semibold",
+                          tableMode === m
+                            ? m === "buy"  ? "border-amber  text-amber  bg-amber/10"
+                            : m === "sell" ? "border-quant  text-quant  bg-quant/10"
+                            :                "border-muted  text-ink    bg-hull/60"
+                            : "border-edge/60 text-muted/60 hover:border-edge hover:text-muted"
                         ].join(" ")}>
                         {m === "all" ? "All" : m === "sell" ? "Sell" : "Buy"}
                       </button>

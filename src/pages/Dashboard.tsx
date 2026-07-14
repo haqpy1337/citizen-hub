@@ -33,6 +33,79 @@ function loadTilePrefs(): TileId[] {
   return ALL_TILES.map(t => t.id);
 }
 
+// ── This Week in Star Citizen Panel ──────────────────────────────────────────
+
+interface TwiskItem { title: string; link: string; date: string; imageUrl: string | null; description: string }
+
+function TwiskPanel() {
+  const [item, setItem]       = useState<TwiskItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(false);
+
+  function load() {
+    setLoading(true); setError(false);
+    window.api.fetchTwisk()
+      .then(res => { if (res.ok && res.item) setItem(res.item); else setError(true); })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }
+  useEffect(() => { load(); }, []);
+
+  const fmtDate = (d: string) => {
+    if (!d) return "";
+    try { return new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }); }
+    catch { return d.slice(0, 10); }
+  };
+
+  return (
+    <div className="panel flex flex-col">
+      {loading ? (
+        <div className="flex items-center gap-3 px-5 py-5">
+          <div className="w-4 h-4 border-2 border-quant/30 border-t-quant rounded-full animate-spin shrink-0" />
+          <span className="text-xs font-mono text-muted">Loading…</span>
+        </div>
+      ) : error || !item ? (
+        <div className="flex items-center justify-between px-5 py-4 gap-4">
+          <span className="text-xs text-muted">Could not load article.</span>
+          <div className="flex items-center gap-3">
+            <button onClick={load} className="text-xs font-mono text-quant hover:underline">↻ Retry</button>
+            <button
+              onClick={() => window.open("https://robertsspaceindustries.com/en/comm-link/transmission/")}
+              className="text-xs font-mono text-muted hover:text-quant transition-colors"
+            >Open RSI ↗</button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-4 p-4">
+          {item.imageUrl && (
+            <img
+              src={item.imageUrl}
+              alt=""
+              className="shrink-0 rounded object-cover"
+              style={{ width: 120, height: 80 }}
+              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          )}
+          <div className="flex flex-col gap-2 min-w-0 flex-1">
+            <p className="text-sm font-semibold text-ink leading-snug line-clamp-2">{item.title}</p>
+            {item.date && <p className="text-[10px] font-mono text-muted">{fmtDate(item.date)}</p>}
+            {item.description && (
+              <p className="text-[11px] text-muted/70 leading-relaxed line-clamp-3">{item.description}</p>
+            )}
+            <div className="flex items-center gap-3 mt-auto pt-1">
+              <button
+                onClick={() => window.open(item.link)}
+                className="text-xs font-mono text-quant hover:underline"
+              >Read more ↗</button>
+              <button onClick={load} className="text-[10px] font-mono text-muted/40 hover:text-muted">↻</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Patch Notes Panel ─────────────────────────────────────────────────────────
 
 interface PatchItem { title: string; link: string; date: string; channel: string }
@@ -349,10 +422,16 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Patch Notes */}
-      <div className="flex flex-col gap-3 pt-2 border-t border-edge/40">
-        <p className="eyebrow text-muted/50">SC Patch Notes</p>
-        <PatchNotesPanel />
+      {/* SC News row */}
+      <div className="flex gap-4 pt-2 border-t border-edge/40">
+        <div className="flex flex-col gap-3 flex-1 min-w-0">
+          <p className="eyebrow text-muted/50">This Week in Star Citizen</p>
+          <TwiskPanel />
+        </div>
+        <div className="flex flex-col gap-3 shrink-0" style={{ width: 380 }}>
+          <p className="eyebrow text-muted/50">Patch Notes</p>
+          <PatchNotesPanel />
+        </div>
       </div>
     </div>
   );

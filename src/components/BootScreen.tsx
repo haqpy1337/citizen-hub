@@ -78,8 +78,8 @@ export default function BootScreen({ onComplete }: Props) {
     window.api.onUpdateError(() => setUpdateState("error"));
     window.api.onUpdateNotAvailable(() => setUpdateState("uptodate"));
     window.api.getVersion().then(v => setVersion(v)).catch(() => {});
-    // Hide titlebar buttons during boot — set symbol color to transparent
-    window.api.setTitlebarColors("#060402", "transparent").catch(() => {});
+    // Hide titlebar buttons during boot — blend symbols into background
+    window.api.setTitlebarColors("#060402", "#060402").catch(() => {});
   }, []);
 
   useEffect(() => {
