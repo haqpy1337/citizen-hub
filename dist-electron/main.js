@@ -532,7 +532,7 @@ function setupAutoUpdater() {
 // Give existing instance 800ms to respond before hard-exiting; this prevents the lock
 // from permanently blocking startup if the previous instance crashed without releasing it.
 if (!electron_1.app.requestSingleInstanceLock()) {
-    setTimeout(() => { electron_1.app.quit(); process.exit(0); }, 800);
+    process.exit(0);
 }
 else {
     electron_1.app.on("second-instance", () => {

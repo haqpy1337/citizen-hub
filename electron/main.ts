@@ -527,7 +527,7 @@ function setupAutoUpdater() {
 // Give existing instance 800ms to respond before hard-exiting; this prevents the lock
 // from permanently blocking startup if the previous instance crashed without releasing it.
 if (!app.requestSingleInstanceLock()) {
-  setTimeout(() => { app.quit(); process.exit(0); }, 800);
+  process.exit(0);
 } else {
   app.on("second-instance", () => {
     if (mainWindow) {
