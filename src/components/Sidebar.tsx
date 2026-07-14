@@ -1,22 +1,27 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePage, useLang } from "../App";
 import CrestLogo from "./CrestLogo";
+import anime from "animejs";
 
 const themes = [
-  { key: "mole",    color: "#e05010", title: "Mole — ARGO Industrial"    },
-  { key: "cockpit", color: "#50e828", title: "Cockpit — RSI Terminal"    },
-  { key: "origin",  color: "#0e6faa", title: "Origin — Luxury Yacht"    },
-  { key: "gatac",   color: "#b848ff", title: "Gatac — Alien Tech"        },
-  { key: "hornet",  color: "#2898d8", title: "Hornet — Anvil Military"   },
+  { key: "mole",    color: "#e05010", title: "Mole",    sub: "ARGO Industrial" },
+  { key: "cockpit", color: "#50e828", title: "Cockpit", sub: "RSI Terminal"    },
+  { key: "origin",  color: "#0e6faa", title: "Origin",  sub: "890 Jump Luxury" },
+  { key: "gatac",   color: "#b848ff", title: "Gatac",   sub: "Alien Tech"      },
+  { key: "hornet",  color: "#2898d8", title: "Hornet",  sub: "Anvil Military"  },
 ];
 
-const navItems = [
+const NAV_ITEMS = [
   { label: "Dashboard",  key: "dashboard"  },
   { label: "Jobs",       key: "jobs"       },
   { label: "History",    key: "history"    },
   { label: "Ore Prices", key: "ores"       },
   { label: "Refineries", key: "refineries" },
+  null,
+  { label: "Settings",   key: "settings"   },
 ] as const;
+
+type PageKey = "dashboard" | "jobs" | "history" | "ores" | "refineries" | "settings";
 
 export default function Sidebar() {
   const { page, setPage } = usePage();
@@ -24,6 +29,94 @@ export default function Sidebar() {
   const [activeTheme, setActiveTheme] = useState<string>(() =>
     localStorage.getItem("ch-theme") ?? "mole"
   );
+  const [themeOpen, setThemeOpen] = useState(false);
+
+  const navRef        = useRef<HTMLDivElement>(null);
+  const indicatorRef  = useRef<HTMLDivElement>(null);
+  const dropRef       = useRef<HTMLDivElement>(null);
+  const dropVisible   = useRef(false);
+
+  // ── Sliding indicator ──────────────────────────────────────────────────────
+  function positionIndicator(key: string, animate: boolean) {
+    if (!navRef.current || !indicatorRef.current) return;
+    const btn = navRef.current.querySelector<HTMLElement>(`[data-nav="${key}"]`);
+    if (!btn) return;
+    const targetTop = btn.offsetTop;
+    const targetH   = btn.offsetHeight;
+
+    if (animate) {
+      anime({
+        targets: indicatorRef.current,
+        top:    targetTop,
+        height: targetH,
+        duration: 300,
+        easing:   "easeOutCubic",
+      });
+    } else {
+      indicatorRef.current.style.top    = `${targetTop}px`;
+      indicatorRef.current.style.height = `${targetH}px`;
+    }
+  }
+
+  useEffect(() => {
+    // Wait one frame so the nav is laid out before measuring
+    const id = requestAnimationFrame(() => positionIndicator(page, false));
+    return () => cancelAnimationFrame(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function navigate(key: string) {
+    setPage(key as PageKey);
+    positionIndicator(key, true);
+
+    // Snap-in animation on the clicked item
+    const btn = navRef.current?.querySelector<HTMLElement>(`[data-nav="${key}"]`);
+    if (btn) {
+      anime({ targets: btn, translateX: [6, 0], duration: 200, easing: "easeOutExpo" });
+    }
+  }
+
+  // ── Nav item hover glow ────────────────────────────────────────────────────
+  function handleNavHover(el: HTMLElement, entering: boolean) {
+    if (el.dataset.nav === page) return; // active item stays put
+    anime({
+      targets: el,
+      translateX: entering ? 3 : 0,
+      duration: 150,
+      easing: "easeOutSine",
+    });
+  }
+
+  // ── Theme dropdown ─────────────────────────────────────────────────────────
+  function openThemeDrop(open: boolean) {
+    if (open === dropVisible.current) return;
+    dropVisible.current = open;
+    const el = dropRef.current;
+    if (!el) return;
+
+    if (open) {
+      el.style.display   = "block";
+      el.style.opacity   = "0";
+      el.style.transform = "translateY(-6px)";
+      anime({
+        targets: el,
+        opacity: [0, 1],
+        translateY: [-6, 0],
+        duration: 220,
+        easing: "easeOutExpo",
+      });
+    } else {
+      anime({
+        targets: el,
+        opacity: [1, 0],
+        translateY: [0, -6],
+        duration: 180,
+        easing: "easeInExpo",
+        complete: () => { el.style.display = "none"; },
+      });
+    }
+    setThemeOpen(open);
+  }
 
   function applyTheme(key: string) {
     const html = document.documentElement;
@@ -31,70 +124,137 @@ export default function Sidebar() {
     html.classList.add(`theme-${key}`);
     localStorage.setItem("ch-theme", key);
     setActiveTheme(key);
+    openThemeDrop(false);
   }
+
+  // Hover on theme rows
+  function onThemeRowHover(el: HTMLElement, entering: boolean) {
+    anime({
+      targets: el,
+      translateX: entering ? 4 : 0,
+      duration: 160,
+      easing: "easeOutSine",
+    });
+  }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function outside(e: MouseEvent) {
+      if (dropVisible.current && dropRef.current && !dropRef.current.contains(e.target as Node)) {
+        openThemeDrop(false);
+      }
+    }
+    document.addEventListener("mousedown", outside);
+    return () => document.removeEventListener("mousedown", outside);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const curTheme = themes.find(t => t.key === activeTheme);
 
   return (
     <aside className="w-56 shrink-0 flex flex-col h-screen border-r border-edge bg-panel sticky top-0">
-      <div className="px-5 py-5 border-b border-edge">
+
+      {/* Logo */}
+      <div className="px-5 py-5 border-b border-edge shrink-0">
         <CrestLogo height={32} />
       </div>
 
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
-        <p className="px-2 mb-2 text-[9px] font-mono uppercase tracking-widest text-muted/50">
+      {/* Navigation */}
+      <div ref={navRef} className="relative flex-1 px-3 py-4 flex flex-col overflow-y-auto">
+
+        {/* Sliding active indicator */}
+        <div
+          ref={indicatorRef}
+          className="absolute left-3 right-3 pointer-events-none"
+          style={{
+            top: 0,
+            height: 36,
+            background: "var(--color-quant-dim)",
+            borderLeft: "2px solid var(--color-quant)",
+            opacity: 0.9,
+          }}
+        />
+
+        <p className="px-2 mb-2 text-[9px] font-mono uppercase tracking-widest text-muted/50 shrink-0">
           Navigation
         </p>
-        {navItems.map(item => (
-          <button
-            key={item.key}
-            onClick={() => setPage(item.key)}
-            className={[
-              "w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-mono uppercase tracking-wider transition-all",
-              page === item.key
-                ? "bg-hull text-quant border border-edge"
-                : "text-muted hover:text-ink hover:bg-hull/60",
-            ].join(" ")}
-          >
-            <span className="flex-1">{item.label}</span>
-            {page === item.key && (
-              <span className="h-1.5 w-1.5 rounded-full bg-quant shrink-0" />
-            )}
-          </button>
-        ))}
-      </nav>
 
-      {/* Settings link */}
-      <button
-        onClick={() => setPage("settings")}
-        className={[
-          "mx-3 mb-1 text-left flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-mono uppercase tracking-wider transition-all border",
-          page === "settings"
-            ? "bg-hull text-quant border-edge"
-            : "text-muted hover:text-ink hover:bg-hull/60 border-transparent",
-        ].join(" ")}
-      >
-        <span className="flex-1">Settings</span>
-        {page === "settings" && <span className="h-1.5 w-1.5 rounded-full bg-quant shrink-0" />}
-      </button>
+        {NAV_ITEMS.map((item, idx) =>
+          item === null ? (
+            <div key={`sep-${idx}`} className="h-px bg-edge/40 my-2 mx-1 shrink-0" />
+          ) : (
+            <button
+              key={item.key}
+              data-nav={item.key}
+              onClick={() => navigate(item.key)}
+              onMouseEnter={e => handleNavHover(e.currentTarget, true)}
+              onMouseLeave={e => handleNavHover(e.currentTarget, false)}
+              className={[
+                "relative z-10 shrink-0 w-full text-left flex items-center gap-2.5 px-3 py-2.5",
+                "text-xs font-mono uppercase tracking-wider transition-colors",
+                page === item.key ? "text-quant" : "text-muted hover:text-ink",
+              ].join(" ")}
+            >
+              <span className="flex-1">{item.label}</span>
+              {page === item.key && (
+                <span className="w-1.5 h-1.5 rounded-full bg-quant shrink-0 sidebar-active-dot" />
+              )}
+            </button>
+          )
+        )}
+      </div>
 
-      <div className="border-t border-edge px-4 py-4 flex flex-col gap-3">
+      {/* Bottom bar */}
+      <div className="border-t border-edge px-4 py-4 flex flex-col gap-3 shrink-0">
+
+        {/* Theme picker */}
         <div>
           <p className="text-[9px] font-mono uppercase tracking-widest text-muted/50 mb-2">Theme</p>
-          <div className="flex gap-2">
-            {themes.map(t => (
-              <button
-                key={t.key}
-                title={t.title}
-                onClick={() => applyTheme(t.key)}
-                style={{ background: t.color }}
-                className={[
-                  "w-4 h-4 rounded-full transition-all hover:scale-110",
-                  activeTheme === t.key ? "ring-2 ring-offset-1 ring-offset-panel ring-white/50" : "",
-                ].join(" ")}
-              />
-            ))}
+          <div className="relative">
+            <button
+              onClick={() => openThemeDrop(!themeOpen)}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 border border-edge hover:border-quant/60 transition-colors text-xs font-mono"
+            >
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: curTheme?.color }} />
+              <span className="flex-1 text-left text-muted/80">{curTheme?.title}</span>
+              <span className="text-muted/40 text-[10px]">{themeOpen ? "▴" : "▾"}</span>
+            </button>
+
+            {/* Dropdown panel — appears above the button */}
+            <div
+              ref={dropRef}
+              className="absolute bottom-full left-0 right-0 mb-1.5 border border-edge bg-panel z-50 overflow-hidden"
+              style={{ display: "none" }}
+            >
+              {themes.map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => applyTheme(t.key)}
+                  onMouseEnter={e => onThemeRowHover(e.currentTarget, true)}
+                  onMouseLeave={e => onThemeRowHover(e.currentTarget, false)}
+                  className={[
+                    "w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors",
+                    t.key === activeTheme
+                      ? "bg-quant/10 text-quant"
+                      : "text-muted hover:bg-hull hover:text-ink",
+                  ].join(" ")}
+                >
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/20"
+                    style={{ background: t.color }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-mono font-bold leading-tight">{t.title}</div>
+                    <div className="text-[10px] text-muted/70 leading-tight">{t.sub}</div>
+                  </div>
+                  {t.key === activeTheme && (
+                    <span className="text-quant text-[10px] shrink-0">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
+        {/* Language */}
         <div>
           <p className="text-[9px] font-mono uppercase tracking-widest text-muted/50 mb-2">Language</p>
           <div className="flex gap-1">
@@ -103,10 +263,10 @@ export default function Sidebar() {
                 key={l}
                 onClick={() => setLang(l)}
                 className={[
-                  "px-2 py-0.5 text-xs font-mono uppercase rounded border transition-all",
+                  "flex-1 py-1 text-xs font-mono uppercase border transition-all",
                   lang === l
                     ? "border-quant text-quant bg-quant/10"
-                    : "border-edge text-muted hover:text-ink",
+                    : "border-edge text-muted hover:text-ink hover:border-edge/80",
                 ].join(" ")}
               >
                 {l}
