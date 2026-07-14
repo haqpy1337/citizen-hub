@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell, dialog, net } from "electron";
+import * as http from "http";
 import { autoUpdater } from "electron-updater";
 import * as path from "path";
 import * as fs from "fs";
@@ -453,8 +454,51 @@ async function createWindow() {
     await mainWindow.loadURL("http://localhost:5173");
     mainWindow.webContents.openDevTools();
   } else {
-    await mainWindow.loadFile(path.join(__dirname, "../dist-renderer/index.html"));
+    // Serve renderer via local HTTP to avoid file:// protocol issues on Windows
+    const rendererDir = path.join(__dirname, "../dist-renderer");
+    const port = await serveRenderer(rendererDir);
+    await mainWindow.loadURL(`http://127.0.0.1:${port}/index.html`);
   }
+}
+
+function serveRenderer(dir: string): Promise<number> {
+  const MIME: Record<string, string> = {
+    ".html": "text/html; charset=utf-8",
+    ".js":   "application/javascript",
+    ".css":  "text/css",
+    ".png":  "image/png",
+    ".svg":  "image/svg+xml",
+    ".ico":  "image/x-icon",
+    ".woff": "font/woff",
+    ".woff2":"font/woff2",
+    ".json": "application/json",
+  };
+  return new Promise((resolve, reject) => {
+    const server = http.createServer((req, res) => {
+      const urlPath = (req.url ?? "/").split("?")[0];
+      const filePath = path.join(dir, urlPath === "/" ? "index.html" : urlPath);
+      const ext = path.extname(filePath).toLowerCase();
+      fs.readFile(filePath, (err, data) => {
+        if (err) {
+          // SPA fallback — serve index.html for unknown routes
+          fs.readFile(path.join(dir, "index.html"), (e2, html) => {
+            if (e2) { res.writeHead(404); res.end("Not found"); return; }
+            res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+            res.end(html);
+          });
+          return;
+        }
+        res.writeHead(200, { "Content-Type": MIME[ext] ?? "application/octet-stream" });
+        res.end(data);
+      });
+    });
+    server.listen(0, "127.0.0.1", () => {
+      const addr = server.address();
+      if (!addr || typeof addr === "string") { reject(new Error("bad server address")); return; }
+      resolve(addr.port);
+    });
+    server.on("error", reject);
+  });
 }
 
 // ── Auto-Updater ─────────────────────────────────────────────────────────────
