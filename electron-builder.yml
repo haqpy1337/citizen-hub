@@ -25,6 +25,7 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   perMachine: false
+  include: build-resources/installer.nsh
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: Citizen Hub
