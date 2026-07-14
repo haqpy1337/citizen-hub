@@ -1,5 +1,7 @@
 import { uexFetch } from "./client";
 import {
+  CommodityLocation,
+  CommodityWithPrices,
   OreCommodity,
   RefineryMethod,
   RefineryStation,
@@ -92,6 +94,53 @@ export async function getRefineryMethods(): Promise<RefineryMethod[]> {
     speed: m.rating_speed ?? null,
     cost: m.rating_cost ?? null,
   }));
+}
+
+/** All tradeable commodities with buy/sell prices per location (UEX-style). */
+export async function getCommoditiesWithPrices(): Promise<CommodityWithPrices[]> {
+  const [commodities, prices] = await Promise.all([
+    uexFetch<UexCommodity>("commodities"),
+    uexFetch<UexCommodityPrice>("commodities_prices").catch(() => [] as UexCommodityPrice[]),
+  ]);
+
+  // Group prices by commodity ID
+  const byComm = new Map<number, UexCommodityPrice[]>();
+  for (const p of prices) {
+    if (p.id_commodity == null) continue;
+    const arr = byComm.get(p.id_commodity) ?? [];
+    arr.push(p);
+    byComm.set(p.id_commodity, arr);
+  }
+
+  return commodities
+    .filter(c => c.is_refinable === 1 || c.is_raw === 1 || c.is_extractable === 1)
+    .map(c => {
+      const locs: CommodityLocation[] = (byComm.get(c.id) ?? [])
+        .map(p => ({
+          terminalId: p.id_terminal ?? 0,
+          terminalName: p.terminal_name ?? `Terminal ${p.id_terminal}`,
+          system: p.star_system_name ?? null,
+          station: p.space_station_name ?? p.planet_name ?? null,
+          priceSell: p.price_sell_avg ?? p.price_sell ?? null,
+          priceBuy:  p.price_buy_avg  ?? p.price_buy  ?? null,
+        }))
+        .filter(l => l.priceSell != null || l.priceBuy != null)
+        .sort((a, b) => (b.priceSell ?? 0) - (a.priceSell ?? 0));
+
+      const sells = locs.map(l => l.priceSell).filter((v): v is number => v != null);
+      const buys  = locs.map(l => l.priceBuy ).filter((v): v is number => v != null);
+
+      return {
+        id: c.id,
+        name: c.name,
+        code: c.code ?? null,
+        isRefinable: c.is_refinable === 1,
+        locations: locs,
+        bestSell: sells.length ? Math.max(...sells) : null,
+        bestBuy:  buys.length  ? Math.min(...buys)  : null,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** All mineable raw ores with average sell price per SCU. */

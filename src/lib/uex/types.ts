@@ -67,12 +67,43 @@ export interface UexCommodityPrice {
   id_commodity?: number;
   id_terminal?: number;
   terminal_name?: string;
+  star_system_name?: string;
+  space_station_name?: string;
+  planet_name?: string;
   /** Price the NPC pays the player (player sells → player receives this). */
   price_sell?: number;
   /** Price the NPC charges the player (player buys). */
   price_buy?: number;
   scu_sell_avg?: number;
   price_sell_avg?: number;
+  price_buy_avg?: number;
+  /** 1 = currently stocked/available at this terminal */
+  is_available?: number;
+}
+
+// --- Normalized commodity types -------------------------------------------
+
+export interface CommodityLocation {
+  terminalId: number;
+  terminalName: string;
+  system: string | null;
+  station: string | null;
+  /** What the NPC pays the player (sell here). */
+  priceSell: number | null;
+  /** What the player pays the NPC (buy here). */
+  priceBuy: number | null;
+}
+
+export interface CommodityWithPrices {
+  id: number;
+  name: string;
+  code: string | null;
+  isRefinable: boolean;
+  locations: CommodityLocation[];
+  /** Best (highest) sell price across all terminals. */
+  bestSell: number | null;
+  /** Best (lowest) buy price across all terminals. */
+  bestBuy: number | null;
 }
 
 // --- Normalized types used by the frontend --------------------------------

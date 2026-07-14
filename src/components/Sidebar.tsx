@@ -13,14 +13,14 @@ const themes = [
 ];
 
 const NAV_ITEMS = [
-  { label: "Dashboard",  key: "dashboard"  },
-  { label: "Jobs",       key: "jobs"       },
-  { label: "History",    key: "history"    },
-  { label: "Ore Prices", key: "ores"       },
-  { label: "Refineries", key: "refineries" },
+  { label: "Dashboard",     key: "dashboard"    },
+  { label: "Refining Jobs", key: "jobs"         },
+  { label: "History",       key: "history"      },
+  { label: "Commodities",   key: "commodities"  },
+  { label: "Refineries",    key: "refineries"   },
 ] as const;
 
-type PageKey = "dashboard" | "jobs" | "history" | "ores" | "refineries";
+type PageKey = "dashboard" | "jobs" | "history" | "commodities" | "refineries";
 
 export default function Sidebar() {
   const { page, setPage } = usePage();
@@ -158,7 +158,7 @@ export default function Sidebar() {
         </div>
 
         {/* Bottom bar */}
-        <div className="border-t border-edge px-4 py-4 flex flex-col gap-3 shrink-0">
+        <div className="border-t border-edge px-4 py-4 flex flex-col gap-3 shrink-0 overflow-visible">
 
           {/* Theme picker */}
           <div>

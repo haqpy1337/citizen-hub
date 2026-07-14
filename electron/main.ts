@@ -312,12 +312,15 @@ function registerIpc() {
       return items;
     }
 
-    // Helper: fetch with timeout using electron's net module (proper Chromium UA)
-    async function netGet(url: string, extraHeaders: Record<string,string> = {}, timeoutMs = 9000): Promise<string | null> {
+    // Helper: fetch via renderer session (carries Chromium cookies/UA, better Cloudflare compat)
+    async function netGet(url: string, extraHeaders: Record<string,string> = {}, timeoutMs = 12000): Promise<string | null> {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const res = await net.fetch(url, {
+        const fetchFn = (mainWindow?.webContents.session.fetch ?? net.fetch).bind(
+          mainWindow?.webContents.session ?? net
+        );
+        const res = await fetchFn(url, {
           signal: controller.signal,
           headers: { ...HEADERS, ...extraHeaders },
         });

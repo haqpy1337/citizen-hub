@@ -4,12 +4,12 @@ import BootScreen from "./components/BootScreen";
 import DashboardPage from "./pages/Dashboard";
 import JobsPage from "./pages/Jobs";
 import HistoryPage from "./pages/History";
-import OresPage from "./pages/Ores";
+import CommoditiesPage from "./pages/Commodities";
 import RefineriesPage from "./pages/Refineries";
 import Sidebar from "./components/Sidebar";
 import { Lang } from "./lib/i18n";
 
-export type Page = "dashboard" | "jobs" | "history" | "ores" | "refineries";
+export type Page = "dashboard" | "jobs" | "history" | "commodities" | "refineries";
 
 export interface AuthCtx { user: User | null; token: string | null }
 export const AuthContext = createContext<AuthCtx>(null!);
@@ -54,7 +54,7 @@ export default function App() {
     dashboard: <DashboardPage />,
     jobs: <JobsPage />,
     history: <HistoryPage />,
-    ores: <OresPage />,
+    commodities: <CommoditiesPage />,
     refineries: <RefineriesPage />,
   };
 
@@ -62,6 +62,16 @@ export default function App() {
     <LangContext.Provider value={{ lang, setLang: handleLang }}>
       <AuthContext.Provider value={{ user, token }}>
         <PageContext.Provider value={{ page, setPage }}>
+          {/* Transparent drag region covering the hidden titlebar area */}
+          <div
+            aria-hidden
+            style={{
+              position: "fixed", top: 0, left: 0, right: 0,
+              height: "env(titlebar-area-height, 36px)",
+              WebkitAppRegion: "drag",
+              zIndex: 9999,
+            } as React.CSSProperties}
+          />
           <div className="flex bg-void overflow-hidden" style={{ height: "100vh", paddingTop: "env(titlebar-area-height, 0px)" }}>
             <Sidebar />
             <main key={page} className="page-enter flex-1 overflow-y-auto p-6">
