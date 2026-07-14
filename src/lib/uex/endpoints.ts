@@ -113,7 +113,6 @@ export async function getCommoditiesWithPrices(): Promise<CommodityWithPrices[]>
   }
 
   return commodities
-    .filter(c => c.is_refinable === 1 || c.is_raw === 1 || c.is_extractable === 1)
     .map(c => {
       const locs: CommodityLocation[] = (byComm.get(c.id) ?? [])
         .map(p => ({
@@ -140,6 +139,7 @@ export async function getCommoditiesWithPrices(): Promise<CommodityWithPrices[]>
         bestBuy:  buys.length  ? Math.min(...buys)  : null,
       };
     })
+    .filter(c => c.locations.length > 0)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
