@@ -78,6 +78,8 @@ export default function BootScreen({ onComplete }: Props) {
     window.api.onUpdateError(() => setUpdateState("error"));
     window.api.onUpdateNotAvailable(() => setUpdateState("uptodate"));
     window.api.getVersion().then(v => setVersion(v)).catch(() => {});
+    // Hide titlebar buttons during boot — set symbol color to transparent
+    window.api.setTitlebarColors("#060402", "transparent").catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -151,7 +153,7 @@ export default function BootScreen({ onComplete }: Props) {
     s === "pending" ? "· · ·" : s === "running" ? "LOADING" : s === "ok" ? "ONLINE" : "OFFLINE";
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center overflow-hidden select-none">
+    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden select-none" style={{ backgroundColor: "var(--color-void)" }}>
 
       {/* Grid — uses theme quant-dim */}
       <div className="boot-grid absolute inset-0 opacity-0 pointer-events-none" style={{
@@ -258,7 +260,7 @@ export default function BootScreen({ onComplete }: Props) {
         <UpdateFooter state={updateState} version={updateVersion} onInstall={handleStart} />
       </div>
 
-      <div className="boot-flash fixed inset-0 opacity-0 pointer-events-none" style={{ background: Q }} />
+      <div className="boot-flash fixed inset-0 opacity-0 pointer-events-none" style={{ backgroundColor: "var(--color-void)" }} />
 
       <style>{`
         @keyframes boot-scanline {

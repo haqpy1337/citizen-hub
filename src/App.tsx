@@ -44,10 +44,25 @@ export default function App() {
 
   const handleLang = (l: Lang) => { setLang(l); localStorage.setItem("ch-lang", l); };
 
-  if (appState === "booting") return <div className="h-screen bg-black" />;
+  if (appState === "booting") return <div className="h-screen bg-void" />;
 
   if (appState === "animating") {
-    return <BootScreen onComplete={() => setAppState("ready")} />;
+    return (
+      <BootScreen onComplete={() => {
+        // Restore titlebar button colors after boot animation
+        const themeColors: Record<string, { bg: string; sym: string }> = {
+          mole:    { bg: "#060402", sym: "#e05010" },
+          cockpit: { bg: "#010402", sym: "#50e828" },
+          origin:  { bg: "#f0f2f5", sym: "#0e6faa" },
+          gatac:   { bg: "#060410", sym: "#b848ff" },
+          hornet:  { bg: "#06080e", sym: "#2898d8" },
+        };
+        const theme = localStorage.getItem("ch-theme") ?? "mole";
+        const c = themeColors[theme] ?? themeColors.mole;
+        window.api.setTitlebarColors(c.bg, c.sym).catch(() => {});
+        setAppState("ready");
+      }} />
+    );
   }
 
   const pageMap: Record<Page, React.ReactElement> = {

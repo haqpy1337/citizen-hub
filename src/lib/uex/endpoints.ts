@@ -96,15 +96,17 @@ export async function getRefineryMethods(): Promise<RefineryMethod[]> {
   }));
 }
 
-/** All commodities (no prices — use getCommodityPrices for on-demand price data). */
+/** All tradeable commodities (no prices — use getCommodityPrices for on-demand price data).
+ *  Excludes raw ores (is_refinable=1) — those go into refineries, not trade terminals. */
 export async function getCommodities(): Promise<CommodityWithPrices[]> {
   const commodities = await uexFetch<UexCommodity>("commodities");
   return commodities
+    .filter(c => c.is_refinable !== 1)
     .map(c => ({
       id: c.id,
       name: c.name,
       code: c.code ?? null,
-      isRefinable: c.is_refinable === 1,
+      isRefinable: false,
       locations: [],
       bestSell: null,
       bestBuy: null,
