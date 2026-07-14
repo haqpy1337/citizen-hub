@@ -84,13 +84,13 @@ export default function History() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-edge">
-                <th className="label text-left px-4 py-3">Date</th>
-                <th className="label text-left px-4 py-3">Station</th>
-                <th className="label text-left px-4 py-3">Method</th>
-                <th className="label text-left px-4 py-3">Materials</th>
-                <th className="label text-left px-4 py-3">Duration</th>
-                <th className="label text-left px-4 py-3">Status</th>
-                <th className="label px-4 py-3" />
+                <th className="text-left px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">Date</th>
+                <th className="text-left px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">Station</th>
+                <th className="text-left px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">Method</th>
+                <th className="text-left px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">Materials</th>
+                <th className="text-left px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">Duration</th>
+                <th className="text-left px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-muted">Status</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>

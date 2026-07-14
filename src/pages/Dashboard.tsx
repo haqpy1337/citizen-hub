@@ -27,100 +27,136 @@ function loadTilePrefs(): TileId[] {
     const s = localStorage.getItem("ch-dash-tiles");
     if (s) {
       const parsed = JSON.parse(s) as TileId[];
-      // Validate — keep only known tile IDs
       return parsed.filter(id => ALL_TILES.some(t => t.id === id));
     }
   } catch {}
   return ALL_TILES.map(t => t.id);
 }
 
-// ── News Panel ─────────────────────────────────────────────────────────────────
+// ── Patch Notes Panel ─────────────────────────────────────────────────────────
 
-interface NewsItem { title: string; link: string; date: string }
-const AUTO_ADVANCE_MS = 8000;
+interface PatchItem { title: string; link: string; date: string; channel: string }
+type PatchTab = "LIVE" | "PTU" | "All";
 
-function NewsPanel() {
-  const [items, setItems]   = useState<NewsItem[]>([]);
+function PatchNotesPanel() {
+  const [items, setItems]     = useState<PatchItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState(false);
-  const [idx, setIdx]       = useState(0);
-  const [autoKey, setAutoKey] = useState(0);
-  const itemsRef = useRef(items);
-  itemsRef.current = items;
+  const [error, setError]     = useState(false);
+  const [idx, setIdx]         = useState(0);
+  const [tab, setTab]         = useState<PatchTab>("LIVE");
+  const itemsRef              = useRef(items);
+  itemsRef.current            = items;
 
-  function fetchNews() {
+  function fetchNotes() {
     setLoading(true); setError(false); setItems([]); setIdx(0);
-    window.api.fetchNews()
+    window.api.fetchPatchNotes()
       .then(res => { if (res.ok && res.items.length > 0) setItems(res.items); else setError(true); })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }
-  useEffect(() => { fetchNews(); }, []);
+  useEffect(() => { fetchNotes(); }, []);
 
-  useEffect(() => {
-    if (items.length <= 1) return;
-    const id = setInterval(() => setIdx(i => (i + 1) % itemsRef.current.length), AUTO_ADVANCE_MS);
-    return () => clearInterval(id);
-  }, [items.length, autoKey]);
-
-  function nav(dir: 1 | -1) {
-    setIdx(i => (i + dir + items.length) % items.length);
-    setAutoKey(k => k + 1);
-  }
+  const filtered = tab === "All" ? items : items.filter(i => i.channel === tab);
+  const cur      = filtered[Math.min(idx, Math.max(0, filtered.length - 1))];
 
   const fmtDate = (d: string) => {
+    if (!d) return "";
     try { return new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
-    catch { return d; }
+    catch { return d.slice(0, 10); }
   };
 
-  const cur = items[idx] ?? null;
+  function changeTab(t: PatchTab) { setTab(t); setIdx(0); }
+  function nav(dir: 1 | -1) { setIdx(i => Math.max(0, Math.min(filtered.length - 1, i + dir))); }
+
+  const CHANNEL_CLS: Record<string, string> = {
+    LIVE: "border-quant/60 text-quant bg-quant/10",
+    PTU:  "border-amber/60 text-amber bg-amber/10",
+    EPTU: "border-muted/40 text-muted",
+  };
 
   return (
     <div className="panel flex flex-col">
+      {/* Header row */}
+      <div className="flex items-center gap-3 px-5 pt-3 pb-2 border-b border-edge/50 shrink-0">
+        <p className="text-[11px] font-mono uppercase tracking-widest text-muted">Patch Notes</p>
+        <div className="flex gap-1 ml-auto">
+          {(["LIVE", "PTU", "All"] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => changeTab(t)}
+              className={[
+                "text-[10px] font-mono px-2 py-0.5 border transition-all",
+                tab === t ? "border-quant text-quant bg-quant/10" : "border-edge text-muted hover:text-ink",
+              ].join(" ")}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Body */}
       {loading ? (
         <div className="flex items-center gap-3 px-5 py-4">
           <div className="w-4 h-4 border-2 border-quant/30 border-t-quant rounded-full animate-spin shrink-0" />
-          <span className="text-xs font-mono text-muted">Loading news…</span>
+          <span className="text-xs font-mono text-muted">Loading patch notes…</span>
         </div>
       ) : error || !cur ? (
         <div className="flex items-center justify-between px-5 py-4 gap-4">
-          <span className="text-xs text-muted">Could not load RSI news.</span>
+          <span className="text-xs text-muted">
+            {items.length > 0 && tab !== "All"
+              ? `No ${tab} patches found.`
+              : "Could not load patch notes."}
+          </span>
           <div className="flex items-center gap-3">
-            <button onClick={fetchNews} className="text-xs font-mono text-quant hover:underline">↻ Retry</button>
+            {(error || items.length === 0) && (
+              <button onClick={fetchNotes} className="text-xs font-mono text-quant hover:underline">↻ Retry</button>
+            )}
             <button
-              onClick={() => window.open("https://robertsspaceindustries.com/comm-link")}
+              onClick={() => window.open("https://robertsspaceindustries.com/comm-link/patch-notes")}
               className="text-xs font-mono text-muted hover:text-quant transition-colors"
             >
-              Open Comm-Link ↗
+              Open RSI Patch Notes ↗
             </button>
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-4 px-5 py-4">
-          <button onClick={() => nav(-1)} disabled={items.length <= 1}
-            className="text-sm font-mono text-muted hover:text-quant transition-colors disabled:opacity-20 shrink-0">←</button>
+        <div className="flex items-center gap-3 px-5 py-4">
+          <button
+            onClick={() => nav(-1)}
+            disabled={idx === 0}
+            className="text-sm font-mono text-muted hover:text-quant transition-colors disabled:opacity-20 shrink-0"
+          >←</button>
 
           <div className="flex-1 min-w-0 flex flex-col gap-1">
-            <p className="text-sm font-medium text-ink leading-snug truncate">{cur.title}</p>
-            <div className="flex items-center gap-3">
-              {cur.date && <span className="text-[10px] text-muted font-mono">{fmtDate(cur.date)}</span>}
-              <button
-                onClick={() => window.open(cur.link || "https://robertsspaceindustries.com/comm-link")}
-                className="text-[10px] text-quant hover:underline font-mono"
-              >Open ↗</button>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={`text-[10px] font-mono px-1.5 py-0.5 border shrink-0 ${CHANNEL_CLS[cur.channel] ?? CHANNEL_CLS.EPTU}`}>
+                {cur.channel}
+              </span>
+              <p className="text-sm font-medium text-ink truncate">{cur.title}</p>
             </div>
+            {cur.date && (
+              <p className="text-[10px] font-mono text-muted">{fmtDate(cur.date)}</p>
+            )}
           </div>
 
-          <div className="flex gap-1 items-center shrink-0">
-            {items.map((_, i) => (
-              <button key={i} onClick={() => { setIdx(i); setAutoKey(k => k + 1); }}
-                className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? "bg-quant" : "bg-muted/30 hover:bg-muted/60"}`} />
-            ))}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-[10px] font-mono text-muted/40 tabular-nums">
+              {idx + 1} / {filtered.length}
+            </span>
+            <button
+              onClick={() => window.open(cur.link || "https://robertsspaceindustries.com/comm-link/patch-notes")}
+              className="text-xs font-mono text-quant hover:underline"
+            >
+              Full Notes ↗
+            </button>
           </div>
 
-          <button onClick={() => nav(1)} disabled={items.length <= 1}
-            className="text-sm font-mono text-muted hover:text-quant transition-colors disabled:opacity-20 shrink-0">→</button>
-          <button onClick={fetchNews} className="text-xs font-mono text-muted/40 hover:text-quant transition-colors shrink-0" title="Refresh">↻</button>
+          <button
+            onClick={() => nav(1)}
+            disabled={idx >= filtered.length - 1}
+            className="text-sm font-mono text-muted hover:text-quant transition-colors disabled:opacity-20 shrink-0"
+          >→</button>
         </div>
       )}
     </div>
@@ -194,10 +230,10 @@ function JobCard({ job, onMarkDone }: { job: Job; onMarkDone: () => void }) {
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { token } = useAuth();
+  const { token }  = useAuth();
   const { setPage } = usePage();
-  const [jobs, setJobs]     = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs]           = useState<Job[]>([]);
+  const [loading, setLoading]     = useState(true);
   const [customize, setCustomize] = useState(false);
   const [visibleTiles, setVisibleTiles] = useState<TileId[]>(loadTilePrefs);
   const now = useNow();
@@ -223,9 +259,9 @@ export default function Dashboard() {
     });
   }
 
-  const activeJobs  = jobs.filter(j => j.status === "running");
-  const doneJobs    = jobs.filter(j => j.status === "done");
-  const earliest    = activeJobs.reduce<Job | null>((best, j) =>
+  const activeJobs = jobs.filter(j => j.status === "running");
+  const doneJobs   = jobs.filter(j => j.status === "done");
+  const earliest   = activeJobs.reduce<Job | null>((best, j) =>
     !best || new Date(j.finishesAt) < new Date(best.finishesAt) ? j : best, null);
 
   const tileContent: Record<TileId, React.ReactNode> = {
@@ -250,7 +286,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stat tiles — customizable */}
+      {/* Stat tiles */}
       {(visibleTiles.length > 0 || customize) && (
         <div>
           {customize && (
@@ -271,8 +307,10 @@ export default function Dashboard() {
             </div>
           )}
           {visibleTiles.length > 0 && (
-            <div className={`grid gap-4 grid-cols-${Math.min(visibleTiles.length, 4)}`}
-              style={{ gridTemplateColumns: `repeat(${Math.min(visibleTiles.length, 4)}, minmax(0, 1fr))` }}>
+            <div
+              className="grid gap-4"
+              style={{ gridTemplateColumns: `repeat(${Math.min(visibleTiles.length, 4)}, minmax(0, 1fr))` }}
+            >
               {visibleTiles.map(id => (
                 <div key={id} className="panel p-4 relative">
                   {tileContent[id]}
@@ -311,10 +349,10 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* News — visually separated */}
+      {/* Patch Notes */}
       <div className="flex flex-col gap-3 pt-2 border-t border-edge/40">
-        <p className="eyebrow text-muted/50">SC News & Comm-Link</p>
-        <NewsPanel />
+        <p className="eyebrow text-muted/50">SC Patch Notes</p>
+        <PatchNotesPanel />
       </div>
     </div>
   );

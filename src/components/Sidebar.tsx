@@ -134,7 +134,7 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="w-56 shrink-0 flex flex-col h-screen border-r border-edge bg-panel sticky top-0">
+      <aside className="w-56 shrink-0 flex flex-col h-full border-r border-edge bg-panel sticky top-0">
 
         {/* Logo — also serves as window drag handle (titleBar: hidden) */}
         <div className="px-5 py-5 border-b border-edge shrink-0" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>

@@ -50,6 +50,7 @@ declare global {
       installUpdate(): Promise<void>;
       checkForUpdates(): Promise<{ ok: boolean; error?: string }>;
       fetchNews(): Promise<{ ok: boolean; source?: string; items: { title: string; link: string; date: string }[] }>;
+      fetchPatchNotes(): Promise<{ ok: boolean; items: { title: string; link: string; date: string; channel: string }[] }>;
       isFirstRunAfterUpdate(): Promise<boolean>;
       setTitlebarColors(color: string, symbolColor: string): Promise<void>;
       getVersion(): Promise<string>;

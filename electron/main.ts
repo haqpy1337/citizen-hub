@@ -68,7 +68,6 @@ async function initDb() {
   db = new SQL.Database(fileData);
 
   db.run("PRAGMA foreign_keys = ON");
-  db.run("PRAGMA journal_mode = WAL");
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -244,8 +243,8 @@ function registerIpc() {
     return row?.result === 1;
   });
 
-  ipcMain.handle("news:fetch", async () => {
-    type NewsItem = { title: string; link: string; date: string };
+  ipcMain.handle("patchnotes:fetch", async () => {
+    type PatchItem = { title: string; link: string; date: string; channel: string };
 
     const HEADERS = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -259,69 +258,19 @@ function registerIpc() {
       const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
       return m ? parseCdata(m[1].trim()) : "";
     }
-    function parseRss(xml: string): NewsItem[] {
-      const items: NewsItem[] = [];
-      const rx = /<item>([\s\S]*?)<\/item>/g;
-      let m: RegExpExecArray | null;
-      while ((m = rx.exec(xml)) !== null && items.length < 6) {
-        const block = m[1];
-        const title = extractTag(block, "title");
-        const link  = extractTag(block, "link") || extractTag(block, "guid");
-        const date  = extractTag(block, "pubDate") || extractTag(block, "dc:date");
-        if (title) items.push({ title, link, date });
-      }
-      return items;
-    }
-    function parseJsonLd(html: string): NewsItem[] {
-      const items: NewsItem[] = [];
-      const rx = /<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi;
-      let m: RegExpExecArray | null;
-      while ((m = rx.exec(html)) !== null && items.length < 6) {
-        try {
-          const data = JSON.parse(m[1]);
-          const entries: unknown[] = Array.isArray(data) ? data : [data];
-          for (const entry of entries) {
-            const e = entry as Record<string, unknown>;
-            const name = typeof e.name === "string" ? e.name : "";
-            const url  = typeof e.url === "string" ? e.url : (typeof e["@id"] === "string" ? e["@id"] : "");
-            const date = typeof e.datePublished === "string" ? e.datePublished : "";
-            if (name && url && url.includes("comm-link")) items.push({ title: name, link: url, date });
-          }
-        } catch {}
-      }
-      return items;
-    }
-    function scrapeHtml(html: string): NewsItem[] {
-      const items: NewsItem[] = [];
-      const seen = new Set<string>();
-      // Match comm-link article hrefs
-      const linkRx = /href="(\/comm-link\/[^"#?]+)"/g;
-      let m: RegExpExecArray | null;
-      while ((m = linkRx.exec(html)) !== null && items.length < 6) {
-        const slug = m[1];
-        if (seen.has(slug) || slug === "/comm-link/" || slug.endsWith("/")) continue;
-        seen.add(slug);
-        // Grab nearest heading text after this href
-        const block = html.slice(m.index, m.index + 1200);
-        const hm = block.match(/<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/i);
-        if (!hm) continue;
-        const title = hm[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-        if (title.length < 5) continue;
-        items.push({ title, link: `https://robertsspaceindustries.com${slug}`, date: "" });
-      }
-      return items;
+    function channelFromTitle(title: string): string {
+      const t = title.toUpperCase();
+      if (t.includes("EPTU")) return "EPTU";
+      if (t.includes("PTU"))  return "PTU";
+      return "LIVE";
     }
 
-    // Helper: fetch via renderer session (carries Chromium cookies/UA, better Cloudflare compat)
-    async function netGet(url: string, extraHeaders: Record<string,string> = {}, timeoutMs = 12000): Promise<string | null> {
+    async function netGet(url: string, extraHeaders: Record<string,string> = {}, timeoutMs = 14000): Promise<string | null> {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const fetchFn = (mainWindow?.webContents.session.fetch ?? net.fetch).bind(
-          mainWindow?.webContents.session ?? net
-        );
-        const res = await fetchFn(url, {
-          signal: controller.signal,
+        const res = await net.fetch(url, {
+          signal: controller.signal as AbortSignal,
           headers: { ...HEADERS, ...extraHeaders },
         });
         if (!res.ok) return null;
@@ -330,31 +279,53 @@ function registerIpc() {
       finally { clearTimeout(timer); }
     }
 
-    // 1. Try RSS feeds
+    // Strategy 1: RSI Comm-Link Patch Notes RSS feeds
     const RSS_URLS = [
-      "https://robertsspaceindustries.com/feed/1",
-      "https://robertsspaceindustries.com/comm-link/rss",
-      "https://robertsspaceindustries.com/community/news/feed",
-      "https://robertsspaceindustries.com/comm-link.rss",
+      "https://robertsspaceindustries.com/comm-link/patch-notes.rss",
+      "https://robertsspaceindustries.com/comm-link/19.rss",
+      "https://robertsspaceindustries.com/feed/19",
     ];
     for (const url of RSS_URLS) {
       const xml = await netGet(url, { Accept: "application/rss+xml,application/xml,text/xml,*/*" });
-      if (!xml) continue;
-      const items = parseRss(xml);
-      if (items.length > 0) return { ok: true, source: url, items };
+      if (!xml || !xml.includes("<item>")) continue;
+      const items: PatchItem[] = [];
+      const rx = /<item>([\s\S]*?)<\/item>/g;
+      let m: RegExpExecArray | null;
+      while ((m = rx.exec(xml)) !== null && items.length < 30) {
+        const block = m[1];
+        const title = extractTag(block, "title");
+        if (!title.toLowerCase().includes("patch")) continue;
+        const link  = extractTag(block, "link") || extractTag(block, "guid");
+        const date  = extractTag(block, "pubDate") || extractTag(block, "dc:date");
+        items.push({ title, link, date, channel: channelFromTitle(title) });
+      }
+      if (items.length > 0) return { ok: true, items };
     }
 
-    // 2. Fall back to scraping the comm-link HTML page (net.fetch uses real browser UA)
-    const html = await netGet("https://robertsspaceindustries.com/comm-link", {
-      Accept: "text/html,application/xhtml+xml,*/*",
-    }, 12000);
+    // Strategy 2: Scrape the Patch Notes comm-link page
+    const html = await netGet(
+      "https://robertsspaceindustries.com/comm-link/patch-notes",
+      { Accept: "text/html,application/xhtml+xml,*/*" }
+    );
     if (html) {
-      // Try JSON-LD structured data first (most reliable)
-      const jsonLdItems = parseJsonLd(html);
-      if (jsonLdItems.length > 0) return { ok: true, source: "json-ld", items: jsonLdItems };
-      // Then regex-based href extraction
-      const scraped = scrapeHtml(html);
-      if (scraped.length > 0) return { ok: true, source: "html-scrape", items: scraped };
+      const items: PatchItem[] = [];
+      const seen = new Set<string>();
+      const linkRx = /href="(\/comm-link\/[^"#?]*patch[^"#?]*)"/gi;
+      let m: RegExpExecArray | null;
+      while ((m = linkRx.exec(html)) !== null && items.length < 30) {
+        const slug = m[1];
+        if (seen.has(slug)) continue;
+        seen.add(slug);
+        const block = html.slice(Math.max(0, m.index - 200), m.index + 800);
+        const hm = block.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)
+          || block.match(/title="([^"]+)"/i)
+          || block.match(/alt="([^"]+)"/i);
+        if (!hm) continue;
+        const title = hm[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+        if (title.length < 8 || !title.toLowerCase().includes("patch")) continue;
+        items.push({ title, link: `https://robertsspaceindustries.com${slug}`, date: "", channel: channelFromTitle(title) });
+      }
+      if (items.length > 0) return { ok: true, items };
     }
 
     return { ok: false, items: [] };
@@ -412,6 +383,18 @@ function setupAutoUpdater() {
 }
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
+
+// Single-instance lock — if another instance is already running, focus it and exit
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  process.exit(0);
+}
+app.on("second-instance", () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
 
 process.on("uncaughtException", (err) => {
   dialog.showErrorBox("Citizen Hub – Error", String(err));

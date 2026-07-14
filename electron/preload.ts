@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld("api", {
   installUpdate: () => ipcRenderer.invoke("install-update"),
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   fetchNews: () => ipcRenderer.invoke("news:fetch"),
+  fetchPatchNotes: () => ipcRenderer.invoke("patchnotes:fetch"),
   isFirstRunAfterUpdate: () => ipcRenderer.invoke("app:isFirstRunAfterUpdate"),
   setTitlebarColors: (color: string, symbolColor: string) => ipcRenderer.invoke("titlebar:setColors", color, symbolColor),
   getVersion: () => ipcRenderer.invoke("app:version"),
