@@ -1,6 +1,6 @@
 {
   "name": "citizen-hub",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Star Citizen companion app — live UEX data, refinery jobs, trade routes.",
   "author": "haqpy",

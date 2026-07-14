@@ -124,8 +124,9 @@ export async function getOreCommodities(): Promise<OreCommodity[]> {
       const fromPrices = arr?.length
         ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)
         : null;
-      const fromCommodity = (c.price_buy && c.price_buy > 0 ? c.price_buy : null)
-        ?? (c.price_sell && c.price_sell > 0 ? c.price_sell : null);
+      // price_sell = what the NPC pays the player when selling ore; price_buy = what player pays to buy back
+      const fromCommodity = (c.price_sell && c.price_sell > 0 ? c.price_sell : null)
+        ?? (c.price_buy && c.price_buy > 0 ? c.price_buy : null);
       return {
         id: c.id,
         name: c.name,

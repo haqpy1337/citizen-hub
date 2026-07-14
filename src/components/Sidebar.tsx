@@ -5,11 +5,11 @@ import SettingsModal from "./SettingsModal";
 import anime from "animejs";
 
 const themes = [
-  { key: "mole",    color: "#e05010", title: "Mole",    sub: "ARGO Industrial", titleBg: "#110d08" },
-  { key: "cockpit", color: "#50e828", title: "Cockpit", sub: "RSI Terminal",    titleBg: "#030a04" },
-  { key: "origin",  color: "#0e6faa", title: "Origin",  sub: "890 Jump Luxury", titleBg: "#f8f9fb" },
-  { key: "gatac",   color: "#b848ff", title: "Gatac",   sub: "Alien Tech",      titleBg: "#0c0820" },
-  { key: "hornet",  color: "#2898d8", title: "Hornet",  sub: "Anvil Military",  titleBg: "#0e1220" },
+  { key: "mole",    color: "#e05010", title: "Mole",    sub: "ARGO Industrial", titleBg: "#1a1410" },
+  { key: "cockpit", color: "#50e828", title: "Cockpit", sub: "RSI Terminal",    titleBg: "#060f07" },
+  { key: "origin",  color: "#0e6faa", title: "Origin",  sub: "890 Jump Luxury", titleBg: "#ffffff" },
+  { key: "gatac",   color: "#b848ff", title: "Gatac",   sub: "Alien Tech",      titleBg: "#100c28" },
+  { key: "hornet",  color: "#2898d8", title: "Hornet",  sub: "Anvil Military",  titleBg: "#141826" },
 ];
 
 const NAV_ITEMS = [
@@ -34,7 +34,7 @@ export default function Sidebar() {
   const navRef       = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const dropRef      = useRef<HTMLDivElement>(null);
-  const gearRef      = useRef<HTMLButtonElement>(null);
+  const gearIconRef  = useRef<HTMLSpanElement>(null);
   const dropVisible  = useRef(false);
 
   // ── Sliding indicator ──────────────────────────────────────────────────────
@@ -136,8 +136,8 @@ export default function Sidebar() {
     <>
       <aside className="w-56 shrink-0 flex flex-col h-screen border-r border-edge bg-panel sticky top-0">
 
-        {/* Logo */}
-        <div className="px-5 py-5 border-b border-edge shrink-0">
+        {/* Logo — also serves as window drag handle (titleBar: hidden) */}
+        <div className="px-5 py-5 border-b border-edge shrink-0" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
           <CrestLogo height={32} />
         </div>
 
@@ -223,18 +223,17 @@ export default function Sidebar() {
           {/* Settings gear */}
           <div className="pt-1 border-t border-edge/50">
             <button
-              ref={gearRef}
               onClick={() => setSettingsOpen(o => !o)}
               className="w-full flex items-center gap-2 px-2 py-1.5 text-muted hover:text-quant transition-colors text-xs font-mono"
             >
-              <span className="text-base leading-none" style={{ display: "inline-block" }}>⚙</span>
-              <span className="uppercase tracking-widest text-[10px]">Settings</span>
+              <span ref={gearIconRef} className="text-base leading-none shrink-0" style={{ display: "inline-block" }}>⚙</span>
+              <span className="uppercase tracking-wide text-[10px] truncate">Settings</span>
             </button>
           </div>
         </div>
       </aside>
 
-      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} gearRef={gearRef} />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} gearRef={gearIconRef} />
     </>
   );
 }

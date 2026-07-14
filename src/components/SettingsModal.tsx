@@ -6,7 +6,7 @@ type UpdateState = "idle" | "checking" | "available" | "downloaded" | "uptodate"
 interface Props {
   open: boolean;
   onClose: () => void;
-  gearRef: React.RefObject<HTMLButtonElement | null>;
+  gearRef: React.RefObject<HTMLSpanElement | null>;
 }
 
 export default function SettingsModal({ open, onClose, gearRef }: Props) {
