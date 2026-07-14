@@ -187,6 +187,27 @@ function rowToJob(r: Record<string, unknown>): Job {
   };
 }
 
+// ── HTTP helpers (shared by IPC handlers) ────────────────────────────────────
+
+const HEADERS = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+};
+
+async function netGet(url: string, extraHeaders: Record<string, string> = {}, timeoutMs = 14000): Promise<string | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await net.fetch(url, {
+      signal: controller.signal as AbortSignal,
+      headers: { ...HEADERS, ...extraHeaders },
+    });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch { return null; }
+  finally { clearTimeout(timer); }
+}
+
 // ── IPC Handlers ─────────────────────────────────────────────────────────────
 
 function registerIpc() {
@@ -277,11 +298,6 @@ function registerIpc() {
   ipcMain.handle("patchnotes:fetch", async () => {
     type PatchItem = { title: string; link: string; date: string; channel: string };
 
-    const HEADERS = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    };
-
     function parseCdata(s: string): string {
       return s.replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim();
     }
@@ -294,20 +310,6 @@ function registerIpc() {
       if (t.includes("EPTU")) return "EPTU";
       if (t.includes("PTU"))  return "PTU";
       return "LIVE";
-    }
-
-    async function netGet(url: string, extraHeaders: Record<string,string> = {}, timeoutMs = 14000): Promise<string | null> {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        const res = await net.fetch(url, {
-          signal: controller.signal as AbortSignal,
-          headers: { ...HEADERS, ...extraHeaders },
-        });
-        if (!res.ok) return null;
-        return await res.text();
-      } catch { return null; }
-      finally { clearTimeout(timer); }
     }
 
     // Strategy 1: RSI Comm-Link Patch Notes RSS feeds
