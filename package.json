@@ -1,6 +1,6 @@
 {
   "name": "citizen-hub",
-  "version": "2.3.29",
+  "version": "2.3.30",
   "private": true,
   "description": "Star Citizen companion app — live UEX data, refinery jobs, trade routes.",
   "author": "haqpy",
@@ -16,16 +16,16 @@
   "dependencies": {
     "animejs": "^3.2.2",
     "electron-updater": "^6.8.9",
-    "sql.js": "^1.12.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "sql.js": "^1.12.0"
   },
   "devDependencies": {
     "@types/animejs": "^3.1.13",
     "@types/node": "^20.16.11",
-    "@types/sql.js": "^1.4.9",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
+    "@types/sql.js": "^1.4.9",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "concurrently": "^9.0.1",

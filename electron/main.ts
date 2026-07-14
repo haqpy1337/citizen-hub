@@ -283,7 +283,15 @@ function registerIpc() {
   ipcMain.handle("app:isFirstRunAfterUpdate", () => !!settings.isFirstRunAfterUpdate);
 
   ipcMain.handle("titlebar:setColors", (_, color: string, symbolColor: string) => {
-    try { mainWindow?.setTitleBarOverlay({ color, symbolColor }); } catch {}
+    try { mainWindow?.setTitleBarOverlay({ color, symbolColor, height: 36 }); } catch {}
+  });
+
+  ipcMain.handle("window:expand", () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.setResizable(true);
+    mainWindow.setMinimumSize(900, 600);
+    mainWindow.setSize(1280, 800);
+    mainWindow.center();
   });
 
   ipcMain.handle("app:getZoom", () => settings.zoom ?? 1);
@@ -430,12 +438,13 @@ function registerIpc() {
 
 async function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1280, height: 800, minWidth: 900, minHeight: 600,
+    width: 660, height: 580, minWidth: 660, minHeight: 580,
+    resizable: false,
     title: "Citizen Hub",
     backgroundColor: "#060402",
     autoHideMenuBar: true,
     titleBarStyle: "hidden",
-    titleBarOverlay: { color: "#060402", symbolColor: "#e05010", height: 36 },
+    titleBarOverlay: { color: "#060402", symbolColor: "#060402", height: 1 },
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

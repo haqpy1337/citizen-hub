@@ -54,6 +54,7 @@ declare global {
       fetchTwisk(): Promise<{ ok: boolean; item: { title: string; link: string; date: string; imageUrl: string | null; description: string } | null }>;
       isFirstRunAfterUpdate(): Promise<boolean>;
       setTitlebarColors(color: string, symbolColor: string): Promise<void>;
+      expandWindow(): Promise<void>;
       getVersion(): Promise<string>;
       getZoom(): Promise<number>;
       setZoom(factor: number): Promise<void>;

@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld("api", {
   fetchTwisk: () => ipcRenderer.invoke("twisk:fetch"),
   isFirstRunAfterUpdate: () => ipcRenderer.invoke("app:isFirstRunAfterUpdate"),
   setTitlebarColors: (color: string, symbolColor: string) => ipcRenderer.invoke("titlebar:setColors", color, symbolColor),
+  expandWindow: () => ipcRenderer.invoke("window:expand"),
   getVersion: () => ipcRenderer.invoke("app:version"),
   getZoom: () => ipcRenderer.invoke("app:getZoom"),
   setZoom: (factor: number) => ipcRenderer.invoke("app:setZoom", factor),

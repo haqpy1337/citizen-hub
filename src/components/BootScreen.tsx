@@ -59,9 +59,10 @@ const CHECKS: Check[] = [
   },
 ];
 
-// CSS var shortcuts for inline styles
-const Q  = "var(--color-quant)";
-const QD = "var(--color-quant-dim)";
+// Bootscreen always uses the dark MOLE palette regardless of active theme
+const BG = "#060402";
+const Q  = "#e05010";
+const QD = "rgba(224,80,16,0.18)";
 
 export default function BootScreen({ onComplete }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,8 +79,9 @@ export default function BootScreen({ onComplete }: Props) {
     window.api.onUpdateError(() => setUpdateState("error"));
     window.api.onUpdateNotAvailable(() => setUpdateState("uptodate"));
     window.api.getVersion().then(v => setVersion(v)).catch(() => {});
-    // Hide titlebar buttons during boot — blend symbols into background
-    window.api.setTitlebarColors("#060402", "#060402").catch(() => {});
+    // Fallback: if no update event fires within 8 s, assume up to date
+    const updateTimeout = setTimeout(() => setUpdateState(s => s === "checking" ? "uptodate" : s), 8000);
+    return () => clearTimeout(updateTimeout);
   }, []);
 
   useEffect(() => {
@@ -137,23 +139,38 @@ export default function BootScreen({ onComplete }: Props) {
   }, [ready]);
 
   function handleStart() {
-    anime({
-      targets: ".boot-flash", opacity: [0, 0.6, 0], duration: 400, easing: "easeInOutSine",
-      complete: () => anime({ targets: containerRef.current, opacity: [1, 0], duration: 350, complete: onComplete }),
-    });
+    const tl = anime.timeline({ easing: "easeInQuad" });
+    tl
+      // corners extend outward and vanish
+      .add({ targets: ".boot-corner-h", scaleX: [1, 2.5], opacity: [1, 0], duration: 280, easing: "easeInCubic" })
+      .add({ targets: ".boot-corner-v", scaleY: [1, 2.5], opacity: [1, 0], duration: 280, easing: "easeInCubic" }, "-=280")
+      // center ring + logo collapse
+      .add({ targets: ".boot-ring", opacity: [null, 0], duration: 180 }, "-=220")
+      .add({ targets: [".boot-citizen", ".boot-hub"], opacity: [null, 0], scale: [1, 1.08], duration: 180, easing: "easeInQuad" }, "-=180")
+      // rows cascade out
+      .add({ targets: [".boot-row", ".boot-bar-track", ".boot-enter", ".boot-footer", ".boot-divider"], opacity: [null, 0], translateY: [0, -5], duration: 140, delay: anime.stagger(10) }, "-=140")
+      // grid zooms
+      .add({ targets: ".boot-grid", backgroundSize: ["44px 44px", "110px 110px"], opacity: [null, 0], duration: 260 }, "-=80")
+      // flash covers window — expand + complete happen under the flash so resize is invisible
+      .add({
+        targets: ".boot-flash", opacity: [0, 1],
+        duration: 200, easing: "easeOutQuad",
+        begin: () => { window.api.expandWindow().catch(() => {}); },
+        complete: onComplete,
+      }, "-=140");
   }
 
   function statusStyle(s: CheckStatus): React.CSSProperties {
     if (s === "pending") return { color: Q, opacity: 0.25 };
     if (s === "running") return { color: Q };
     if (s === "ok")      return { color: Q };
-    return { color: "var(--color-danger)" };
+    return { color: "#e02010" };
   }
   const statusText = (s: CheckStatus) =>
     s === "pending" ? "· · ·" : s === "running" ? "LOADING" : s === "ok" ? "ONLINE" : "OFFLINE";
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden select-none" style={{ backgroundColor: "var(--color-void)" }}>
+    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden select-none" style={{ backgroundColor: BG, WebkitAppRegion: "drag" } as React.CSSProperties}>
 
       {/* Grid — uses theme quant-dim */}
       <div className="boot-grid absolute inset-0 opacity-0 pointer-events-none" style={{
@@ -187,9 +204,9 @@ export default function BootScreen({ onComplete }: Props) {
       ))}
 
       {/* Center panel */}
-      <div className="relative flex flex-col items-center w-72" style={{ gap: "1.75rem" }}>
+      <div className="relative flex flex-col items-center w-72" style={{ gap: "1.1rem" }}>
 
-        <svg width="110" height="110" viewBox="0 0 110 110" fill="none">
+        <svg width="88" height="88" viewBox="0 0 110 110" fill="none">
           <circle className="boot-ring" cx="55" cy="55" r="50" stroke={Q} strokeWidth="0.7" opacity="0.2" />
           <circle className="boot-ring" cx="55" cy="55" r="38" stroke={Q} strokeWidth="1"   opacity="0.45" />
           <circle className="boot-ring" cx="55" cy="55" r="26" stroke={Q} strokeWidth="1.2" opacity="0.7" />
@@ -237,7 +254,7 @@ export default function BootScreen({ onComplete }: Props) {
         </div>
 
         {/* ENTER button */}
-        <div className="boot-enter w-full" style={{ opacity: 0, pointerEvents: ready ? "auto" : "none" }}>
+        <div className="boot-enter w-full" style={{ opacity: 0, pointerEvents: ready ? "auto" : "none", WebkitAppRegion: "no-drag" } as React.CSSProperties}>
           <button
             onClick={handleStart}
             className="w-full py-2.5 text-sm font-mono font-semibold tracking-[0.25em] uppercase rounded transition-all active:scale-95"
@@ -255,12 +272,19 @@ export default function BootScreen({ onComplete }: Props) {
       </div>
 
       {/* Footer */}
-      <div className="boot-footer absolute bottom-7 left-0 right-0 flex items-center justify-between px-10" style={{ opacity: 0 }}>
+      <div className="boot-footer absolute bottom-8 left-0 right-0 flex items-center justify-between px-8" style={{ opacity: 0 }}>
         <span className="text-sm font-mono tracking-widest" style={{ color: Q, opacity: 0.55 }}>v{version}</span>
         <UpdateFooter state={updateState} version={updateVersion} onInstall={handleStart} />
       </div>
 
-      <div className="boot-flash fixed inset-0 opacity-0 pointer-events-none" style={{ backgroundColor: "var(--color-void)" }} />
+      <div className="boot-flash fixed inset-0 opacity-0 pointer-events-none" style={{ backgroundColor: BG, zIndex: 10 }} />
+
+      {/* Expansion scan line */}
+      <div className="boot-expand-scanline absolute pointer-events-none" style={{
+        width: "100%", height: "2px", top: "-1px", opacity: 0, zIndex: 11,
+        background: `linear-gradient(90deg, transparent, ${Q}, ${Q}, transparent)`,
+        boxShadow: `0 0 12px 2px ${Q}`,
+      }} />
 
       <style>{`
         @keyframes boot-scanline {
@@ -295,7 +319,7 @@ function UpdateFooter({ state, version, onInstall }: {
   const style = { color: q, opacity: 0.45 } as React.CSSProperties;
   if (state === "checking")  return <span className="text-xs font-mono animate-pulse tracking-wider" style={style}>CHECKING FOR UPDATES…</span>;
   if (state === "uptodate")  return <span className="text-xs font-mono tracking-wider" style={{ ...style, opacity: 0.3 }}>UP TO DATE</span>;
-  if (state === "error")     return <span className="text-xs font-mono tracking-wider" style={{ color: "var(--color-danger)", opacity: 0.5 }}>UPDATE CHECK FAILED</span>;
+  if (state === "error")     return <span className="text-xs font-mono tracking-wider" style={{ color: "#e02010", opacity: 0.5 }}>UPDATE CHECK FAILED</span>;
   if (state === "available") return (
     <span className="text-xs font-mono tracking-wider" style={{ ...style, opacity: 0.65 }}>
       <DownloadingDots label={`DOWNLOADING v${version}`} color={q} />
