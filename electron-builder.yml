@@ -12,9 +12,7 @@ files:
   - "!**/*.ts"
   - "!**/*.map"
 
-asarUnpack:
-  - "dist-renderer/**"
-  - "**/sql.js/dist/sql-wasm.wasm"
+asar: false
 
 win:
   target:
