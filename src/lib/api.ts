@@ -51,6 +51,7 @@ declare global {
       checkForUpdates(): Promise<{ ok: boolean; error?: string }>;
       fetchNews(): Promise<{ ok: boolean; source?: string; items: { title: string; link: string; date: string }[] }>;
       isFirstRunAfterUpdate(): Promise<boolean>;
+      setTitlebarColors(color: string, symbolColor: string): Promise<void>;
       getVersion(): Promise<string>;
       getZoom(): Promise<number>;
       setZoom(factor: number): Promise<void>;

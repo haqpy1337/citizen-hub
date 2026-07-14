@@ -5,11 +5,11 @@ import SettingsModal from "./SettingsModal";
 import anime from "animejs";
 
 const themes = [
-  { key: "mole",    color: "#e05010", title: "Mole",    sub: "ARGO Industrial" },
-  { key: "cockpit", color: "#50e828", title: "Cockpit", sub: "RSI Terminal"    },
-  { key: "origin",  color: "#0e6faa", title: "Origin",  sub: "890 Jump Luxury" },
-  { key: "gatac",   color: "#b848ff", title: "Gatac",   sub: "Alien Tech"      },
-  { key: "hornet",  color: "#2898d8", title: "Hornet",  sub: "Anvil Military"  },
+  { key: "mole",    color: "#e05010", title: "Mole",    sub: "ARGO Industrial", titleBg: "#110d08" },
+  { key: "cockpit", color: "#50e828", title: "Cockpit", sub: "RSI Terminal",    titleBg: "#030a04" },
+  { key: "origin",  color: "#0e6faa", title: "Origin",  sub: "890 Jump Luxury", titleBg: "#f8f9fb" },
+  { key: "gatac",   color: "#b848ff", title: "Gatac",   sub: "Alien Tech",      titleBg: "#0c0820" },
+  { key: "hornet",  color: "#2898d8", title: "Hornet",  sub: "Anvil Military",  titleBg: "#0e1220" },
 ];
 
 const NAV_ITEMS = [
@@ -52,6 +52,9 @@ export default function Sidebar() {
 
   useEffect(() => {
     const id = requestAnimationFrame(() => positionIndicator(page, false));
+    // Sync titlebar color with current theme on startup
+    const t = themes.find(t => t.key === activeTheme);
+    if (t) window.api.setTitlebarColors(t.titleBg, t.color).catch(() => {});
     return () => cancelAnimationFrame(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -91,6 +94,8 @@ export default function Sidebar() {
     localStorage.setItem("ch-theme", key);
     setActiveTheme(key);
     openDrop(false);
+    const t = themes.find(t => t.key === key);
+    if (t) window.api.setTitlebarColors(t.titleBg, t.color).catch(() => {});
   }
 
   useEffect(() => {

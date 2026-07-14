@@ -15,7 +15,7 @@ html.theme-mole {
   --color-edge:       #3a2e20;
   --color-steel:      #503e2c;
   --color-ink:        #f4dfc0;
-  --color-muted:      #806848;
+  --color-muted:      #a08060;
   --color-quant:      #e05010;
   --color-quant-dim:  rgba(224,80,16,0.18);
   --color-amber:      #d08000;
@@ -104,7 +104,7 @@ html.theme-cockpit {
   --color-edge:       #0e2810;
   --color-steel:      #164818;
   --color-ink:        #88e070;
-  --color-muted:      #3a6030;
+  --color-muted:      #62a048;
   --color-quant:      #50e828;
   --color-quant-dim:  rgba(80,232,40,0.12);
   --color-amber:      #d8c020;
@@ -268,7 +268,7 @@ html.theme-gatac {
   --color-edge:       #221440;
   --color-steel:      #302060;
   --color-ink:        #ead8ff;
-  --color-muted:      #5840a0;
+  --color-muted:      #8860c8;
   --color-quant:      #b848ff;
   --color-quant-dim:  rgba(184,72,255,0.14);
   --color-amber:      #f0a800;
@@ -370,7 +370,7 @@ html.theme-hornet {
   --color-edge:       #202840;
   --color-steel:      #2e3a54;
   --color-ink:        #c8d8f0;
-  --color-muted:      #486080;
+  --color-muted:      #6888a8;
   --color-quant:      #2898d8;
   --color-quant-dim:  rgba(40,152,216,0.15);
   --color-amber:      #40b8f0;

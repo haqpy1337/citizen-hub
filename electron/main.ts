@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog } from "electron";
+import { app, BrowserWindow, ipcMain, shell, dialog, net } from "electron";
 import { autoUpdater } from "electron-updater";
 import * as path from "path";
 import * as fs from "fs";
@@ -228,6 +228,10 @@ function registerIpc() {
 
   ipcMain.handle("app:isFirstRunAfterUpdate", () => !!settings.isFirstRunAfterUpdate);
 
+  ipcMain.handle("titlebar:setColors", (_, color: string, symbolColor: string) => {
+    try { mainWindow?.setTitleBarOverlay({ color, symbolColor }); } catch {}
+  });
+
   ipcMain.handle("app:getZoom", () => settings.zoom ?? 1);
   ipcMain.handle("app:setZoom", (_e, factor: number) => {
     settings.zoom = Math.max(0.5, Math.min(2, factor));
@@ -268,6 +272,25 @@ function registerIpc() {
       }
       return items;
     }
+    function parseJsonLd(html: string): NewsItem[] {
+      const items: NewsItem[] = [];
+      const rx = /<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi;
+      let m: RegExpExecArray | null;
+      while ((m = rx.exec(html)) !== null && items.length < 6) {
+        try {
+          const data = JSON.parse(m[1]);
+          const entries: unknown[] = Array.isArray(data) ? data : [data];
+          for (const entry of entries) {
+            const e = entry as Record<string, unknown>;
+            const name = typeof e.name === "string" ? e.name : "";
+            const url  = typeof e.url === "string" ? e.url : (typeof e["@id"] === "string" ? e["@id"] : "");
+            const date = typeof e.datePublished === "string" ? e.datePublished : "";
+            if (name && url && url.includes("comm-link")) items.push({ title: name, link: url, date });
+          }
+        } catch {}
+      }
+      return items;
+    }
     function scrapeHtml(html: string): NewsItem[] {
       const items: NewsItem[] = [];
       const seen = new Set<string>();
@@ -289,34 +312,47 @@ function registerIpc() {
       return items;
     }
 
+    // Helper: fetch with timeout using electron's net module (proper Chromium UA)
+    async function netGet(url: string, extraHeaders: Record<string,string> = {}, timeoutMs = 9000): Promise<string | null> {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await net.fetch(url, {
+          signal: controller.signal,
+          headers: { ...HEADERS, ...extraHeaders },
+        });
+        if (!res.ok) return null;
+        return await res.text();
+      } catch { return null; }
+      finally { clearTimeout(timer); }
+    }
+
     // 1. Try RSS feeds
     const RSS_URLS = [
       "https://robertsspaceindustries.com/feed/1",
       "https://robertsspaceindustries.com/comm-link/rss",
       "https://robertsspaceindustries.com/community/news/feed",
+      "https://robertsspaceindustries.com/comm-link.rss",
     ];
     for (const url of RSS_URLS) {
-      try {
-        const res = await fetch(url, { signal: AbortSignal.timeout(8000), headers: HEADERS });
-        if (!res.ok) continue;
-        const xml = await res.text();
-        const items = parseRss(xml);
-        if (items.length > 0) return { ok: true, source: url, items };
-      } catch { /* next */ }
+      const xml = await netGet(url, { Accept: "application/rss+xml,application/xml,text/xml,*/*" });
+      if (!xml) continue;
+      const items = parseRss(xml);
+      if (items.length > 0) return { ok: true, source: url, items };
     }
 
-    // 2. Fall back to scraping the comm-link page
-    try {
-      const res = await fetch("https://robertsspaceindustries.com/comm-link", {
-        signal: AbortSignal.timeout(10000),
-        headers: { ...HEADERS, "Accept": "text/html,application/xhtml+xml,*/*" },
-      });
-      if (res.ok) {
-        const html = await res.text();
-        const items = scrapeHtml(html);
-        if (items.length > 0) return { ok: true, source: "html-scrape", items };
-      }
-    } catch { /* give up */ }
+    // 2. Fall back to scraping the comm-link HTML page (net.fetch uses real browser UA)
+    const html = await netGet("https://robertsspaceindustries.com/comm-link", {
+      Accept: "text/html,application/xhtml+xml,*/*",
+    }, 12000);
+    if (html) {
+      // Try JSON-LD structured data first (most reliable)
+      const jsonLdItems = parseJsonLd(html);
+      if (jsonLdItems.length > 0) return { ok: true, source: "json-ld", items: jsonLdItems };
+      // Then regex-based href extraction
+      const scraped = scrapeHtml(html);
+      if (scraped.length > 0) return { ok: true, source: "html-scrape", items: scraped };
+    }
 
     return { ok: false, items: [] };
   });
@@ -328,8 +364,10 @@ async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280, height: 800, minWidth: 900, minHeight: 600,
     title: "Citizen Hub",
-    backgroundColor: "#000000",
+    backgroundColor: "#060402",
     autoHideMenuBar: true,
+    titleBarStyle: "hidden",
+    titleBarOverlay: { color: "#110d08", symbolColor: "#e05010", height: 36 },
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

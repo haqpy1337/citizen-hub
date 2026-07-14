@@ -35,18 +35,17 @@ export default function SettingsModal({ open, onClose, gearRef }: Props) {
     if (!overlay || !panel) return;
 
     if (open && !prevOpen.current) {
-      // Spin gear
+      // Always spin forward by one full turn from wherever we are
       if (gearRef.current) {
-        anime({ targets: gearRef.current, rotate: [0, 360], duration: 600, easing: "easeOutExpo" });
+        anime({ targets: gearRef.current, rotate: "+=360", duration: 600, easing: "easeOutExpo" });
       }
-      // Show overlay
       overlay.style.display = "flex";
       anime({ targets: overlay, opacity: [0, 1], duration: 200, easing: "easeOutSine" });
       anime({ targets: panel, translateX: [-320, 0], opacity: [0, 1], duration: 320, easing: "easeOutExpo" });
     } else if (!open && prevOpen.current) {
-      // Spin gear back
+      // Reset rotation to 0 on close — no accumulated tilt
       if (gearRef.current) {
-        anime({ targets: gearRef.current, rotate: [0, -180], duration: 400, easing: "easeInExpo" });
+        anime({ targets: gearRef.current, rotate: 0, duration: 350, easing: "easeInExpo" });
       }
       anime({ targets: panel, translateX: [0, -40], opacity: [1, 0], duration: 220, easing: "easeInExpo" });
       anime({
@@ -94,7 +93,7 @@ export default function SettingsModal({ open, onClose, gearRef }: Props) {
     >
       <div
         ref={panelRef}
-        className="relative h-full w-[420px] bg-panel border-r border-edge flex flex-col overflow-y-auto"
+        className="relative h-full w-[420px] bg-panel border-r border-edge flex flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ boxShadow: "var(--shadow-panel), 12px 0 48px rgba(0,0,0,0.6)" }}
       >
         {/* Header */}
@@ -189,8 +188,9 @@ export default function SettingsModal({ open, onClose, gearRef }: Props) {
             <p className="label">About</p>
             <div className="panel p-4 flex flex-col gap-2">
               <p className="text-sm text-ink font-medium">Citizen Hub</p>
-              <p className="text-xs text-muted">
-                Star Citizen refinery job tracker — live UEX Corp market data.
+              <p className="text-xs text-muted leading-relaxed">
+                Star Citizen companion app — track refinery jobs, compare stations and ore prices,
+                monitor processing timers, and browse live UEX Corp market data.
               </p>
               <button
                 onClick={() => window.open("https://github.com/haqpy1337/citizen-hub")}

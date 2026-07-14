@@ -62,7 +62,7 @@ export default function App() {
     <LangContext.Provider value={{ lang, setLang: handleLang }}>
       <AuthContext.Provider value={{ user, token }}>
         <PageContext.Provider value={{ page, setPage }}>
-          <div className="flex h-screen bg-void overflow-hidden">
+          <div className="flex bg-void overflow-hidden" style={{ height: "100vh", paddingTop: "env(titlebar-area-height, 0px)" }}>
             <Sidebar />
             <main key={page} className="page-enter flex-1 overflow-y-auto p-6">
               {pageMap[page]}

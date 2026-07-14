@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld("api", {
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   fetchNews: () => ipcRenderer.invoke("news:fetch"),
   isFirstRunAfterUpdate: () => ipcRenderer.invoke("app:isFirstRunAfterUpdate"),
+  setTitlebarColors: (color: string, symbolColor: string) => ipcRenderer.invoke("titlebar:setColors", color, symbolColor),
   getVersion: () => ipcRenderer.invoke("app:version"),
   getZoom: () => ipcRenderer.invoke("app:getZoom"),
   setZoom: (factor: number) => ipcRenderer.invoke("app:setZoom", factor),
