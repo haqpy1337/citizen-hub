@@ -8,6 +8,7 @@ import OresPage from "./pages/Ores";
 import RefineriesPage from "./pages/Refineries";
 import SettingsPage from "./pages/Settings";
 import Sidebar from "./components/Sidebar";
+import ThemeBackground from "./components/ThemeBackground";
 import { Lang } from "./lib/i18n";
 
 export type Page = "dashboard" | "jobs" | "history" | "ores" | "refineries" | "settings";
@@ -64,9 +65,10 @@ export default function App() {
     <LangContext.Provider value={{ lang, setLang: handleLang }}>
       <AuthContext.Provider value={{ user, token }}>
         <PageContext.Provider value={{ page, setPage }}>
-          <div className="flex h-screen bg-void overflow-hidden">
+          <div className="relative flex h-screen bg-void overflow-hidden">
+            <ThemeBackground />
             <Sidebar />
-            <main className="flex-1 overflow-y-auto p-6">
+            <main className="relative flex-1 overflow-y-auto p-6" style={{ zIndex: 1 }}>
               {pageMap[page]}
             </main>
           </div>

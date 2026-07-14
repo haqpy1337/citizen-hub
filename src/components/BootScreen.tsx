@@ -66,21 +66,15 @@ export default function BootScreen({ onComplete }: Props) {
 
   // Intro animation + sequential checks
   useEffect(() => {
-    // Exact ms from timeline start when each row's animation begins.
-    // Calculated from the chain of .add() offsets below:
-    //   divider ends at 3380ms → rows use stagger(100) with -=100 → row 0 at 3280ms
+    // Row animation start times relative to component mount (ms).
+    // Timeline math: divider ends at ~3380ms, rows use stagger(100) with -=100
+    // → row 0 begins at 3280ms, each subsequent row 100ms later.
     const ROW_START_MS = CHECKS.map((_, i) => 3280 + i * 100);
 
-    // Capture the exact moment the timeline fires its first tick.
-    // We use the TIMELINE-level begin (not per-child) because that's guaranteed.
-    let tlStartAt = 0;
-    let resolveTlStart!: () => void;
-    const tlStarted = new Promise<void>(r => { resolveTlStart = r; });
+    // Record mount time synchronously — guaranteed, no callback needed.
+    const mountedAt = Date.now();
 
-    const tl = anime.timeline({
-      easing: "easeOutExpo",
-      begin: () => { tlStartAt = performance.now(); resolveTlStart(); },
-    });
+    const tl = anime.timeline({ easing: "easeOutExpo" });
 
     tl
       .add({ targets: ".boot-grid",      opacity: [0, 1], duration: 700 })
@@ -97,20 +91,21 @@ export default function BootScreen({ onComplete }: Props) {
 
     let cancelled = false;
     (async () => {
-      // Wait for the timeline to actually start (fires on the first rAF tick, ~16ms)
-      await tlStarted;
-
       for (let i = 0; i < CHECKS.length; i++) {
         if (cancelled) return;
 
-        // Wait precisely until this row's animation begins in the timeline.
-        // If a previous slow check already pushed us past this point, skip the wait.
-        const wait = ROW_START_MS[i] - (performance.now() - tlStartAt);
+        // Wait until this row's animation is visible in the timeline.
+        // If a slow previous check already pushed past this point, skip the wait.
+        const wait = ROW_START_MS[i] - (Date.now() - mountedAt);
         if (wait > 0) await new Promise(r => setTimeout(r, wait));
         if (cancelled) return;
 
         setStatuses(prev => { const n = [...prev]; n[i] = "running"; return n; });
-        const result = await CHECKS[i].run();
+        // Keep LOADING visible for at least 700ms so the user can see it.
+        const [result] = await Promise.all([
+          CHECKS[i].run(),
+          new Promise<void>(r => setTimeout(r, 700)),
+        ]);
         if (cancelled) return;
 
         setStatuses(prev => { const n = [...prev]; n[i] = result ? "ok" : "fail"; return n; });
