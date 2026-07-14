@@ -235,10 +235,18 @@ function registerIpc() {
     run("DELETE FROM refinery_jobs WHERE id=? AND user_id=?", [id, userId]);
   });
 
-  // Release single-instance lock before installer replaces the exe, then quit+install
+  // Graceful update install: close window first, release lock, then run installer.
+  // This ensures no file handles are locked when NSIS tries to replace the exe.
   ipcMain.handle("install-update", () => {
     app.releaseSingleInstanceLock();
-    setImmediate(() => autoUpdater.quitAndInstall(true, true));
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.once("closed", () => {
+        setTimeout(() => autoUpdater.quitAndInstall(true, true), 300);
+      });
+      mainWindow.close();
+    } else {
+      setTimeout(() => autoUpdater.quitAndInstall(true, true), 300);
+    }
   });
 
   ipcMain.handle("update:check", async () => {

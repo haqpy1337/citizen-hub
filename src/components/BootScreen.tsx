@@ -274,6 +274,20 @@ export default function BootScreen({ onComplete }: Props) {
   );
 }
 
+function DownloadingDots({ label, color }: { label: string; color: string }) {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setFrame(f => (f + 1) % 4), 500);
+    return () => clearInterval(id);
+  }, []);
+  const dots = ["   ", ".  ", ".. ", "..."][frame];
+  return (
+    <span style={{ color, fontFamily: "monospace" }}>
+      {label}<span style={{ opacity: 0.6 }}>{dots}</span>
+    </span>
+  );
+}
+
 function UpdateFooter({ state, version, onInstall }: {
   state: UpdateState; version: string | null; onInstall: () => void;
 }) {
@@ -282,12 +296,18 @@ function UpdateFooter({ state, version, onInstall }: {
   if (state === "checking")  return <span className="text-xs font-mono animate-pulse tracking-wider" style={style}>CHECKING FOR UPDATES…</span>;
   if (state === "uptodate")  return <span className="text-xs font-mono tracking-wider" style={{ ...style, opacity: 0.3 }}>UP TO DATE</span>;
   if (state === "error")     return <span className="text-xs font-mono tracking-wider" style={{ color: "var(--color-danger)", opacity: 0.5 }}>UPDATE CHECK FAILED</span>;
-  if (state === "available") return <span className="text-xs font-mono animate-pulse tracking-wider" style={{ ...style, opacity: 0.65 }}>DOWNLOADING v{version}…</span>;
+  if (state === "available") return (
+    <span className="text-xs font-mono tracking-wider" style={{ ...style, opacity: 0.65 }}>
+      <DownloadingDots label={`DOWNLOADING v${version}`} color={q} />
+    </span>
+  );
   if (state === "downloaded") return (
     <button
       onClick={e => { e.stopPropagation(); onInstall(); }}
-      className="text-xs font-mono px-3 py-1 rounded animate-pulse tracking-wider transition-colors"
-      style={{ color: q, border: `1px solid ${q}`, opacity: 0.8 }}
+      className="text-xs font-mono px-3 py-1 tracking-wider transition-all"
+      style={{ color: q, border: `1px solid ${q}`, opacity: 0.9 }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; (e.currentTarget as HTMLButtonElement).style.background = `${q}18`; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9"; (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
     >
       v{version} READY — INSTALL &amp; RESTART
     </button>
