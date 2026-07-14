@@ -11,14 +11,17 @@ const themes = [
   { key: "hornet",  color: "#2898d8", title: "Hornet",  sub: "Anvil Military"  },
 ];
 
-const NAV_ITEMS = [
+// Split into main and bottom groups to avoid null-in-as-const issues
+const NAV_MAIN = [
   { label: "Dashboard",  key: "dashboard"  },
   { label: "Jobs",       key: "jobs"       },
   { label: "History",    key: "history"    },
   { label: "Ore Prices", key: "ores"       },
   { label: "Refineries", key: "refineries" },
-  null,
-  { label: "Settings",   key: "settings"   },
+] as const;
+
+const NAV_BOTTOM = [
+  { label: "Settings", key: "settings" },
 ] as const;
 
 type PageKey = "dashboard" | "jobs" | "history" | "ores" | "refineries" | "settings";
@@ -31,35 +34,32 @@ export default function Sidebar() {
   );
   const [themeOpen, setThemeOpen] = useState(false);
 
-  const navRef        = useRef<HTMLDivElement>(null);
-  const indicatorRef  = useRef<HTMLDivElement>(null);
-  const dropRef       = useRef<HTMLDivElement>(null);
-  const dropVisible   = useRef(false);
+  const navRef       = useRef<HTMLDivElement>(null);
+  const indicatorRef = useRef<HTMLDivElement>(null);
+  const dropRef      = useRef<HTMLDivElement>(null);
+  const dropVisible  = useRef(false);
 
   // ── Sliding indicator ──────────────────────────────────────────────────────
   function positionIndicator(key: string, animate: boolean) {
     if (!navRef.current || !indicatorRef.current) return;
     const btn = navRef.current.querySelector<HTMLElement>(`[data-nav="${key}"]`);
     if (!btn) return;
-    const targetTop = btn.offsetTop;
-    const targetH   = btn.offsetHeight;
 
     if (animate) {
       anime({
         targets: indicatorRef.current,
-        top:    targetTop,
-        height: targetH,
+        top:    btn.offsetTop,
+        height: btn.offsetHeight,
         duration: 300,
         easing:   "easeOutCubic",
       });
     } else {
-      indicatorRef.current.style.top    = `${targetTop}px`;
-      indicatorRef.current.style.height = `${targetH}px`;
+      indicatorRef.current.style.top    = `${btn.offsetTop}px`;
+      indicatorRef.current.style.height = `${btn.offsetHeight}px`;
     }
   }
 
   useEffect(() => {
-    // Wait one frame so the nav is laid out before measuring
     const id = requestAnimationFrame(() => positionIndicator(page, false));
     return () => cancelAnimationFrame(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,54 +68,33 @@ export default function Sidebar() {
   function navigate(key: string) {
     setPage(key as PageKey);
     positionIndicator(key, true);
-
-    // Snap-in animation on the clicked item
     const btn = navRef.current?.querySelector<HTMLElement>(`[data-nav="${key}"]`);
-    if (btn) {
-      anime({ targets: btn, translateX: [6, 0], duration: 200, easing: "easeOutExpo" });
-    }
+    if (btn) anime({ targets: btn, translateX: [6, 0], duration: 200, easing: "easeOutExpo" });
   }
 
-  // ── Nav item hover glow ────────────────────────────────────────────────────
   function handleNavHover(el: HTMLElement, entering: boolean) {
-    if (el.dataset.nav === page) return; // active item stays put
-    anime({
-      targets: el,
-      translateX: entering ? 3 : 0,
-      duration: 150,
-      easing: "easeOutSine",
-    });
+    if (el.dataset.nav === page) return;
+    anime({ targets: el, translateX: entering ? 3 : 0, duration: 150, easing: "easeOutSine" });
   }
 
   // ── Theme dropdown ─────────────────────────────────────────────────────────
-  function openThemeDrop(open: boolean) {
+  function openDrop(open: boolean) {
     if (open === dropVisible.current) return;
     dropVisible.current = open;
+    setThemeOpen(open);
     const el = dropRef.current;
     if (!el) return;
 
     if (open) {
-      el.style.display   = "block";
-      el.style.opacity   = "0";
-      el.style.transform = "translateY(-6px)";
-      anime({
-        targets: el,
-        opacity: [0, 1],
-        translateY: [-6, 0],
-        duration: 220,
-        easing: "easeOutExpo",
-      });
+      el.style.display = "block";
+      anime({ targets: el, opacity: [0, 1], translateY: [-6, 0], duration: 220, easing: "easeOutExpo" });
     } else {
       anime({
-        targets: el,
-        opacity: [1, 0],
-        translateY: [0, -6],
-        duration: 180,
-        easing: "easeInExpo",
+        targets: el, opacity: [1, 0], translateY: [0, -6],
+        duration: 180, easing: "easeInExpo",
         complete: () => { el.style.display = "none"; },
       });
     }
-    setThemeOpen(open);
   }
 
   function applyTheme(key: string) {
@@ -124,24 +103,13 @@ export default function Sidebar() {
     html.classList.add(`theme-${key}`);
     localStorage.setItem("ch-theme", key);
     setActiveTheme(key);
-    openThemeDrop(false);
+    openDrop(false);
   }
 
-  // Hover on theme rows
-  function onThemeRowHover(el: HTMLElement, entering: boolean) {
-    anime({
-      targets: el,
-      translateX: entering ? 4 : 0,
-      duration: 160,
-      easing: "easeOutSine",
-    });
-  }
-
-  // Close dropdown when clicking outside
   useEffect(() => {
     function outside(e: MouseEvent) {
       if (dropVisible.current && dropRef.current && !dropRef.current.contains(e.target as Node)) {
-        openThemeDrop(false);
+        openDrop(false);
       }
     }
     document.addEventListener("mousedown", outside);
@@ -150,6 +118,28 @@ export default function Sidebar() {
   }, []);
 
   const curTheme = themes.find(t => t.key === activeTheme);
+
+  function navButton(item: { label: string; key: string }) {
+    return (
+      <button
+        key={item.key}
+        data-nav={item.key}
+        onClick={() => navigate(item.key)}
+        onMouseEnter={e => handleNavHover(e.currentTarget, true)}
+        onMouseLeave={e => handleNavHover(e.currentTarget, false)}
+        className={[
+          "relative z-10 shrink-0 w-full text-left flex items-center gap-2.5 px-3 py-2.5",
+          "text-xs font-mono uppercase tracking-wider transition-colors",
+          page === item.key ? "text-quant" : "text-muted hover:text-ink",
+        ].join(" ")}
+      >
+        <span className="flex-1">{item.label}</span>
+        {page === item.key && (
+          <span className="w-1.5 h-1.5 rounded-full bg-quant shrink-0 sidebar-active-dot" />
+        )}
+      </button>
+    );
+  }
 
   return (
     <aside className="w-56 shrink-0 flex flex-col h-screen border-r border-edge bg-panel sticky top-0">
@@ -171,7 +161,6 @@ export default function Sidebar() {
             height: 36,
             background: "var(--color-quant-dim)",
             borderLeft: "2px solid var(--color-quant)",
-            opacity: 0.9,
           }}
         />
 
@@ -179,32 +168,17 @@ export default function Sidebar() {
           Navigation
         </p>
 
-        {NAV_ITEMS.map((item, idx) =>
-          item === null ? (
-            <div key={`sep-${idx}`} className="h-px bg-edge/40 my-2 mx-1 shrink-0" />
-          ) : (
-            <button
-              key={item.key}
-              data-nav={item.key}
-              onClick={() => navigate(item.key)}
-              onMouseEnter={e => handleNavHover(e.currentTarget, true)}
-              onMouseLeave={e => handleNavHover(e.currentTarget, false)}
-              className={[
-                "relative z-10 shrink-0 w-full text-left flex items-center gap-2.5 px-3 py-2.5",
-                "text-xs font-mono uppercase tracking-wider transition-colors",
-                page === item.key ? "text-quant" : "text-muted hover:text-ink",
-              ].join(" ")}
-            >
-              <span className="flex-1">{item.label}</span>
-              {page === item.key && (
-                <span className="w-1.5 h-1.5 rounded-full bg-quant shrink-0 sidebar-active-dot" />
-              )}
-            </button>
-          )
-        )}
+        {/* Main nav items */}
+        {NAV_MAIN.map(item => navButton(item))}
+
+        {/* Separator before Settings */}
+        <div className="h-px bg-edge/40 my-2 mx-1 shrink-0" />
+
+        {/* Settings */}
+        {NAV_BOTTOM.map(item => navButton(item))}
       </div>
 
-      {/* Bottom bar */}
+      {/* Bottom bar: theme + language */}
       <div className="border-t border-edge px-4 py-4 flex flex-col gap-3 shrink-0">
 
         {/* Theme picker */}
@@ -212,26 +186,27 @@ export default function Sidebar() {
           <p className="text-[9px] font-mono uppercase tracking-widest text-muted/50 mb-2">Theme</p>
           <div className="relative">
             <button
-              onClick={() => openThemeDrop(!themeOpen)}
+              onClick={() => openDrop(!themeOpen)}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 border border-edge hover:border-quant/60 transition-colors text-xs font-mono"
             >
-              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: curTheme?.color }} />
+              <span className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ background: curTheme?.color }} />
               <span className="flex-1 text-left text-muted/80">{curTheme?.title}</span>
               <span className="text-muted/40 text-[10px]">{themeOpen ? "▴" : "▾"}</span>
             </button>
 
-            {/* Dropdown panel — appears above the button */}
+            {/* Animated dropdown */}
             <div
               ref={dropRef}
               className="absolute bottom-full left-0 right-0 mb-1.5 border border-edge bg-panel z-50 overflow-hidden"
-              style={{ display: "none" }}
+              style={{ display: "none", opacity: 0 }}
             >
               {themes.map(t => (
                 <button
                   key={t.key}
                   onClick={() => applyTheme(t.key)}
-                  onMouseEnter={e => onThemeRowHover(e.currentTarget, true)}
-                  onMouseLeave={e => onThemeRowHover(e.currentTarget, false)}
+                  onMouseEnter={e => anime({ targets: e.currentTarget, translateX: [0, 4], duration: 140, easing: "easeOutSine" })}
+                  onMouseLeave={e => anime({ targets: e.currentTarget, translateX: [4, 0], duration: 140, easing: "easeOutSine" })}
                   className={[
                     "w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors",
                     t.key === activeTheme
@@ -245,9 +220,7 @@ export default function Sidebar() {
                     <div className="text-xs font-mono font-bold leading-tight">{t.title}</div>
                     <div className="text-[10px] text-muted/70 leading-tight">{t.sub}</div>
                   </div>
-                  {t.key === activeTheme && (
-                    <span className="text-quant text-[10px] shrink-0">✓</span>
-                  )}
+                  {t.key === activeTheme && <span className="text-quant text-[10px] shrink-0">✓</span>}
                 </button>
               ))}
             </div>
@@ -266,7 +239,7 @@ export default function Sidebar() {
                   "flex-1 py-1 text-xs font-mono uppercase border transition-all",
                   lang === l
                     ? "border-quant text-quant bg-quant/10"
-                    : "border-edge text-muted hover:text-ink hover:border-edge/80",
+                    : "border-edge text-muted hover:text-ink",
                 ].join(" ")}
               >
                 {l}

@@ -26,16 +26,24 @@ html.theme-mole {
   --color-toxic:      #60aa20;
   --color-danger:     #e02010;
   --grid-color:       rgba(224,80,16,0.08);
-  --shadow-panel:
-    6px 0 0 0 rgba(224,80,16,0.8) inset,
-    0 0 0 1px rgba(224,80,16,0.12) inset,
-    0 12px 48px rgba(0,0,0,0.98),
-    0 2px 8px rgba(0,0,0,0.7);
+  --shadow-panel:     none;
+  --panel-filter:     drop-shadow(0 10px 36px rgba(0,0,0,0.97)) drop-shadow(0 0 2px rgba(224,80,16,0.45));
   --shadow-glow:      0 0 0 1px rgba(224,80,16,0.8), 0 0 28px rgba(224,80,16,0.35);
-  --panel-clip:       polygon(0 0, calc(100% - 36px) 0, 100% 36px, 100% 100%, 0 100%);
+  --panel-clip:       polygon(0 0, calc(100% - 60px) 0, 100% 60px, 100% 100%, 0 100%);
   --panel-radius:     0;
   --panel-left:       6px solid rgba(224,80,16,0.85);
   --panel-accent-top: transparent;
+}
+/* Mole panel: orange corner gradient + shaped filter */
+html:not([class*="theme-"]) .panel,
+html.theme-mole .panel {
+  filter: var(--panel-filter);
+  background-image: linear-gradient(
+    to bottom left,
+    rgba(224,80,16,0.22) 0px,
+    rgba(224,80,16,0.07) 56px,
+    transparent 88px
+  );
 }
 html:not([class*="theme-"]) body,
 html.theme-mole body {
@@ -102,6 +110,7 @@ html.theme-cockpit {
   --color-toxic:      #30e870;
   --color-danger:     #e04030;
   --grid-color:       rgba(80,232,40,0.04);
+  --panel-filter:     none;
   --shadow-panel:
     0 0 0 1px rgba(80,232,40,0.2) inset,
     0 0 0 3px rgba(80,232,40,0.05) inset,
@@ -189,6 +198,7 @@ html.theme-origin {
   --color-toxic:      #187840;
   --color-danger:     #b81818;
   --grid-color:       rgba(14,111,170,0.04);
+  --panel-filter:     none;
   --shadow-panel:
     0 0 0 1px rgba(0,0,0,0.06),
     0 2px 6px rgba(0,0,0,0.05),
@@ -258,13 +268,10 @@ html.theme-gatac {
   --color-toxic:      #b848ff;
   --color-danger:     #ff3060;
   --grid-color:       rgba(184,72,255,0.06);
-  --shadow-panel:
-    -4px 0 0 rgba(184,72,255,0.4) inset,
-    0 0 0 1px rgba(184,72,255,0.08) inset,
-    0 0 80px rgba(184,72,255,0.05),
-    0 20px 50px rgba(0,0,0,0.98);
+  --shadow-panel:     none;
+  --panel-filter:     drop-shadow(0 16px 48px rgba(0,0,0,0.98)) drop-shadow(0 0 3px rgba(184,72,255,0.4));
   --shadow-glow:      0 0 0 1px rgba(184,72,255,0.5), 0 0 32px rgba(184,72,255,0.25);
-  --panel-clip:       polygon(28px 0, 100% 0, calc(100% - 28px) 100%, 0 100%);
+  --panel-clip:       polygon(44px 0, 100% 0, calc(100% - 44px) 100%, 0 100%);
   --panel-radius:     0;
   --panel-left:       none;
   --panel-accent-top: transparent;
@@ -276,8 +283,12 @@ html.theme-gatac body {
   background-size: 28px 28px;
 }
 html.theme-gatac .panel {
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+  filter: var(--panel-filter);
+  padding-left: 3rem;
+  padding-right: 3rem;
+  background-image:
+    linear-gradient(to right,  rgba(184,72,255,0.12) 0px, transparent 52px),
+    linear-gradient(to left,   rgba(184,72,255,0.12) 0px, transparent 52px);
 }
 html.theme-gatac .field {
   border-radius: 0;
@@ -341,13 +352,10 @@ html.theme-hornet {
   --color-toxic:      #38c870;
   --color-danger:     #e03030;
   --grid-color:       rgba(40,152,216,0.06);
-  --shadow-panel:
-    0 3px 0 rgba(40,152,216,0.5) inset,
-    0 0 0 1px rgba(40,152,216,0.08) inset,
-    0 10px 40px rgba(0,0,0,0.9),
-    -2px 4px 0 rgba(0,0,0,0.4);
+  --shadow-panel:     none;
+  --panel-filter:     drop-shadow(0 10px 40px rgba(0,0,0,0.95)) drop-shadow(0 0 2px rgba(40,152,216,0.45));
   --shadow-glow:      0 0 0 1px rgba(40,152,216,0.6), 0 0 24px rgba(40,152,216,0.25);
-  --panel-clip:       polygon(0 0, calc(100% - 38px) 0, 100% 38px, 100% 100%, 38px 100%, 0 calc(100% - 38px));
+  --panel-clip:       polygon(0 0, calc(100% - 52px) 0, 100% 52px, 100% 100%, 52px 100%, 0 calc(100% - 52px));
   --panel-radius:     0;
   --panel-left:       none;
   --panel-accent-top: rgba(40,152,216,0.8);
@@ -356,6 +364,12 @@ html.theme-hornet body {
   background-image:
     repeating-linear-gradient(-45deg, transparent, transparent 9px, rgba(40,152,216,0.07) 9px, rgba(40,152,216,0.07) 10px),
     repeating-linear-gradient( 45deg, transparent, transparent 9px, rgba(40,152,216,0.04) 9px, rgba(40,152,216,0.04) 10px);
+}
+html.theme-hornet .panel {
+  filter: var(--panel-filter);
+  background-image:
+    linear-gradient(to bottom left,  rgba(40,152,216,0.18) 0px, rgba(40,152,216,0.04) 48px, transparent 72px),
+    linear-gradient(to top right,    rgba(40,152,216,0.18) 0px, rgba(40,152,216,0.04) 48px, transparent 72px);
 }
 html.theme-hornet .field {
   border-radius: 0;
@@ -414,7 +428,8 @@ body {
     border-left: var(--panel-left);
     border-top: 2px solid var(--panel-accent-top);
     clip-path: var(--panel-clip, none);
-    box-shadow: var(--shadow-panel);
+    box-shadow: var(--shadow-panel, none);
+    filter: var(--panel-filter, none);
   }
   .eyebrow {
     @apply font-mono text-[11px] uppercase tracking-[0.25em] text-muted;
@@ -454,14 +469,13 @@ body {
   animation: page-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ── Panel hover lift ─────────────────────────────────────────────────────── */
-.panel {
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
-}
-.panel:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-panel), 0 4px 24px rgba(0,0,0,0.15);
-}
+/* ── Panel hover: intensify the drop-shadow (works with filter) ───────────── */
+.panel { transition: filter 0.2s ease; }
+html.theme-mole   .panel:hover { filter: drop-shadow(0 14px 48px rgba(0,0,0,0.98)) drop-shadow(0 0 4px rgba(224,80,16,0.6)); }
+html.theme-gatac  .panel:hover { filter: drop-shadow(0 18px 56px rgba(0,0,0,0.99)) drop-shadow(0 0 5px rgba(184,72,255,0.55)); }
+html.theme-hornet .panel:hover { filter: drop-shadow(0 14px 48px rgba(0,0,0,0.97)) drop-shadow(0 0 4px rgba(40,152,216,0.55)); }
+html.theme-cockpit .panel:hover { box-shadow: var(--shadow-panel), 0 0 24px rgba(80,232,40,0.1); }
+html.theme-origin  .panel:hover { box-shadow: var(--shadow-panel), 0 8px 32px rgba(14,111,170,0.12); }
 
 /* ── Sidebar active dot pulse ─────────────────────────────────────────────── */
 @keyframes dot-pulse {
