@@ -57,9 +57,9 @@ async function initDb() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const initSqlJs = require("sql.js");
 
-  // In packaged app, WASM file is in resources (asarUnpack)
+  // asar:false — all files land under resources/app, no .unpacked directory
   const wasmPath = app.isPackaged
-    ? path.join(process.resourcesPath, "app.asar.unpacked", "node_modules", "sql.js", "dist", "sql-wasm.wasm")
+    ? path.join(process.resourcesPath, "app", "node_modules", "sql.js", "dist", "sql-wasm.wasm")
     : path.join(__dirname, "..", "node_modules", "sql.js", "dist", "sql-wasm.wasm");
 
   const SQL = await initSqlJs({ locateFile: () => wasmPath });
