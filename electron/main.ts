@@ -235,8 +235,11 @@ function registerIpc() {
     run("DELETE FROM refinery_jobs WHERE id=? AND user_id=?", [id, userId]);
   });
 
-  // isSilent=true: NSIS /S flag (no wizard), isForceRunAfter=true: relaunch app after install
-  ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(true, true); });
+  // Release single-instance lock before installer replaces the exe, then quit+install
+  ipcMain.handle("install-update", () => {
+    app.releaseSingleInstanceLock();
+    setImmediate(() => autoUpdater.quitAndInstall(true, true));
+  });
 
   ipcMain.handle("update:check", async () => {
     try { await autoUpdater.checkForUpdates(); return { ok: true }; }
@@ -388,7 +391,9 @@ async function createWindow() {
 
 function setupAutoUpdater() {
   autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = true;
+  // Don't auto-install on quit — we control install via the "install-update" IPC
+  // to ensure releaseSingleInstanceLock() runs first
+  autoUpdater.autoInstallOnAppQuit = false;
   autoUpdater.on("update-available", (info) =>
     mainWindow?.webContents.send("update-available", info.version));
   autoUpdater.on("update-downloaded", (info) =>
@@ -404,17 +409,19 @@ function setupAutoUpdater() {
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 
-// Single-instance lock — if another instance is already running, focus it and exit
+// Single-instance lock — if another instance is already running, focus it and exit.
+// Give existing instance 800ms to respond before hard-exiting; this prevents the lock
+// from permanently blocking startup if the previous instance crashed without releasing it.
 if (!app.requestSingleInstanceLock()) {
-  app.quit();
-  process.exit(0);
+  setTimeout(() => { app.quit(); process.exit(0); }, 800);
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
 }
-app.on("second-instance", () => {
-  if (mainWindow) {
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
-  }
-});
 
 process.on("uncaughtException", (err) => {
   // Only crash for startup errors; runtime errors (network, etc.) are logged but non-fatal
