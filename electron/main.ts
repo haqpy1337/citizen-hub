@@ -14,6 +14,7 @@ interface Job { id: string; stationId: number | null; stationName: string; syste
 // ── Globals ──────────────────────────────────────────────────────────────────
 
 let mainWindow: BrowserWindow | null = null;
+let isInstallingUpdate = false;
 const sessions = new Map<string, string>(); // token → userId
 let db: Database;
 let dbPath: string;
@@ -256,17 +257,18 @@ function registerIpc() {
     run("DELETE FROM refinery_jobs WHERE id=? AND user_id=?", [id, userId]);
   });
 
-  // Graceful update install: close window first, release lock, then run installer.
-  // This ensures no file handles are locked when NSIS tries to replace the exe.
+  // Graceful update install: set flag so window-all-closed doesn't call app.quit(),
+  // close window, then run installer after the window is fully gone.
   ipcMain.handle("install-update", () => {
+    isInstallingUpdate = true;
     app.releaseSingleInstanceLock();
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.once("closed", () => {
-        setTimeout(() => autoUpdater.quitAndInstall(true, true), 300);
+        setTimeout(() => autoUpdater.quitAndInstall(true, true), 400);
       });
       mainWindow.close();
     } else {
-      setTimeout(() => autoUpdater.quitAndInstall(true, true), 300);
+      setTimeout(() => autoUpdater.quitAndInstall(true, true), 400);
     }
   });
 
@@ -517,5 +519,8 @@ app.whenReady().then(async () => {
   }
 });
 
-app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
+app.on("window-all-closed", () => {
+  // Skip quit if we're about to run the installer — quitAndInstall handles the exit
+  if (!isInstallingUpdate && process.platform !== "darwin") app.quit();
+});
 app.on("activate", async () => { if (BrowserWindow.getAllWindows().length === 0) await createWindow(); });
