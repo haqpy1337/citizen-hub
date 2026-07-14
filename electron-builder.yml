@@ -13,6 +13,7 @@ files:
   - "!**/*.map"
 
 asarUnpack:
+  - "dist-renderer/**"
   - "**/sql.js/dist/sql-wasm.wasm"
 
 win:

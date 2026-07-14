@@ -453,7 +453,10 @@ async function createWindow() {
     await mainWindow.loadURL("http://localhost:5173");
     mainWindow.webContents.openDevTools();
   } else {
-    await mainWindow.loadFile(path.join(__dirname, "../dist-renderer/index.html"));
+    // dist-renderer is asarUnpacked — lives in app.asar.unpacked, not inside the asar
+    const rendererPath = path.join(__dirname, "../dist-renderer/index.html")
+      .replace("app.asar", "app.asar.unpacked");
+    await mainWindow.loadFile(rendererPath);
   }
 }
 
