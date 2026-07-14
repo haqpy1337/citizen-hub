@@ -229,29 +229,52 @@ function registerIpc() {
   });
 
   ipcMain.handle("news:fetch", async () => {
-    try {
-      // RSI Comm-Link RSS feed
-      const res = await fetch("https://robertsspaceindustries.com/feed/1", {
-        signal: AbortSignal.timeout(8000),
-        headers: { "User-Agent": "CitizenHub/2.0" },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const xml = await res.text();
-      // Simple regex parse — no external dep
+    // Try multiple RSI feed URLs in order — RSI occasionally changes these
+    const FEED_URLS = [
+      "https://robertsspaceindustries.com/feed/1",
+      "https://robertsspaceindustries.com/community/news/feed",
+      "https://robertsspaceindustries.com/feeds/latest/1",
+    ];
+
+    function parseCdata(s: string): string {
+      return s.replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim();
+    }
+    function extractTag(block: string, tag: string): string {
+      const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+      return m ? parseCdata(m[1].trim()) : "";
+    }
+    function parseItems(xml: string): { title: string; link: string; date: string }[] {
       const items: { title: string; link: string; date: string }[] = [];
       const rx = /<item>([\s\S]*?)<\/item>/g;
       let m: RegExpExecArray | null;
       while ((m = rx.exec(xml)) !== null && items.length < 6) {
         const block = m[1];
-        const title = (/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/.exec(block)?.[1] ?? "").trim();
-        const link  = (/<link>(.*?)<\/link>/.exec(block)?.[1] ?? "").trim();
-        const date  = (/<pubDate>(.*?)<\/pubDate>/.exec(block)?.[1] ?? "").trim();
+        const title = extractTag(block, "title");
+        const link  = extractTag(block, "link") || extractTag(block, "guid");
+        const date  = extractTag(block, "pubDate") || extractTag(block, "dc:date");
         if (title) items.push({ title, link, date });
       }
-      return { ok: true, source: "rsi", items };
-    } catch {
-      return { ok: false, items: [] };
+      return items;
     }
+
+    for (const url of FEED_URLS) {
+      try {
+        const res = await fetch(url, {
+          signal: AbortSignal.timeout(8000),
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/rss+xml, application/xml, text/xml, */*",
+          },
+        });
+        if (!res.ok) continue;
+        const xml = await res.text();
+        const items = parseItems(xml);
+        if (items.length > 0) return { ok: true, source: url, items };
+      } catch {
+        // try next URL
+      }
+    }
+    return { ok: false, items: [] };
   });
 }
 

@@ -4,11 +4,7 @@
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    MOLE  —  ARGO Astronautics MOLE mining barge
-   Feeling: deep-space industrial. Welded carbon, burn-scarred ore bays.
-   Colors:  near-black carbon body, molten-iron orange accent
-   Shape:   large top-right bevel — heavy hull plate stamped from metal
-   Grid:    coarse riveted-plate square grid (40 px)
-   Sidebar: thick orange left-rail gutter
+   Heavy carbon hull, burn-scarred orange, industrial rivets
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 :root,
 html.theme-mole {
@@ -26,24 +22,15 @@ html.theme-mole {
   --color-toxic:      #60aa20;
   --color-danger:     #e02010;
   --grid-color:       rgba(224,80,16,0.08);
-  --shadow-panel:     none;
-  --panel-filter:     drop-shadow(0 10px 36px rgba(0,0,0,0.97)) drop-shadow(0 0 2px rgba(224,80,16,0.45));
+  --shadow-panel:
+    6px 0 0 0 rgba(224,80,16,0.8) inset,
+    0 0 0 1px rgba(224,80,16,0.1) inset,
+    0 16px 48px rgba(0,0,0,0.97),
+    0 2px 8px rgba(0,0,0,0.7);
   --shadow-glow:      0 0 0 1px rgba(224,80,16,0.8), 0 0 28px rgba(224,80,16,0.35);
-  --panel-clip:       polygon(0 0, calc(100% - 60px) 0, 100% 60px, 100% 100%, 0 100%);
   --panel-radius:     0;
   --panel-left:       6px solid rgba(224,80,16,0.85);
   --panel-accent-top: transparent;
-}
-/* Mole panel: orange corner gradient + shaped filter */
-html:not([class*="theme-"]) .panel,
-html.theme-mole .panel {
-  filter: var(--panel-filter);
-  background-image: linear-gradient(
-    to bottom left,
-    rgba(224,80,16,0.22) 0px,
-    rgba(224,80,16,0.07) 56px,
-    transparent 88px
-  );
 }
 html:not([class*="theme-"]) body,
 html.theme-mole body {
@@ -52,16 +39,45 @@ html.theme-mole body {
     linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
   background-size: 40px 40px;
 }
+/* Mole panel: thick left rail + folded-corner triangle in top-right */
+html:not([class*="theme-"]) .panel,
+html.theme-mole .panel {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(to right, rgba(224,80,16,0.1) 0%, transparent 120px);
+  box-shadow: var(--shadow-panel);
+}
+html:not([class*="theme-"]) .panel::before,
+html.theme-mole .panel::before {
+  content: '';
+  position: absolute;
+  top: 6px; left: 8px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(224,80,16,0.5);
+  pointer-events: none;
+  z-index: 1;
+}
+html:not([class*="theme-"]) .panel::after,
+html.theme-mole .panel::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 54px 54px 0;
+  border-color: transparent rgba(224,80,16,0.3) transparent transparent;
+  pointer-events: none;
+  z-index: 1;
+}
 html:not([class*="theme-"]) .field,
 html.theme-mole .field {
   border-radius: 0;
-  border-left: 6px solid rgba(224,80,16,0.6);
-  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  border-left: 5px solid rgba(224,80,16,0.6);
 }
 html:not([class*="theme-"]) .tag,
 html.theme-mole .tag {
   border-radius: 0;
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
   border-color: rgba(224,80,16,0.5);
   letter-spacing: 0.14em;
   color: #e05010;
@@ -71,7 +87,6 @@ html.theme-mole .btn {
   border-radius: 0;
   letter-spacing: 0.2em;
   font-weight: 700;
-  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
 }
 html:not([class*="theme-"]) .btn-primary,
 html.theme-mole .btn-primary {
@@ -79,7 +94,6 @@ html.theme-mole .btn-primary {
 }
 html:not([class*="theme-"]) .label,
 html.theme-mole .label  { letter-spacing: 0.24em; color: rgba(224,80,16,0.7); }
-/* Sidebar: thick orange left-rail */
 html:not([class*="theme-"]) aside,
 html.theme-mole aside {
   border-right: 1px solid #3a2e20;
@@ -88,12 +102,8 @@ html.theme-mole aside {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   COCKPIT  —  RSI Aurora MR flight deck / retro terminal
-   Feeling: 1980s phosphor CRT, cramped pilot seat, amber-green screen.
-   Colors:  pitch black, vivid phosphor green, amber warnings
-   Shape:   sharp rectangles, zero rounding — terminal window aesthetic
-   Grid:    horizontal CRT scanlines (3px solid / 2px gap)
-   Font:    full monospace — even body text and labels
+   COCKPIT  —  RSI Aurora MR flight deck / CRT terminal
+   Phosphor green screen, cramped cockpit, retro terminal
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-cockpit {
   color-scheme: dark;
@@ -110,47 +120,59 @@ html.theme-cockpit {
   --color-toxic:      #30e870;
   --color-danger:     #e04030;
   --grid-color:       rgba(80,232,40,0.04);
-  --panel-filter:     none;
   --shadow-panel:
-    0 0 0 1px rgba(80,232,40,0.2) inset,
-    0 0 0 3px rgba(80,232,40,0.05) inset,
-    0 0 60px rgba(80,232,40,0.04),
-    0 4px 32px rgba(0,0,0,0.98);
+    0 0 0 1px rgba(80,232,40,0.25) inset,
+    0 0 0 1px rgba(80,232,40,0.06) inset,
+    0 0 40px rgba(80,232,40,0.04),
+    0 8px 32px rgba(0,0,0,0.98);
   --shadow-glow:      0 0 0 1px rgba(80,232,40,0.6), 0 0 20px rgba(80,232,40,0.35);
-  --panel-clip:       none;
   --panel-radius:     0;
-  --panel-left:       1px solid rgba(80,232,40,0.3);
-  --panel-accent-top: rgba(80,232,40,0.5);
+  --panel-left:       2px solid rgba(80,232,40,0.4);
+  --panel-accent-top: rgba(80,232,40,0.6);
 }
 html.theme-cockpit body {
   font-family: 'Courier New', 'Consolas', monospace;
-  /* CRT scanlines — clearly visible phosphor rows */
   background-image: repeating-linear-gradient(
     to bottom,
-    rgba(80,232,40,0.06) 0px,
-    rgba(80,232,40,0.06) 2px,
+    rgba(80,232,40,0.05) 0px,
+    rgba(80,232,40,0.05) 2px,
     transparent 2px,
     transparent 5px
   );
   background-size: 100% 5px;
 }
 html.theme-cockpit .panel {
-  box-shadow: var(--shadow-panel);
   position: relative;
   overflow: hidden;
   font-family: 'Courier New', 'Consolas', monospace;
+  box-shadow: var(--shadow-panel);
 }
+/* CRT scanline overlay */
 html.theme-cockpit .panel::after {
   content: '';
   position: absolute;
   inset: 0;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(80,232,40,0.03) 0px, rgba(80,232,40,0.03) 1px,
+    rgba(80,232,40,0.025) 0px, rgba(80,232,40,0.025) 1px,
     transparent 1px, transparent 4px
   );
   pointer-events: none;
+  z-index: 0;
 }
+/* Terminal cursor blink in top-left corner */
+html.theme-cockpit .panel::before {
+  content: '█';
+  position: absolute;
+  top: 6px; right: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  color: rgba(80,232,40,0.5);
+  pointer-events: none;
+  z-index: 1;
+  animation: crt-blink 1.2s step-end infinite;
+}
+@keyframes crt-blink { 0%,100%{opacity:1} 50%{opacity:0} }
 html.theme-cockpit .field {
   border-radius: 0;
   border: 1px solid rgba(80,232,40,0.3);
@@ -168,7 +190,6 @@ html.theme-cockpit .btn         { border-radius: 0; font-family: 'Courier New', 
 html.theme-cockpit .btn-primary { border: 1px solid rgba(80,232,40,0.9); box-shadow: 0 0 18px rgba(80,232,40,0.25), inset 0 0 12px rgba(80,232,40,0.08); }
 html.theme-cockpit .label       { letter-spacing: 0.35em; font-family: 'Courier New', monospace; }
 html.theme-cockpit .eyebrow     { font-family: 'Courier New', monospace; letter-spacing: 0.3em; }
-/* Sidebar: green top accent bar, terminal feel */
 html.theme-cockpit aside {
   border-right: 1px solid rgba(80,232,40,0.2);
   box-shadow: 2px 0 30px rgba(80,232,40,0.04);
@@ -177,11 +198,7 @@ html.theme-cockpit aside {
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    ORIGIN  —  Origin Jumpworks 890 Jump luxury superyacht
-   Feeling: Michelin-star penthouse suite above a gas giant.
-            Marble, platinum, ice-white with sapphire lighting.
-   Colors:  pure white panels, warm off-white body, deep sapphire accent
-   Shape:   fully rounded cards, no hard edges, gossamer shadows
-   Grid:    invisible — only subtle dot matrix
+   Marble, platinum, sapphire — the finest things in the verse
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-origin {
   color-scheme: light;
@@ -198,14 +215,12 @@ html.theme-origin {
   --color-toxic:      #187840;
   --color-danger:     #b81818;
   --grid-color:       rgba(14,111,170,0.04);
-  --panel-filter:     none;
   --shadow-panel:
-    0 0 0 1px rgba(0,0,0,0.06),
-    0 2px 6px rgba(0,0,0,0.05),
-    0 8px 32px rgba(0,0,0,0.07),
+    0 0 0 1px rgba(0,0,0,0.07),
+    0 2px 8px rgba(0,0,0,0.06),
+    0 12px 40px rgba(0,0,0,0.09),
     0 1px 0 #ffffff inset;
   --shadow-glow:      0 0 0 2px rgba(14,111,170,0.5), 0 0 20px rgba(14,111,170,0.2);
-  --panel-clip:       none;
   --panel-radius:     1rem;
   --panel-left:       none;
   --panel-accent-top: transparent;
@@ -215,8 +230,20 @@ html.theme-origin body {
   background-size: 28px 28px;
 }
 html.theme-origin .panel {
-  border: 1px solid #e0e5ea;
+  border: 1px solid #dde2e8;
   box-shadow: var(--shadow-panel);
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(to bottom, rgba(14,111,170,0.035) 0%, transparent 56px);
+}
+/* Subtle sapphire shimmer line at top */
+html.theme-origin .panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(14,111,170,0.4) 50%, transparent);
+  pointer-events: none;
 }
 html.theme-origin .field {
   border-radius: 0.75rem;
@@ -238,7 +265,6 @@ html.theme-origin .btn-ghost   { border-color: #d0d8e0; color: #14181e; }
 html.theme-origin .btn-ghost:hover { border-color: #0e6faa; color: #0e6faa; background: rgba(14,111,170,0.06); }
 html.theme-origin .label       { letter-spacing: 0.14em; color: #8a96a4; font-weight: 600; }
 html.theme-origin .eyebrow     { letter-spacing: 0.18em; color: #0e6faa; }
-/* Sidebar: light card, clean separator */
 html.theme-origin aside {
   background: #ffffff;
   border-right: 1px solid #e0e5ea;
@@ -247,11 +273,7 @@ html.theme-origin aside {
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    GATAC  —  Gatac Manufacture Railen / Syulen alien tech
-   Feeling: bioluminescent deep-space organism. Void-dark, purple veins,
-            asymmetric geometry — not built, GROWN.
-   Colors:  absolute void black, violet-magenta bioluminescence
-   Shape:   parallelogram slant — geometry that defies human convention
-   Grid:    diagonal 45° bio-lattice
+   Bioluminescent, grown not built, alien geometry
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-gatac {
   color-scheme: dark;
@@ -268,12 +290,15 @@ html.theme-gatac {
   --color-toxic:      #b848ff;
   --color-danger:     #ff3060;
   --grid-color:       rgba(184,72,255,0.06);
-  --shadow-panel:     none;
-  --panel-filter:     drop-shadow(0 16px 48px rgba(0,0,0,0.98)) drop-shadow(0 0 3px rgba(184,72,255,0.4));
+  --shadow-panel:
+    0 0 0 1px rgba(184,72,255,0.12) inset,
+    0 0 0 1px rgba(184,72,255,0.06) inset,
+    -4px 0 24px rgba(184,72,255,0.08),
+    4px 0 24px rgba(184,72,255,0.08),
+    0 20px 56px rgba(0,0,0,0.98);
   --shadow-glow:      0 0 0 1px rgba(184,72,255,0.5), 0 0 32px rgba(184,72,255,0.25);
-  --panel-clip:       polygon(44px 0, 100% 0, calc(100% - 44px) 100%, 0 100%);
   --panel-radius:     0;
-  --panel-left:       none;
+  --panel-left:       2px solid rgba(184,72,255,0.55);
   --panel-accent-top: transparent;
 }
 html.theme-gatac body {
@@ -283,37 +308,58 @@ html.theme-gatac body {
   background-size: 28px 28px;
 }
 html.theme-gatac .panel {
-  filter: var(--panel-filter);
-  padding-left: 3rem;
-  padding-right: 3rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-panel);
+  border-right: 2px solid rgba(184,72,255,0.45);
   background-image:
-    linear-gradient(to right,  rgba(184,72,255,0.12) 0px, transparent 52px),
-    linear-gradient(to left,   rgba(184,72,255,0.12) 0px, transparent 52px);
+    linear-gradient(to right,   rgba(184,72,255,0.07) 0%, transparent 60px),
+    linear-gradient(to left,    rgba(184,72,255,0.07) 0%, transparent 60px),
+    linear-gradient(135deg, transparent 60%, rgba(184,72,255,0.04) 100%);
+}
+/* Bioluminescent node — top-left corner dot */
+html.theme-gatac .panel::before {
+  content: '';
+  position: absolute;
+  top: 10px; left: 10px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(184,72,255,0.9);
+  box-shadow: 0 0 8px 3px rgba(184,72,255,0.5);
+  pointer-events: none;
+  z-index: 1;
+  animation: gatac-pulse 3s ease-in-out infinite;
+}
+/* Bottom-right node */
+html.theme-gatac .panel::after {
+  content: '';
+  position: absolute;
+  bottom: 10px; right: 10px;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: rgba(184,72,255,0.7);
+  box-shadow: 0 0 6px 2px rgba(184,72,255,0.4);
+  pointer-events: none;
+  z-index: 1;
+  animation: gatac-pulse 3s ease-in-out infinite 1.5s;
+}
+@keyframes gatac-pulse {
+  0%, 100% { opacity: 0.7; box-shadow: 0 0 6px 2px rgba(184,72,255,0.4); }
+  50%       { opacity: 1;   box-shadow: 0 0 12px 5px rgba(184,72,255,0.7); }
 }
 html.theme-gatac .field {
   border-radius: 0;
   border: none;
-  border-right: 2px solid rgba(184,72,255,0.35);
-  clip-path: polygon(18px 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
-  padding-left: 24px;
-  padding-right: 24px;
+  border-bottom: 1px solid rgba(184,72,255,0.3);
+  border-left: 2px solid rgba(184,72,255,0.35);
   background: rgba(184,72,255,0.06);
 }
 html.theme-gatac .tag {
   border-radius: 0;
-  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
   border-color: rgba(184,72,255,0.4);
-  padding-left: 18px;
-  padding-right: 18px;
   color: #c060ff;
 }
-html.theme-gatac .btn {
-  border-radius: 0;
-  letter-spacing: 0.1em;
-  clip-path: polygon(20px 0, 100% 0, calc(100% - 20px) 100%, 0 100%);
-  padding-left: 30px;
-  padding-right: 30px;
-}
+html.theme-gatac .btn { border-radius: 0; letter-spacing: 0.1em; }
 html.theme-gatac .btn-primary {
   background: rgba(184,72,255,0.2);
   border: 1px solid rgba(184,72,255,0.6);
@@ -322,20 +368,14 @@ html.theme-gatac .btn-primary {
 }
 html.theme-gatac .label  { letter-spacing: 0.14em; color: rgba(184,72,255,0.7); }
 html.theme-gatac .eyebrow { color: rgba(184,72,255,0.6); letter-spacing: 0.22em; }
-/* Sidebar: asymmetric — right border slants via clip */
 html.theme-gatac aside {
-  border-right: none;
-  box-shadow: 4px 0 30px rgba(184,72,255,0.08), 2px 0 0 rgba(184,72,255,0.25);
-  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 100%, 0 100%);
+  border-right: 2px solid rgba(184,72,255,0.3);
+  box-shadow: 4px 0 30px rgba(184,72,255,0.08), 2px 0 0 rgba(184,72,255,0.15);
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    HORNET  —  Anvil Aerospace F7C-M Super Hornet
-   Feeling: carrier-deck MILSPEC. Gunmetal grey, HUD blue, weapons-hot.
-            Every surface has a purpose. Zero decoration.
-   Colors:  gunmetal / deep navy, electric targeting blue
-   Shape:   swept-wing — top-right AND bottom-left bevels (fighter profile)
-   Grid:    tactical cross-hatch (-45°, tight 10 px)
+   MILSPEC carrier-deck, gunmetal, HUD blue, weapons-hot
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 html.theme-hornet {
   color-scheme: dark;
@@ -352,44 +392,61 @@ html.theme-hornet {
   --color-toxic:      #38c870;
   --color-danger:     #e03030;
   --grid-color:       rgba(40,152,216,0.06);
-  --shadow-panel:     none;
-  --panel-filter:     drop-shadow(0 10px 40px rgba(0,0,0,0.95)) drop-shadow(0 0 2px rgba(40,152,216,0.45));
+  --shadow-panel:
+    0 3px 0 rgba(40,152,216,0.45) inset,
+    0 0 0 1px rgba(40,152,216,0.08) inset,
+    0 12px 40px rgba(0,0,0,0.92);
   --shadow-glow:      0 0 0 1px rgba(40,152,216,0.6), 0 0 24px rgba(40,152,216,0.25);
-  --panel-clip:       polygon(0 0, calc(100% - 52px) 0, 100% 52px, 100% 100%, 52px 100%, 0 calc(100% - 52px));
   --panel-radius:     0;
   --panel-left:       none;
   --panel-accent-top: rgba(40,152,216,0.8);
 }
 html.theme-hornet body {
   background-image:
-    repeating-linear-gradient(-45deg, transparent, transparent 9px, rgba(40,152,216,0.07) 9px, rgba(40,152,216,0.07) 10px),
-    repeating-linear-gradient( 45deg, transparent, transparent 9px, rgba(40,152,216,0.04) 9px, rgba(40,152,216,0.04) 10px);
+    repeating-linear-gradient(-45deg, transparent, transparent 9px, rgba(40,152,216,0.06) 9px, rgba(40,152,216,0.06) 10px),
+    repeating-linear-gradient( 45deg, transparent, transparent 9px, rgba(40,152,216,0.03) 9px, rgba(40,152,216,0.03) 10px);
 }
 html.theme-hornet .panel {
-  filter: var(--panel-filter);
-  background-image:
-    linear-gradient(to bottom left,  rgba(40,152,216,0.18) 0px, rgba(40,152,216,0.04) 48px, transparent 72px),
-    linear-gradient(to top right,    rgba(40,152,216,0.18) 0px, rgba(40,152,216,0.04) 48px, transparent 72px);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-panel);
+  background-image: linear-gradient(to bottom, rgba(40,152,216,0.07) 0%, transparent 56px);
+}
+/* Top-left HUD bracket */
+html.theme-hornet .panel::before {
+  content: '';
+  position: absolute;
+  top: 7px; left: 7px;
+  width: 16px; height: 16px;
+  border-top: 1.5px solid rgba(40,152,216,0.6);
+  border-left: 1.5px solid rgba(40,152,216,0.6);
+  pointer-events: none;
+  z-index: 1;
+}
+/* Bottom-right HUD bracket */
+html.theme-hornet .panel::after {
+  content: '';
+  position: absolute;
+  bottom: 7px; right: 7px;
+  width: 16px; height: 16px;
+  border-bottom: 1.5px solid rgba(40,152,216,0.6);
+  border-right: 1.5px solid rgba(40,152,216,0.6);
+  pointer-events: none;
+  z-index: 1;
 }
 html.theme-hornet .field {
   border-radius: 0;
   border-top: 2px solid rgba(40,152,216,0.4);
   border-left: none;
   border-bottom: 1px solid rgba(40,152,216,0.2);
-  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
 }
 html.theme-hornet .tag {
   border-radius: 0;
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
   border-color: rgba(40,152,216,0.4);
   color: #2898d8;
   letter-spacing: 0.15em;
 }
-html.theme-hornet .btn {
-  border-radius: 0;
-  letter-spacing: 0.14em;
-  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
-}
+html.theme-hornet .btn { border-radius: 0; letter-spacing: 0.14em; }
 html.theme-hornet .btn-primary {
   border-top: 2px solid rgba(40,152,216,0.9);
   background: rgba(40,152,216,0.18);
@@ -398,7 +455,6 @@ html.theme-hornet .btn-primary {
 html.theme-hornet .btn-primary:hover { background: rgba(40,152,216,0.3); }
 html.theme-hornet .label  { letter-spacing: 0.22em; color: rgba(40,152,216,0.7); }
 html.theme-hornet .eyebrow { letter-spacing: 0.28em; }
-/* Sidebar: top accent stripe, military column */
 html.theme-hornet aside {
   border-right: 1px solid #202840;
   border-top: 3px solid rgba(40,152,216,0.7);
@@ -427,9 +483,8 @@ body {
     border-radius: var(--panel-radius, 0.5rem);
     border-left: var(--panel-left);
     border-top: 2px solid var(--panel-accent-top);
-    clip-path: var(--panel-clip, none);
-    box-shadow: var(--shadow-panel, none);
-    filter: var(--panel-filter, none);
+    /* NO clip-path — shapes done via ::before/::after and borders */
+    box-shadow: var(--shadow-panel, 0 4px 24px rgba(0,0,0,0.5));
   }
   .eyebrow {
     @apply font-mono text-[11px] uppercase tracking-[0.25em] text-muted;
@@ -460,7 +515,7 @@ body {
   }
 }
 
-/* ── Page enter animation ──────────────────────────────────────────────────── */
+/* ── Page enter animation ─────────────────────────────────────────────────── */
 @keyframes page-enter {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -469,13 +524,13 @@ body {
   animation: page-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ── Panel hover: intensify the drop-shadow (works with filter) ───────────── */
-.panel { transition: filter 0.2s ease; }
-html.theme-mole   .panel:hover { filter: drop-shadow(0 14px 48px rgba(0,0,0,0.98)) drop-shadow(0 0 4px rgba(224,80,16,0.6)); }
-html.theme-gatac  .panel:hover { filter: drop-shadow(0 18px 56px rgba(0,0,0,0.99)) drop-shadow(0 0 5px rgba(184,72,255,0.55)); }
-html.theme-hornet .panel:hover { filter: drop-shadow(0 14px 48px rgba(0,0,0,0.97)) drop-shadow(0 0 4px rgba(40,152,216,0.55)); }
-html.theme-cockpit .panel:hover { box-shadow: var(--shadow-panel), 0 0 24px rgba(80,232,40,0.1); }
-html.theme-origin  .panel:hover { box-shadow: var(--shadow-panel), 0 8px 32px rgba(14,111,170,0.12); }
+/* ── Panel hover glow ─────────────────────────────────────────────────────── */
+.panel { transition: box-shadow 0.2s ease, background-image 0.2s ease; }
+html.theme-mole    .panel:hover { box-shadow: 6px 0 0 0 rgba(224,80,16,0.95) inset, 0 0 0 1px rgba(224,80,16,0.18) inset, 0 20px 56px rgba(0,0,0,0.98), 0 0 32px rgba(224,80,16,0.08); }
+html.theme-cockpit .panel:hover { box-shadow: 0 0 0 1px rgba(80,232,40,0.4) inset, 0 0 40px rgba(80,232,40,0.08), 0 8px 32px rgba(0,0,0,0.98); }
+html.theme-origin  .panel:hover { box-shadow: 0 0 0 1px rgba(14,111,170,0.2), 0 4px 12px rgba(0,0,0,0.08), 0 16px 48px rgba(14,111,170,0.09), 0 1px 0 #fff inset; }
+html.theme-gatac   .panel:hover { box-shadow: 0 0 0 1px rgba(184,72,255,0.2) inset, -4px 0 32px rgba(184,72,255,0.14), 4px 0 32px rgba(184,72,255,0.14), 0 20px 56px rgba(0,0,0,0.99); }
+html.theme-hornet  .panel:hover { box-shadow: 0 3px 0 rgba(40,152,216,0.65) inset, 0 0 0 1px rgba(40,152,216,0.12) inset, 0 12px 40px rgba(0,0,0,0.95), 0 0 24px rgba(40,152,216,0.06); }
 
 /* ── Sidebar active dot pulse ─────────────────────────────────────────────── */
 @keyframes dot-pulse {
