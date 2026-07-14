@@ -361,7 +361,7 @@ async function createWindow() {
     backgroundColor: "#060402",
     autoHideMenuBar: true,
     titleBarStyle: "hidden",
-    titleBarOverlay: { color: "#110d08", symbolColor: "#e05010", height: 36 },
+    titleBarOverlay: { color: "#060402", symbolColor: "#e05010", height: 36 },
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

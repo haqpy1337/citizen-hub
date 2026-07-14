@@ -1,345 +1,404 @@
-import { useEffect, useMemo, useState } from "react";
-import { getCommoditiesWithPrices } from "../lib/uex/endpoints";
-import type { CommodityWithPrices } from "../lib/uex/types";
-
-type ListSort = "name" | "sell" | "roi";
-type LocSort  = "sell" | "buy";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getCommodities, getCommodityPrices } from "../lib/uex/endpoints";
+import type { CommodityLocation, CommodityWithPrices } from "../lib/uex/types";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-function calcRoi(bestSell: number | null, bestBuy: number | null): number | null {
-  if (bestSell == null || bestBuy == null || bestBuy === 0) return null;
-  return ((bestSell - bestBuy) / bestBuy) * 100;
-}
-
-function fmtPrice(n: number | null): string {
+function fmt(n: number | null, suffix = ""): string {
   if (n == null) return "—";
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + "M";
-  if (n >= 1_000)     return (n / 1_000).toFixed(1) + "K";
-  return n.toLocaleString();
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + "M" + suffix;
+  if (n >= 1_000)     return (n / 1_000).toFixed(1) + "K" + suffix;
+  return n.toLocaleString() + suffix;
 }
 
-function RoiBadge({ value, className = "" }: { value: number | null; className?: string }) {
-  if (value == null) return <span className={`text-muted/30 ${className}`}>—</span>;
-  const pos = value >= 0;
-  return (
-    <span className={`${pos ? "text-quant" : "text-danger"} ${className}`}>
-      {pos ? "+" : ""}{value.toFixed(1)}%
-    </span>
-  );
+function calcRoi(sell: number | null, buy: number | null): number | null {
+  if (sell == null || buy == null || buy === 0) return null;
+  return ((sell - buy) / buy) * 100;
 }
 
-const TH = "px-3 py-2.5 font-mono text-[10px] uppercase tracking-widest whitespace-nowrap select-none";
+// ── Best price card ───────────────────────────────────────────────────────────
 
-function SortTh({ label, col, sort, dir, onSort, right }: {
-  label: string; col: string; sort: string; dir: 1 | -1;
-  onSort: (c: string) => void; right?: boolean;
+type PriceMode = "sell" | "buy";
+
+function BestCard({
+  mode,
+  loc,
+  price,
+  active,
+  onClick,
+}: {
+  mode: PriceMode;
+  loc: CommodityLocation | null;
+  price: number | null;
+  active: boolean;
+  onClick: () => void;
 }) {
-  const active = sort === col;
+  const isSell = mode === "sell";
+  const label  = isSell ? "Best Sell" : "Best Buy";
+  const verb   = isSell ? "Sell here" : "Buy here";
+  const accent = isSell ? "text-quant border-quant/40 bg-quant/[0.06]" : "text-amber border-amber/40 bg-amber/[0.06]";
+  const accentLight = isSell ? "text-quant" : "text-amber";
+
   return (
-    <th onClick={() => onSort(col)} className={[
-      TH, right ? "text-right" : "text-left",
-      "cursor-pointer transition-colors",
-      active ? "text-quant" : "text-muted hover:text-ink",
-    ].join(" ")}>
-      {label}
-      <span className="ml-0.5 opacity-50 text-[8px]">
-        {active ? (dir === -1 ? "▾" : "▴") : "⇅"}
-      </span>
-    </th>
+    <button
+      onClick={onClick}
+      className={[
+        "panel flex-1 p-4 text-left transition-all",
+        active ? (isSell ? "ring-1 ring-quant/60 bg-quant/[0.06]" : "ring-1 ring-amber/60 bg-amber/[0.06]") : "hover:bg-hull/60",
+      ].join(" ")}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <span className={`text-[10px] font-mono uppercase tracking-widest ${active ? accentLight : "text-muted/70"}`}>
+          {label}
+        </span>
+        {active && <span className={`text-[9px] font-mono ${accentLight} border ${accent} px-1.5 py-0.5`}>Active filter</span>}
+      </div>
+
+      {loc ? (
+        <>
+          <p className={`text-xl font-bold font-mono tabular-nums mb-1 ${isSell ? "text-quant" : "text-amber"}`}>
+            {fmt(price)} <span className="text-[11px] font-normal text-muted">aUEC / SCU</span>
+          </p>
+          <p className="text-sm font-semibold text-ink leading-tight mb-0.5">{loc.terminalName}</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+            {loc.system  && <span className="text-[10px] font-mono text-muted">{loc.system}</span>}
+            {loc.station && <span className="text-[10px] font-mono text-muted/60">{loc.station}</span>}
+            {loc.orbit   && <span className="text-[10px] font-mono text-muted/50">{loc.orbit}</span>}
+            {loc.faction && <span className="text-[10px] font-mono text-muted/50">{loc.faction}</span>}
+          </div>
+          {isSell ? (
+            loc.scuSellAvg != null && (
+              <p className="text-[10px] font-mono text-muted/50 mt-1.5">
+                Avg stock {fmt(loc.scuSellAvg)} SCU
+                {loc.scuSellMin != null && loc.scuSellMax != null && ` · ${fmt(loc.scuSellMin)}–${fmt(loc.scuSellMax)}`}
+              </p>
+            )
+          ) : (
+            loc.scuBuyAvg != null && (
+              <p className="text-[10px] font-mono text-muted/50 mt-1.5">
+                Demand {fmt(loc.scuBuyAvg)} SCU
+                {loc.scuBuyMin != null && loc.scuBuyMax != null && ` · ${fmt(loc.scuBuyMin)}–${fmt(loc.scuBuyMax)}`}
+              </p>
+            )
+          )}
+          <p className={`text-[10px] font-mono mt-2 ${accentLight} opacity-70`}>{verb} · click to filter ↓</p>
+        </>
+      ) : (
+        <p className="text-sm text-muted/40 mt-2">No data</p>
+      )}
+    </button>
   );
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Location table ────────────────────────────────────────────────────────────
+
+const TH = "px-3 py-2.5 text-[10px] font-mono uppercase tracking-widest whitespace-nowrap select-none text-muted";
+
+function LocationTable({
+  locations,
+  mode,
+  bestSell,
+  bestBuy,
+}: {
+  locations: CommodityLocation[];
+  mode: "all" | "sell" | "buy";
+  bestSell: number | null;
+  bestBuy: number | null;
+}) {
+  const filtered = useMemo(() => {
+    const locs = mode === "sell"
+      ? locations.filter(l => l.priceSell != null)
+      : mode === "buy"
+        ? locations.filter(l => l.priceBuy != null)
+        : locations;
+    return [...locs].sort((a, b) =>
+      mode === "buy"
+        ? (a.priceBuy ?? Infinity) - (b.priceBuy ?? Infinity)
+        : (b.priceSell ?? -1) - (a.priceSell ?? -1)
+    );
+  }, [locations, mode]);
+
+  if (filtered.length === 0) {
+    return (
+      <div className="flex items-center justify-center flex-1">
+        <p className="text-muted text-sm">
+          {mode === "sell" ? "No sell locations." : mode === "buy" ? "No buy locations." : "No price data."}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-y-auto flex-1 [scrollbar-width:thin]">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-edge sticky top-0 bg-panel z-10">
+            <th className={`${TH} text-left`}>Terminal</th>
+            <th className={`${TH} text-left`}>System</th>
+            <th className={`${TH} text-left`}>Location</th>
+            <th className={`${TH} text-left`}>Orbit</th>
+            <th className={`${TH} text-left`}>Faction</th>
+            <th className={`${TH} text-right text-quant`}>Sell / SCU</th>
+            <th className={`${TH} text-right`}>Sell Stock ø</th>
+            <th className={`${TH} text-right text-amber`}>Buy / SCU</th>
+            <th className={`${TH} text-right`}>Buy Demand ø</th>
+            <th className={`${TH} text-right`}>ROI</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((loc, i) => {
+            const topSell = loc.priceSell != null && loc.priceSell === bestSell;
+            const topBuy  = loc.priceBuy  != null && loc.priceBuy  === bestBuy;
+            const roi     = calcRoi(loc.priceSell, loc.priceBuy);
+            return (
+              <tr key={i} className={[
+                "border-b border-edge/20 transition-colors",
+                topSell || topBuy ? "bg-quant/[0.04]" : "hover:bg-hull/40",
+              ].join(" ")}>
+                <td className="px-3 py-2 font-medium text-ink">{loc.terminalName}</td>
+                <td className="px-3 py-2 text-muted">{loc.system ?? "—"}</td>
+                <td className="px-3 py-2 text-muted">{loc.station ?? "—"}</td>
+                <td className="px-3 py-2 text-muted/60">{loc.orbit ?? "—"}</td>
+                <td className="px-3 py-2 text-muted/60">{loc.faction ?? "—"}</td>
+                <td className="px-3 py-2 text-right tabular-nums font-mono">
+                  {loc.priceSell != null
+                    ? <span className={topSell ? "text-quant font-bold" : "text-ink"}>
+                        {loc.priceSell.toLocaleString()}
+                        {topSell && <span className="ml-1 text-[8px] opacity-50">★</span>}
+                      </span>
+                    : <span className="text-muted/25">—</span>}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums font-mono text-muted/60 text-[10px]">
+                  {loc.scuSellAvg != null
+                    ? <span title={`${fmt(loc.scuSellMin)}–${fmt(loc.scuSellMax)} SCU`}>{fmt(loc.scuSellAvg)} SCU</span>
+                    : "—"}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums font-mono">
+                  {loc.priceBuy != null
+                    ? <span className={topBuy ? "text-amber font-bold" : "text-muted"}>
+                        {loc.priceBuy.toLocaleString()}
+                      </span>
+                    : <span className="text-muted/25">—</span>}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums font-mono text-muted/60 text-[10px]">
+                  {loc.scuBuyAvg != null
+                    ? <span title={`${fmt(loc.scuBuyMin)}–${fmt(loc.scuBuyMax)} SCU`}>{fmt(loc.scuBuyAvg)} SCU</span>
+                    : "—"}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums font-mono">
+                  {roi != null
+                    ? <span className={roi >= 0 ? "text-quant" : "text-danger"}>{roi >= 0 ? "+" : ""}{roi.toFixed(1)}%</span>
+                    : <span className="text-muted/25">—</span>}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function Commodities() {
-  const [all, setAll]             = useState<CommodityWithPrices[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState(false);
+  const [allComm, setAllComm]     = useState<CommodityWithPrices[]>([]);
   const [search, setSearch]       = useState("");
+  const [listLoading, setListLoading] = useState(true);
   const [selected, setSelected]   = useState<CommodityWithPrices | null>(null);
-  const [listSort, setListSort]   = useState<ListSort>("sell");
-  const [listDir, setListDir]     = useState<1 | -1>(-1);
-  const [sysFilter, setSysFilter] = useState("all");
-  const [locSort, setLocSort]     = useState<LocSort>("sell");
-  const [scu, setScu]             = useState("100");
+  const [priceData, setPriceData] = useState<{
+    locations: CommodityLocation[];
+    bestSell: number | null;
+    bestBuy: number | null;
+  } | null>(null);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [tableMode, setTableMode] = useState<"all" | "sell" | "buy">("all");
+  const fetchingRef = useRef<number>(0);
 
+  // Load commodity list once
   useEffect(() => {
-    getCommoditiesWithPrices()
-      .then(data => {
-        setAll(data);
-        if (data.length > 0) setSelected(data[0]);
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+    getCommodities()
+      .then(data => { setAllComm(data); if (data.length) setSelected(data[0]); })
+      .finally(() => setListLoading(false));
   }, []);
 
-  const systems = useMemo(() => {
-    if (!selected) return [];
-    const s = new Set<string>();
-    selected.locations.forEach(l => { if (l.system) s.add(l.system); });
-    return ["all", ...Array.from(s).sort()];
+  // Load prices when selected commodity changes
+  useEffect(() => {
+    if (!selected) return;
+    const seq = ++fetchingRef.current;
+    setPriceData(null);
+    setPriceLoading(true);
+    setTableMode("all");
+    getCommodityPrices(selected.id).then(data => {
+      if (seq !== fetchingRef.current) return; // stale
+      setPriceData(data);
+    }).finally(() => {
+      if (seq === fetchingRef.current) setPriceLoading(false);
+    });
   }, [selected]);
-
-  function toggleSort(k: ListSort) {
-    if (listSort === k) setListDir(d => (d === 1 ? -1 : 1));
-    else { setListSort(k); setListDir(-1); }
-  }
 
   const filteredList = useMemo(() => {
     const q = search.toLowerCase();
-    return all
-      .filter(c => !q || c.name.toLowerCase().includes(q) || (c.code?.toLowerCase() ?? "").includes(q))
-      .sort((a, b) => {
-        const diff =
-          listSort === "name" ? a.name.localeCompare(b.name) :
-          listSort === "sell" ? (a.bestSell ?? -1) - (b.bestSell ?? -1) :
-          (calcRoi(a.bestSell, a.bestBuy) ?? -Infinity) - (calcRoi(b.bestSell, b.bestBuy) ?? -Infinity);
-        return diff * listDir;
-      });
-  }, [all, search, listSort, listDir]);
-
-  const locations = useMemo(() => {
-    if (!selected) return [];
-    const locs = sysFilter === "all"
-      ? selected.locations
-      : selected.locations.filter(l => l.system === sysFilter);
-    return [...locs].sort((a, b) =>
-      locSort === "sell"
-        ? (b.priceSell ?? -1) - (a.priceSell ?? -1)
-        : (a.priceBuy ?? Infinity) - (b.priceBuy ?? Infinity)
+    if (!q) return allComm;
+    return allComm.filter(c =>
+      c.name.toLowerCase().includes(q) || (c.code?.toLowerCase() ?? "").includes(q)
     );
-  }, [selected, sysFilter, locSort]);
+  }, [allComm, search]);
 
-  // Calculator
-  const qty        = Math.max(0, parseFloat(scu) || 0);
-  const selRoi     = selected ? calcRoi(selected.bestSell, selected.bestBuy) : null;
-  const profit     = selected?.bestSell != null && selected?.bestBuy != null
-    ? (selected.bestSell - selected.bestBuy) * qty
-    : selected?.bestSell != null ? selected.bestSell * qty : null;
+  // Best buy/sell locations
+  const bestSellLoc = priceData?.locations.reduce<CommodityLocation | null>((best, l) =>
+    l.priceSell != null && (best == null || l.priceSell > (best.priceSell ?? 0)) ? l : best
+  , null) ?? null;
+  const bestBuyLoc = priceData?.locations.reduce<CommodityLocation | null>((best, l) =>
+    l.priceBuy != null && (best == null || l.priceBuy < (best.priceBuy ?? Infinity)) ? l : best
+  , null) ?? null;
+
+  function toggleMode(m: "sell" | "buy") {
+    setTableMode(prev => prev === m ? "all" : m);
+  }
 
   return (
-    <div className="flex flex-col gap-3" style={{ height: "100%" }}>
+    <div className="flex gap-3" style={{ height: "100%" }}>
 
-      {/* ── Top bar ── */}
-      <div className="flex items-center gap-3 shrink-0">
-        <h1 className="eyebrow">Commodities</h1>
-        <input
-          className="field text-xs w-44"
-          placeholder="Search name or code…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        {!loading && !error && (
-          <span className="text-[10px] font-mono text-muted/50 ml-auto">
-            {filteredList.length} commodities · UEX Corp
-          </span>
+      {/* ── Left: commodity list ── */}
+      <div className="panel flex flex-col min-h-0 shrink-0" style={{ width: 220 }}>
+        {/* Search */}
+        <div className="px-3 pt-3 pb-2 border-b border-edge shrink-0">
+          <input
+            className="field text-xs w-full"
+            placeholder="Search commodity…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {!listLoading && (
+            <p className="text-[9px] font-mono text-muted/40 mt-1.5 px-0.5">
+              {filteredList.length} of {allComm.length} commodities
+            </p>
+          )}
+        </div>
+
+        {listLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="w-5 h-5 border-2 border-quant/30 border-t-quant rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="overflow-y-auto flex-1 [scrollbar-width:thin]">
+            {filteredList.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setSelected(c)}
+                className={[
+                  "w-full text-left px-3 py-2 border-b border-edge/20 transition-colors",
+                  selected?.id === c.id ? "bg-quant/10" : "hover:bg-hull/50",
+                ].join(" ")}
+              >
+                <p className={`text-[11px] font-medium leading-tight ${selected?.id === c.id ? "text-quant" : "text-ink"}`}>
+                  {c.name}
+                </p>
+                {c.code && <p className="text-[9px] font-mono text-muted/50">{c.code}</p>}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
-      {loading ? (
-        <div className="flex items-center gap-3 py-16 justify-center">
-          <div className="w-6 h-6 border-2 border-quant/30 border-t-quant rounded-full animate-spin" />
-          <span className="text-sm font-mono text-muted">Loading commodities…</span>
-        </div>
-      ) : error ? (
-        <div className="panel p-10 text-center">
-          <p className="text-muted text-sm">Could not load commodity data.</p>
-        </div>
-      ) : (
-        <div className="flex gap-3 flex-1 min-h-0">
-
-          {/* ── Left: list ── */}
-          <div className="panel flex flex-col min-h-0 shrink-0" style={{ width: 210 }}>
-            <div className="overflow-y-auto flex-1 [scrollbar-width:thin]">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-edge sticky top-0 bg-panel z-10">
-                    <SortTh label="Commodity" col="name" sort={listSort} dir={listDir} onSort={k => toggleSort(k as ListSort)} />
-                    <SortTh label="Sell"      col="sell" sort={listSort} dir={listDir} onSort={k => toggleSort(k as ListSort)} right />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredList.map(c => (
-                    <tr
-                      key={c.id}
-                      onClick={() => { setSelected(c); setSysFilter("all"); }}
-                      className={[
-                        "border-b border-edge/20 cursor-pointer transition-colors",
-                        selected?.id === c.id ? "bg-quant/10" : "hover:bg-hull/50",
-                      ].join(" ")}
-                    >
-                      <td className="px-3 py-2">
-                        <p className={selected?.id === c.id ? "text-quant font-semibold text-[11px]" : "text-ink text-[11px] font-medium"}>
-                          {c.name}
-                        </p>
-                        {c.code && <p className="text-[9px] text-muted font-mono">{c.code}</p>}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono text-[11px] tabular-nums">
-                        {c.bestSell != null
-                          ? <span className="text-quant">{fmtPrice(c.bestSell)}</span>
-                          : <span className="text-muted/25">—</span>
-                        }
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+      {/* ── Right: detail ── */}
+      <div className="flex flex-col flex-1 min-w-0 min-h-0 gap-2">
+        {!selected ? (
+          <div className="panel flex-1 flex items-center justify-center">
+            <p className="text-muted text-sm">Select a commodity.</p>
           </div>
-
-          {/* ── Right: detail ── */}
-          {selected ? (
-            <div className="flex flex-col gap-2 flex-1 min-w-0 min-h-0">
-
-              {/* Header + Calculator — single panel */}
-              <div className="panel px-4 py-3 shrink-0 flex items-center gap-5 flex-wrap">
-
-                {/* Commodity identity */}
-                <div className="shrink-0">
-                  <p className="text-base font-bold text-ink leading-tight">{selected.name}</p>
-                  {selected.code && <p className="text-[10px] font-mono text-muted">{selected.code}</p>}
-                </div>
-
-                <div className="w-px h-8 bg-edge/60 shrink-0" />
-
-                {/* Key stats */}
-                <div className="flex gap-5">
-                  {[
-                    { label: "Best Sell",  val: selected.bestSell  != null ? fmtPrice(selected.bestSell)  + " aUEC" : "—", cls: "text-quant" },
-                    { label: "Best Buy",   val: selected.bestBuy   != null ? fmtPrice(selected.bestBuy)   + " aUEC" : "—", cls: "text-ink"   },
-                    { label: "Locations",  val: String(selected.locations.length),                                          cls: "text-ink"   },
-                  ].map(s => (
-                    <div key={s.label}>
-                      <p className="text-[9px] font-mono uppercase tracking-widest text-muted/60">{s.label}</p>
-                      <p className={`text-sm font-bold font-mono tabular-nums mt-0.5 ${s.cls}`}>{s.val}</p>
-                    </div>
-                  ))}
-                  <div>
-                    <p className="text-[9px] font-mono uppercase tracking-widest text-muted/60">ROI</p>
-                    <p className="text-sm font-bold font-mono mt-0.5">
-                      <RoiBadge value={selRoi} />
-                    </p>
-                  </div>
-                </div>
-
-                <div className="w-px h-8 bg-edge/60 shrink-0 ml-auto" />
-
-                {/* Inline calculator */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[9px] font-mono text-muted/60 uppercase tracking-widest">SCU</span>
-                  <input
-                    type="number" min="0" step="1" value={scu}
-                    onChange={e => setScu(e.target.value)}
-                    className="field text-xs text-right tabular-nums py-1 w-20"
-                  />
-                  <div className="text-right">
-                    <p className="text-[9px] font-mono text-muted/60 uppercase tracking-widest">
-                      {selected.bestBuy != null ? "Profit" : "Sell Value"}
-                    </p>
-                    <p className={`text-sm font-bold font-mono tabular-nums ${
-                      profit == null ? "text-muted" : profit >= 0 ? "text-quant" : "text-danger"
-                    }`}>
-                      {profit != null
-                        ? (selected.bestBuy != null && profit >= 0 ? "+" : "") + fmtPrice(profit) + " aUEC"
-                        : "—"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Filters row */}
-              <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                <div className="flex gap-1 flex-wrap">
-                  {systems.map(s => (
-                    <button key={s} onClick={() => setSysFilter(s)}
-                      className={["text-[10px] font-mono px-2 py-0.5 border transition-all",
-                        sysFilter === s ? "border-quant text-quant bg-quant/10" : "border-edge text-muted hover:text-ink"
-                      ].join(" ")}>
-                      {s === "all" ? "All" : s}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-1 ml-auto">
-                  {(["sell", "buy"] as const).map(k => (
-                    <button key={k} onClick={() => setLocSort(k)}
-                      className={["text-[10px] font-mono px-2 py-0.5 border transition-all",
-                        locSort === k ? "border-quant text-quant bg-quant/10" : "border-edge text-muted hover:text-ink"
-                      ].join(" ")}>
-                      Sort: {k === "sell" ? "Best Sell" : "Best Buy"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Location table */}
-              <div className="panel overflow-hidden flex-1 min-h-0">
-                {locations.length === 0 ? (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-muted text-sm">
-                      No price data{sysFilter !== "all" ? ` in ${sysFilter}` : ""}.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-y-auto h-full [scrollbar-width:thin]">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-edge sticky top-0 bg-panel z-10">
-                          <th className={`${TH} text-left text-muted`}>Terminal</th>
-                          <th className={`${TH} text-left text-muted`}>System</th>
-                          <th className={`${TH} text-left text-muted`}>Location</th>
-                          <th className={`${TH} text-right text-quant`}>Sell / SCU</th>
-                          <th className={`${TH} text-right text-muted`}>Buy / SCU</th>
-                          <th className={`${TH} text-right text-muted`}>ROI</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {locations.map((loc, i) => {
-                          const topSell = loc.priceSell != null && loc.priceSell === selected.bestSell;
-                          const topBuy  = loc.priceBuy  != null && loc.priceBuy  === selected.bestBuy;
-                          const lRoi    = calcRoi(loc.priceSell, loc.priceBuy);
-                          return (
-                            <tr key={i} className={[
-                              "border-b border-edge/20 transition-colors",
-                              topSell || topBuy ? "bg-quant/[0.05]" : "hover:bg-hull/40",
-                            ].join(" ")}>
-                              <td className="px-3 py-2 text-ink font-medium">{loc.terminalName}</td>
-                              <td className="px-3 py-2 text-muted">{loc.system ?? "—"}</td>
-                              <td className="px-3 py-2 text-muted">{loc.station ?? "—"}</td>
-                              <td className="px-3 py-2 text-right tabular-nums font-mono">
-                                {loc.priceSell != null ? (
-                                  <span className={topSell ? "text-quant font-bold" : "text-ink"}>
-                                    {loc.priceSell.toLocaleString()}
-                                    {topSell && <span className="ml-1 opacity-50 text-[9px]">★</span>}
-                                  </span>
-                                ) : <span className="text-muted/25">—</span>}
-                              </td>
-                              <td className="px-3 py-2 text-right tabular-nums font-mono">
-                                {loc.priceBuy != null ? (
-                                  <span className={topBuy ? "text-amber font-bold" : "text-muted"}>
-                                    {loc.priceBuy.toLocaleString()}
-                                  </span>
-                                ) : <span className="text-muted/25">—</span>}
-                              </td>
-                              <td className="px-3 py-2 text-right tabular-nums font-mono">
-                                <RoiBadge value={lRoi} />
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+        ) : (
+          <>
+            {/* Commodity header */}
+            <div className="flex items-center gap-3 shrink-0">
+              <div>
+                <h1 className="text-lg font-bold text-ink leading-tight">{selected.name}</h1>
+                {selected.code && (
+                  <span className="text-[10px] font-mono text-muted">{selected.code}</span>
                 )}
               </div>
+              {priceData && (
+                <div className="flex items-center gap-3 ml-auto text-[10px] font-mono text-muted/50">
+                  {priceData.locations.length > 0 && (
+                    <>
+                      <span>{priceData.locations.length} locations</span>
+                      {calcRoi(priceData.bestSell, priceData.bestBuy) != null && (
+                        <span>
+                          ROI{" "}
+                          <span className={calcRoi(priceData.bestSell, priceData.bestBuy)! >= 0 ? "text-quant" : "text-danger"}>
+                            {calcRoi(priceData.bestSell, priceData.bestBuy)! >= 0 ? "+" : ""}
+                            {calcRoi(priceData.bestSell, priceData.bestBuy)!.toFixed(1)}%
+                          </span>
+                        </span>
+                      )}
+                    </>
+                  )}
+                  <span className="text-muted/30">UEX Corp</span>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="panel flex-1 flex items-center justify-center">
-              <p className="text-muted text-sm">Select a commodity.</p>
-            </div>
-          )}
-        </div>
-      )}
+
+            {priceLoading ? (
+              <div className="flex items-center gap-3 justify-center flex-1">
+                <div className="w-6 h-6 border-2 border-quant/30 border-t-quant rounded-full animate-spin" />
+                <span className="text-sm font-mono text-muted">Loading prices…</span>
+              </div>
+            ) : !priceData || priceData.locations.length === 0 ? (
+              <div className="panel flex-1 flex items-center justify-center">
+                <p className="text-muted text-sm">No price data for {selected.name}.</p>
+              </div>
+            ) : (
+              <>
+                {/* Best buy / best sell cards */}
+                <div className="flex gap-2 shrink-0">
+                  <BestCard
+                    mode="sell"
+                    loc={bestSellLoc}
+                    price={priceData.bestSell}
+                    active={tableMode === "sell"}
+                    onClick={() => toggleMode("sell")}
+                  />
+                  <BestCard
+                    mode="buy"
+                    loc={bestBuyLoc}
+                    price={priceData.bestBuy}
+                    active={tableMode === "buy"}
+                    onClick={() => toggleMode("buy")}
+                  />
+                </div>
+
+                {/* Table header with mode filter */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <p className="eyebrow">
+                    {tableMode === "sell" ? "Sell Locations" : tableMode === "buy" ? "Buy Locations" : "All Locations"}
+                  </p>
+                  <div className="flex gap-1 ml-auto">
+                    {(["all", "sell", "buy"] as const).map(m => (
+                      <button key={m} onClick={() => setTableMode(m)}
+                        className={["text-[10px] font-mono px-2 py-0.5 border transition-all",
+                          tableMode === m ? "border-quant text-quant bg-quant/10" : "border-edge text-muted hover:text-ink"
+                        ].join(" ")}>
+                        {m === "all" ? "All" : m === "sell" ? "Sell" : "Buy"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Location table */}
+                <div className="panel flex-1 min-h-0 flex flex-col overflow-hidden">
+                  <LocationTable
+                    locations={priceData.locations}
+                    mode={tableMode}
+                    bestSell={priceData.bestSell}
+                    bestBuy={priceData.bestBuy}
+                  />
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

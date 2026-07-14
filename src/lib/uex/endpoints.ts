@@ -96,51 +96,65 @@ export async function getRefineryMethods(): Promise<RefineryMethod[]> {
   }));
 }
 
-/** All tradeable commodities with buy/sell prices per location (UEX-style). */
-export async function getCommoditiesWithPrices(): Promise<CommodityWithPrices[]> {
-  const [commodities, prices] = await Promise.all([
-    uexFetch<UexCommodity>("commodities"),
-    uexFetch<UexCommodityPrice>("commodities_prices").catch(() => [] as UexCommodityPrice[]),
-  ]);
-
-  // Group prices by commodity ID
-  const byComm = new Map<number, UexCommodityPrice[]>();
-  for (const p of prices) {
-    if (p.id_commodity == null) continue;
-    const arr = byComm.get(p.id_commodity) ?? [];
-    arr.push(p);
-    byComm.set(p.id_commodity, arr);
-  }
-
+/** All commodities (no prices — use getCommodityPrices for on-demand price data). */
+export async function getCommodities(): Promise<CommodityWithPrices[]> {
+  const commodities = await uexFetch<UexCommodity>("commodities");
   return commodities
-    .map(c => {
-      const locs: CommodityLocation[] = (byComm.get(c.id) ?? [])
-        .map(p => ({
-          terminalId: p.id_terminal ?? 0,
-          terminalName: p.terminal_name ?? `Terminal ${p.id_terminal}`,
-          system: p.star_system_name ?? null,
-          station: p.space_station_name ?? p.planet_name ?? null,
-          priceSell: p.price_sell_avg ?? p.price_sell ?? null,
-          priceBuy:  p.price_buy_avg  ?? p.price_buy  ?? null,
-        }))
-        .filter(l => l.priceSell != null || l.priceBuy != null)
-        .sort((a, b) => (b.priceSell ?? 0) - (a.priceSell ?? 0));
-
-      const sells = locs.map(l => l.priceSell).filter((v): v is number => v != null);
-      const buys  = locs.map(l => l.priceBuy ).filter((v): v is number => v != null);
-
-      return {
-        id: c.id,
-        name: c.name,
-        code: c.code ?? null,
-        isRefinable: c.is_refinable === 1,
-        locations: locs,
-        bestSell: sells.length ? Math.max(...sells) : null,
-        bestBuy:  buys.length  ? Math.min(...buys)  : null,
-      };
-    })
-    .filter(c => c.locations.length > 0)
+    .map(c => ({
+      id: c.id,
+      name: c.name,
+      code: c.code ?? null,
+      isRefinable: c.is_refinable === 1,
+      locations: [],
+      bestSell: null,
+      bestBuy: null,
+    }))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function pricesToLocations(prices: UexCommodityPrice[]): CommodityLocation[] {
+  return prices
+    .map(p => ({
+      terminalId:  p.id_terminal ?? 0,
+      terminalName: p.terminal_name ?? `Terminal ${p.id_terminal}`,
+      system:  p.star_system_name ?? null,
+      station: p.space_station_name ?? p.planet_name ?? null,
+      orbit:   p.orbit_name ?? null,
+      faction: p.faction_name ?? null,
+      priceSell:   (p.price_sell_avg ?? p.price_sell) || null,
+      priceBuy:    (p.price_buy_avg  ?? p.price_buy)  || null,
+      scuSellAvg: p.scu_sell_avg ?? null,
+      scuSellMin: p.scu_sell_min ?? null,
+      scuSellMax: p.scu_sell_max ?? null,
+      scuBuyAvg:  p.scu_buy_avg  ?? null,
+      scuBuyMin:  p.scu_buy_min  ?? null,
+      scuBuyMax:  p.scu_buy_max  ?? null,
+    }))
+    .filter(l => l.priceSell != null || l.priceBuy != null);
+}
+
+/** Prices for a single commodity, fetched on-demand. */
+export async function getCommodityPrices(id: number): Promise<{
+  locations: CommodityLocation[];
+  bestSell: number | null;
+  bestBuy: number | null;
+}> {
+  const prices = await uexFetch<UexCommodityPrice>("commodities_prices", {
+    query: { id_commodity: id },
+  });
+  const locations = pricesToLocations(prices);
+  const sells = locations.map(l => l.priceSell).filter((v): v is number => v != null);
+  const buys  = locations.map(l => l.priceBuy ).filter((v): v is number => v != null);
+  return {
+    locations,
+    bestSell: sells.length ? Math.max(...sells) : null,
+    bestBuy:  buys.length  ? Math.min(...buys)  : null,
+  };
+}
+
+/** @deprecated use getCommodities + getCommodityPrices */
+export async function getCommoditiesWithPrices(): Promise<CommodityWithPrices[]> {
+  return getCommodities();
 }
 
 /** All mineable raw ores with average sell price per SCU. */

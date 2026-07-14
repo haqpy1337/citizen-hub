@@ -70,13 +70,20 @@ export interface UexCommodityPrice {
   star_system_name?: string;
   space_station_name?: string;
   planet_name?: string;
+  orbit_name?: string;
+  faction_name?: string;
   /** Price the NPC pays the player (player sells → player receives this). */
   price_sell?: number;
   /** Price the NPC charges the player (player buys). */
   price_buy?: number;
-  scu_sell_avg?: number;
   price_sell_avg?: number;
   price_buy_avg?: number;
+  scu_sell_avg?: number;
+  scu_sell_min?: number;
+  scu_sell_max?: number;
+  scu_buy_avg?: number;
+  scu_buy_min?: number;
+  scu_buy_max?: number;
   /** 1 = currently stocked/available at this terminal */
   is_available?: number;
 }
@@ -88,10 +95,18 @@ export interface CommodityLocation {
   terminalName: string;
   system: string | null;
   station: string | null;
+  orbit: string | null;
+  faction: string | null;
   /** What the NPC pays the player (sell here). */
   priceSell: number | null;
   /** What the player pays the NPC (buy here). */
   priceBuy: number | null;
+  scuSellAvg: number | null;
+  scuSellMin: number | null;
+  scuSellMax: number | null;
+  scuBuyAvg: number | null;
+  scuBuyMin: number | null;
+  scuBuyMax: number | null;
 }
 
 export interface CommodityWithPrices {
