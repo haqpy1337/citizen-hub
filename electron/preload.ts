@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld("api", {
   installUpdate: () => ipcRenderer.invoke("install-update"),
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   fetchNews: () => ipcRenderer.invoke("news:fetch"),
+  isFirstRunAfterUpdate: () => ipcRenderer.invoke("app:isFirstRunAfterUpdate"),
   getVersion: () => ipcRenderer.invoke("app:version"),
   getZoom: () => ipcRenderer.invoke("app:getZoom"),
   setZoom: (factor: number) => ipcRenderer.invoke("app:setZoom", factor),

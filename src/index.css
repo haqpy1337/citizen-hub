@@ -39,37 +39,28 @@ html.theme-mole body {
     linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
   background-size: 40px 40px;
 }
-/* Mole panel: thick left rail + folded-corner triangle in top-right */
+/* Mole panel: clean industrial — left rail + subtle top-right corner mark */
 html:not([class*="theme-"]) .panel,
 html.theme-mole .panel {
   position: relative;
   overflow: hidden;
-  background-image: linear-gradient(to right, rgba(224,80,16,0.1) 0%, transparent 120px);
+  background-image: linear-gradient(to right, rgba(224,80,16,0.07) 0%, transparent 90px);
   box-shadow: var(--shadow-panel);
 }
+/* Top-right L-bracket — clean corner mark, no gimmicks */
 html:not([class*="theme-"]) .panel::before,
 html.theme-mole .panel::before {
   content: '';
   position: absolute;
-  top: 6px; left: 8px;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: rgba(224,80,16,0.5);
+  top: 6px; right: 6px;
+  width: 14px; height: 14px;
+  border-top: 1.5px solid rgba(224,80,16,0.4);
+  border-right: 1.5px solid rgba(224,80,16,0.4);
   pointer-events: none;
   z-index: 1;
 }
 html:not([class*="theme-"]) .panel::after,
-html.theme-mole .panel::after {
-  content: '';
-  position: absolute;
-  top: 0; right: 0;
-  width: 0; height: 0;
-  border-style: solid;
-  border-width: 0 54px 54px 0;
-  border-color: transparent rgba(224,80,16,0.3) transparent transparent;
-  pointer-events: none;
-  z-index: 1;
-}
+html.theme-mole .panel::after { content: none; }
 html:not([class*="theme-"]) .field,
 html.theme-mole .field {
   border-radius: 0;
@@ -147,32 +138,26 @@ html.theme-cockpit .panel {
   font-family: 'Courier New', 'Consolas', monospace;
   box-shadow: var(--shadow-panel);
 }
-/* CRT scanline overlay */
+/* Occasional CRT sweep — long interval, subtle */
+@keyframes crt-sweep {
+  0%      { top: -3px; opacity: 0; }
+  1%      { top: -3px; opacity: 0.75; }
+  13%     { top: 110%; opacity: 0.35; }
+  14%, 100% { top: 110%; opacity: 0; }
+}
 html.theme-cockpit .panel::after {
   content: '';
   position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(80,232,40,0.025) 0px, rgba(80,232,40,0.025) 1px,
-    transparent 1px, transparent 4px
-  );
-  pointer-events: none;
-  z-index: 0;
-}
-/* Terminal cursor blink in top-left corner */
-html.theme-cockpit .panel::before {
-  content: '█';
-  position: absolute;
-  top: 6px; right: 10px;
-  font-family: 'Courier New', monospace;
-  font-size: 9px;
-  color: rgba(80,232,40,0.5);
+  left: 0; right: 0;
+  height: 2px;
+  top: -3px;
+  background: linear-gradient(to right, transparent, rgba(80,232,40,0.55) 25%, rgba(80,232,40,0.8) 50%, rgba(80,232,40,0.55) 75%, transparent);
+  box-shadow: 0 0 8px 1px rgba(80,232,40,0.35);
   pointer-events: none;
   z-index: 1;
-  animation: crt-blink 1.2s step-end infinite;
+  animation: crt-sweep 9s ease-in-out infinite;
 }
-@keyframes crt-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+html.theme-cockpit .panel::before { content: none; }
 html.theme-cockpit .field {
   border-radius: 0;
   border: 1px solid rgba(80,232,40,0.3);
@@ -298,8 +283,13 @@ html.theme-gatac {
     0 20px 56px rgba(0,0,0,0.98);
   --shadow-glow:      0 0 0 1px rgba(184,72,255,0.5), 0 0 32px rgba(184,72,255,0.25);
   --panel-radius:     0;
-  --panel-left:       2px solid rgba(184,72,255,0.55);
-  --panel-accent-top: transparent;
+  --panel-left:       none;
+  --panel-accent-top: rgba(184,72,255,0.5);
+  --shadow-panel:
+    0 1px 0 rgba(184,72,255,0.25) inset,
+    0 0 0 1px rgba(184,72,255,0.08) inset,
+    0 20px 56px rgba(0,0,0,0.98),
+    0 4px 16px rgba(0,0,0,0.7);
 }
 html.theme-gatac body {
   background-image:
@@ -307,22 +297,30 @@ html.theme-gatac body {
     linear-gradient(-45deg, var(--grid-color) 1px, transparent 1px);
   background-size: 28px 28px;
 }
+/* Gatac panel: clean dark card, top violet shimmer, radial inner glow, single node dot */
 html.theme-gatac .panel {
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(184,72,255,0.14);
+  border-top: 1px solid rgba(184,72,255,0.45);
   box-shadow: var(--shadow-panel);
-  border-right: 2px solid rgba(184,72,255,0.45);
-  background-image:
-    linear-gradient(to right,   rgba(184,72,255,0.07) 0%, transparent 60px),
-    linear-gradient(to left,    rgba(184,72,255,0.07) 0%, transparent 60px),
-    linear-gradient(135deg, transparent 60%, rgba(184,72,255,0.04) 100%);
+  background: #100c28;
 }
-/* Bioluminescent node — top-left corner dot */
+/* Radial bioluminescent glow from top-left — part of the card background */
 html.theme-gatac .panel::before {
   content: '';
   position: absolute;
-  top: 10px; left: 10px;
-  width: 6px; height: 6px;
+  inset: 0;
+  background: radial-gradient(ellipse at 10% 0%, rgba(184,72,255,0.1) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+/* Pulsing node dot — top right */
+html.theme-gatac .panel::after {
+  content: '';
+  position: absolute;
+  top: 9px; right: 11px;
+  width: 5px; height: 5px;
   border-radius: 50%;
   background: rgba(184,72,255,0.9);
   box-shadow: 0 0 8px 3px rgba(184,72,255,0.5);
@@ -330,22 +328,9 @@ html.theme-gatac .panel::before {
   z-index: 1;
   animation: gatac-pulse 3s ease-in-out infinite;
 }
-/* Bottom-right node */
-html.theme-gatac .panel::after {
-  content: '';
-  position: absolute;
-  bottom: 10px; right: 10px;
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: rgba(184,72,255,0.7);
-  box-shadow: 0 0 6px 2px rgba(184,72,255,0.4);
-  pointer-events: none;
-  z-index: 1;
-  animation: gatac-pulse 3s ease-in-out infinite 1.5s;
-}
 @keyframes gatac-pulse {
-  0%, 100% { opacity: 0.7; box-shadow: 0 0 6px 2px rgba(184,72,255,0.4); }
-  50%       { opacity: 1;   box-shadow: 0 0 12px 5px rgba(184,72,255,0.7); }
+  0%, 100% { opacity: 0.65; box-shadow: 0 0 6px 2px rgba(184,72,255,0.35); }
+  50%       { opacity: 1;    box-shadow: 0 0 14px 6px rgba(184,72,255,0.7); }
 }
 html.theme-gatac .field {
   border-radius: 0;

@@ -59,77 +59,77 @@ function NewsPanel() {
 
   return (
     <div className="panel flex flex-col">
-      <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-edge">
-        <p className="label">SC News & Comm-Link</p>
-        {!loading && (
-          <button
-            onClick={fetchNews}
-            className="text-[10px] font-mono text-muted hover:text-quant transition-colors"
-          >
-            ↻ Refresh
-          </button>
-        )}
-      </div>
-
       {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="w-5 h-5 border-2 border-quant/30 border-t-quant rounded-full animate-spin" />
+        <div className="flex items-center gap-3 px-5 py-4">
+          <div className="w-4 h-4 border-2 border-quant/30 border-t-quant rounded-full animate-spin shrink-0" />
+          <span className="text-xs font-mono text-muted">Loading news…</span>
         </div>
       ) : error || !cur ? (
-        <div className="px-4 py-6 text-xs text-muted text-center">
-          Could not load news.{" "}
-          <button
-            className="text-quant hover:underline"
-            onClick={() => window.open("https://robertsspaceindustries.com/comm-link")}
-          >
-            Open Comm-Link ↗
-          </button>
+        <div className="flex items-center justify-between px-5 py-4 gap-4">
+          <span className="text-xs text-muted">Could not load RSI news.</span>
+          <div className="flex items-center gap-3">
+            <button onClick={fetchNews} className="text-xs font-mono text-quant hover:underline">
+              ↻ Retry
+            </button>
+            <button
+              onClick={() => window.open("https://robertsspaceindustries.com/comm-link")}
+              className="text-xs font-mono text-muted hover:text-quant transition-colors"
+            >
+              Open Comm-Link ↗
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="flex flex-col flex-1">
-          {/* Post content */}
-          <div className="flex flex-col gap-3 px-4 py-5 flex-1">
-            <p className="text-sm font-semibold text-ink leading-snug">{cur.title}</p>
-            {cur.date && (
-              <p className="text-[10px] text-muted font-mono">{fmtDate(cur.date)}</p>
-            )}
-            <button
-              onClick={() => window.open(cur.link || "https://robertsspaceindustries.com/comm-link")}
-              className="self-start text-xs text-quant hover:underline font-mono mt-auto"
-            >
-              Open in browser ↗
-            </button>
-          </div>
+        <div className="flex items-center gap-4 px-5 py-4">
+          {/* Nav: prev */}
+          <button
+            onClick={() => nav(-1)}
+            disabled={items.length <= 1}
+            className="text-sm font-mono text-muted hover:text-quant transition-colors disabled:opacity-20 shrink-0"
+          >
+            ←
+          </button>
 
-          {/* Navigation bar */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-edge">
-            <button
-              onClick={() => nav(-1)}
-              className="text-xs font-mono text-muted hover:text-quant transition-colors px-2 py-1 disabled:opacity-30"
-              disabled={items.length <= 1}
-            >
-              ← Prev
-            </button>
-
-            {/* Dot indicators */}
-            <div className="flex gap-1.5 items-center">
-              {items.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => { setIdx(i); setAutoKey(k => k + 1); }}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? "bg-quant scale-125" : "bg-muted/40 hover:bg-muted"}`}
-                />
-              ))}
+          {/* Content */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1">
+            <p className="text-sm font-medium text-ink leading-snug truncate">{cur.title}</p>
+            <div className="flex items-center gap-3">
+              {cur.date && <span className="text-[10px] text-muted font-mono">{fmtDate(cur.date)}</span>}
+              <button
+                onClick={() => window.open(cur.link || "https://robertsspaceindustries.com/comm-link")}
+                className="text-[10px] text-quant hover:underline font-mono"
+              >
+                Open ↗
+              </button>
             </div>
-
-            <button
-              onClick={() => nav(1)}
-              className="text-xs font-mono text-muted hover:text-quant transition-colors px-2 py-1 disabled:opacity-30"
-              disabled={items.length <= 1}
-            >
-              Next →
-            </button>
           </div>
+
+          {/* Dot indicators */}
+          <div className="flex gap-1 items-center shrink-0">
+            {items.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => { setIdx(i); setAutoKey(k => k + 1); }}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? "bg-quant" : "bg-muted/30 hover:bg-muted/60"}`}
+              />
+            ))}
+          </div>
+
+          {/* Nav: next + refresh */}
+          <button
+            onClick={() => nav(1)}
+            disabled={items.length <= 1}
+            className="text-sm font-mono text-muted hover:text-quant transition-colors disabled:opacity-20 shrink-0"
+          >
+            →
+          </button>
+          <button
+            onClick={fetchNews}
+            className="text-xs font-mono text-muted/40 hover:text-quant transition-colors shrink-0"
+            title="Refresh"
+          >
+            ↻
+          </button>
         </div>
       )}
     </div>
@@ -248,30 +248,32 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Two-column: jobs left, news right */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="flex flex-col gap-4">
-          <p className="eyebrow">Active Jobs</p>
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="w-7 h-7 border-2 border-quant/30 border-t-quant rounded-full animate-spin" />
-            </div>
-          ) : activeJobs.length === 0 ? (
-            <div className="panel p-10 text-center flex flex-col items-center gap-3">
-              <p className="text-muted text-sm">No active refinery jobs</p>
-              <button onClick={() => setPage("jobs")} className="btn btn-primary text-sm">
-                Start a Job
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {activeJobs.map(job => (
-                <JobCard key={job.id} job={job} onMarkDone={() => markDone(job.id)} />
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Active jobs */}
+      <div className="flex flex-col gap-4">
+        <p className="eyebrow">Active Jobs</p>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-7 h-7 border-2 border-quant/30 border-t-quant rounded-full animate-spin" />
+          </div>
+        ) : activeJobs.length === 0 ? (
+          <div className="panel p-10 text-center flex flex-col items-center gap-3">
+            <p className="text-muted text-sm">No active refinery jobs</p>
+            <button onClick={() => setPage("jobs")} className="btn btn-primary text-sm">
+              Start a Job
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {activeJobs.map(job => (
+              <JobCard key={job.id} job={job} onMarkDone={() => markDone(job.id)} />
+            ))}
+          </div>
+        )}
+      </div>
 
+      {/* News — visually separated section */}
+      <div className="flex flex-col gap-3 pt-2 border-t border-edge/40">
+        <p className="eyebrow text-muted/50">SC News & Comm-Link</p>
         <NewsPanel />
       </div>
     </div>

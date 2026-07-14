@@ -20,13 +20,23 @@ let dbPath: string;
 
 // ── Settings (persisted JSON) ─────────────────────────────────────────────────
 
-interface AppSettings { zoom?: number }
+interface AppSettings { zoom?: number; lastVersion?: string; isFirstRunAfterUpdate?: boolean }
 let settingsPath: string;
 let settings: AppSettings = {};
 
 function loadSettings() {
   settingsPath = path.join(app.getPath("userData"), "settings.json");
   try { settings = JSON.parse(fs.readFileSync(settingsPath, "utf8")); } catch { settings = {}; }
+
+  // Detect version change (= first run after update)
+  const current = app.getVersion();
+  if (settings.lastVersion && settings.lastVersion !== current) {
+    settings.isFirstRunAfterUpdate = true;
+  } else {
+    settings.isFirstRunAfterUpdate = false;
+  }
+  settings.lastVersion = current;
+  saveSettings();
 }
 function saveSettings() {
   try { fs.writeFileSync(settingsPath, JSON.stringify(settings)); } catch {}
@@ -216,6 +226,8 @@ function registerIpc() {
 
   ipcMain.handle("app:version", () => app.getVersion());
 
+  ipcMain.handle("app:isFirstRunAfterUpdate", () => !!settings.isFirstRunAfterUpdate);
+
   ipcMain.handle("app:getZoom", () => settings.zoom ?? 1);
   ipcMain.handle("app:setZoom", (_e, factor: number) => {
     settings.zoom = Math.max(0.5, Math.min(2, factor));
@@ -229,12 +241,12 @@ function registerIpc() {
   });
 
   ipcMain.handle("news:fetch", async () => {
-    // Try multiple RSI feed URLs in order — RSI occasionally changes these
-    const FEED_URLS = [
-      "https://robertsspaceindustries.com/feed/1",
-      "https://robertsspaceindustries.com/community/news/feed",
-      "https://robertsspaceindustries.com/feeds/latest/1",
-    ];
+    type NewsItem = { title: string; link: string; date: string };
+
+    const HEADERS = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    };
 
     function parseCdata(s: string): string {
       return s.replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim();
@@ -243,8 +255,8 @@ function registerIpc() {
       const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
       return m ? parseCdata(m[1].trim()) : "";
     }
-    function parseItems(xml: string): { title: string; link: string; date: string }[] {
-      const items: { title: string; link: string; date: string }[] = [];
+    function parseRss(xml: string): NewsItem[] {
+      const items: NewsItem[] = [];
       const rx = /<item>([\s\S]*?)<\/item>/g;
       let m: RegExpExecArray | null;
       while ((m = rx.exec(xml)) !== null && items.length < 6) {
@@ -256,24 +268,56 @@ function registerIpc() {
       }
       return items;
     }
+    function scrapeHtml(html: string): NewsItem[] {
+      const items: NewsItem[] = [];
+      const seen = new Set<string>();
+      // Match comm-link article hrefs
+      const linkRx = /href="(\/comm-link\/[^"#?]+)"/g;
+      let m: RegExpExecArray | null;
+      while ((m = linkRx.exec(html)) !== null && items.length < 6) {
+        const slug = m[1];
+        if (seen.has(slug) || slug === "/comm-link/" || slug.endsWith("/")) continue;
+        seen.add(slug);
+        // Grab nearest heading text after this href
+        const block = html.slice(m.index, m.index + 1200);
+        const hm = block.match(/<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/i);
+        if (!hm) continue;
+        const title = hm[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+        if (title.length < 5) continue;
+        items.push({ title, link: `https://robertsspaceindustries.com${slug}`, date: "" });
+      }
+      return items;
+    }
 
-    for (const url of FEED_URLS) {
+    // 1. Try RSS feeds
+    const RSS_URLS = [
+      "https://robertsspaceindustries.com/feed/1",
+      "https://robertsspaceindustries.com/comm-link/rss",
+      "https://robertsspaceindustries.com/community/news/feed",
+    ];
+    for (const url of RSS_URLS) {
       try {
-        const res = await fetch(url, {
-          signal: AbortSignal.timeout(8000),
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/rss+xml, application/xml, text/xml, */*",
-          },
-        });
+        const res = await fetch(url, { signal: AbortSignal.timeout(8000), headers: HEADERS });
         if (!res.ok) continue;
         const xml = await res.text();
-        const items = parseItems(xml);
+        const items = parseRss(xml);
         if (items.length > 0) return { ok: true, source: url, items };
-      } catch {
-        // try next URL
-      }
+      } catch { /* next */ }
     }
+
+    // 2. Fall back to scraping the comm-link page
+    try {
+      const res = await fetch("https://robertsspaceindustries.com/comm-link", {
+        signal: AbortSignal.timeout(10000),
+        headers: { ...HEADERS, "Accept": "text/html,application/xhtml+xml,*/*" },
+      });
+      if (res.ok) {
+        const html = await res.text();
+        const items = scrapeHtml(html);
+        if (items.length > 0) return { ok: true, source: "html-scrape", items };
+      }
+    } catch { /* give up */ }
+
     return { ok: false, items: [] };
   });
 }

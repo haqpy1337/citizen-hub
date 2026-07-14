@@ -43,6 +43,21 @@ const CHECKS: Check[] = [
       catch { return false; }
     },
   },
+  {
+    label: "SYSTEM INTEGRITY",
+    run: async () => {
+      try {
+        const isUpdate = await window.api.isFirstRunAfterUpdate().catch(() => false);
+        if (!isUpdate) return true; // normal boot — instant pass
+        // First run after an update: re-verify database and API
+        const [dbOk, apiOk] = await Promise.all([
+          window.api.dbPing().catch(() => false),
+          getOreCommodities().then(r => r.length > 0).catch(() => false),
+        ]);
+        return dbOk && apiOk;
+      } catch { return false; }
+    },
+  },
 ];
 
 export default function BootScreen({ onComplete }: Props) {
