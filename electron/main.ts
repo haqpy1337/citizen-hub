@@ -293,6 +293,7 @@ function registerIpc() {
 
   ipcMain.handle("window:expand", () => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (settings.zoom && settings.zoom !== 1) mainWindow.webContents.setZoomFactor(settings.zoom);
     mainWindow.setResizable(true);
     mainWindow.setMinimumSize(900, 600);
     mainWindow.maximize();
@@ -346,12 +347,14 @@ function registerIpc() {
     if (hubHtml) {
       const items: PatchItem[] = [];
       const linkRx = /href="(\/comm-link\/[^"]+)"/g;
-      const titleRx = /<div class="title[^"]*">([^<]+)</g;
+      const titleRx = /<div class="title[^"]*">([\s\S]*?)<\/div>/g;
       const links: string[] = [];
       const titles: string[] = [];
       let m: RegExpExecArray | null;
       while ((m = linkRx.exec(hubHtml)) !== null) links.push(m[1]);
-      while ((m = titleRx.exec(hubHtml)) !== null) titles.push(m[1].trim());
+      while ((m = titleRx.exec(hubHtml)) !== null) {
+        titles.push(m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+      }
       for (let i = 0; i < links.length; i++) {
         const slug = links[i];
         const title = titles[i] ?? slug.replace(/.*\/\d+-/, "").replace(/-/g, " ");
@@ -421,10 +424,15 @@ function registerIpc() {
       || articleHtml.match(/class="[^"]*hero[^"]*"[^>]*src="([^"]+)"/i);
     const imageUrl = imgM ? imgM[1] : null;
 
-    // Extract description/summary
-    const descM = articleHtml.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i)
-      || articleHtml.match(/<meta[^>]+name="description"[^>]+content="([^"]+)"/i);
-    const description = descM ? descM[1].trim() : "";
+    // Extract description from article body paragraphs (og:description is generic RSI site text)
+    const paragraphs: string[] = [];
+    const paraRx = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+    let pm: RegExpExecArray | null;
+    while ((pm = paraRx.exec(articleHtml)) !== null) {
+      const text = pm[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      if (text.length > 40) paragraphs.push(text);
+    }
+    const description = paragraphs.slice(0, 2).join(" ").slice(0, 400);
 
     const item: TwiskItem = { title, link: articleUrl, date, imageUrl, description };
     return { ok: true, item };
@@ -441,7 +449,7 @@ async function createWindow() {
     backgroundColor: "#060402",
     autoHideMenuBar: true,
     titleBarStyle: "hidden",
-    titleBarOverlay: { color: "#060402", symbolColor: "#e05010", height: 36 },
+    titleBarOverlay: { color: "#060402", symbolColor: "#060402", height: 36 },
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -450,9 +458,6 @@ async function createWindow() {
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: "deny" }; });
-  mainWindow.webContents.on("did-finish-load", () => {
-    if (settings.zoom && settings.zoom !== 1) mainWindow?.webContents.setZoomFactor(settings.zoom);
-  });
 
   if (!app.isPackaged) {
     await mainWindow.loadURL("http://localhost:5173");

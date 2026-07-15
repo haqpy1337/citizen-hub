@@ -3,13 +3,13 @@ import { User } from "./lib/api";
 import BootScreen from "./components/BootScreen";
 import DashboardPage from "./pages/Dashboard";
 import JobsPage from "./pages/Jobs";
-import HistoryPage from "./pages/History";
+import RefineryJobsPage from "./pages/RefineryJobs";
 import CommoditiesPage from "./pages/Commodities";
 import RefineriesPage from "./pages/Refineries";
 import Sidebar from "./components/Sidebar";
 import { Lang } from "./lib/i18n";
 
-export type Page = "dashboard" | "jobs" | "history" | "commodities" | "refineries";
+export type Page = "dashboard" | "refinery-jobs" | "jobs" | "commodities" | "refineries";
 
 export interface AuthCtx { user: User | null; token: string | null }
 export const AuthContext = createContext<AuthCtx>(null!);
@@ -68,8 +68,8 @@ export default function App() {
 
   const pageMap: Record<Page, React.ReactElement> = {
     dashboard: <DashboardPage />,
+    "refinery-jobs": <RefineryJobsPage />,
     jobs: <JobsPage />,
-    history: <HistoryPage />,
     commodities: <CommoditiesPage />,
     refineries: <RefineriesPage />,
   };

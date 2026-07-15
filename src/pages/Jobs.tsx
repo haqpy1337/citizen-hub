@@ -103,7 +103,7 @@ export default function Jobs() {
 
     try {
       await api.jobs.create(token, data);
-      setPage("dashboard");
+      setPage("refinery-jobs");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create job.");
     } finally {
@@ -115,7 +115,7 @@ export default function Jobs() {
     <div className="flex flex-col gap-6 max-w-2xl">
       <div className="flex items-center justify-between">
         <h1 className="eyebrow">New Refinery Job</h1>
-        <button onClick={() => setPage("dashboard")} className="btn btn-ghost text-sm">
+        <button onClick={() => setPage("refinery-jobs")} className="btn btn-ghost text-sm">
           Cancel
         </button>
       </div>
@@ -287,7 +287,7 @@ export default function Jobs() {
             <button type="submit" disabled={submitting} className="btn btn-primary flex-1">
               {submitting ? "Creating…" : "Create Job"}
             </button>
-            <button type="button" onClick={() => setPage("dashboard")} className="btn btn-ghost">
+            <button type="button" onClick={() => setPage("refinery-jobs")} className="btn btn-ghost">
               Cancel
             </button>
           </div>

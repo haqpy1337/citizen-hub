@@ -310,10 +310,11 @@ function registerIpc() {
     electron_1.ipcMain.handle("window:expand", () => {
         if (!mainWindow || mainWindow.isDestroyed())
             return;
+        if (settings.zoom && settings.zoom !== 1)
+            mainWindow.webContents.setZoomFactor(settings.zoom);
         mainWindow.setResizable(true);
         mainWindow.setMinimumSize(900, 600);
-        mainWindow.setSize(1280, 800);
-        mainWindow.center();
+        mainWindow.maximize();
     });
     electron_1.ipcMain.handle("app:getZoom", () => settings.zoom ?? 1);
     electron_1.ipcMain.handle("app:setZoom", (_e, factor) => {
@@ -326,13 +327,6 @@ function registerIpc() {
         return row?.result === 1;
     });
     electron_1.ipcMain.handle("patchnotes:fetch", async () => {
-        function parseCdata(s) {
-            return s.replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim();
-        }
-        function extractTag(block, tag) {
-            const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
-            return m ? parseCdata(m[1].trim()) : "";
-        }
         function channelFromTitle(title) {
             const t = title.toUpperCase();
             if (t.includes("EPTU"))
@@ -341,53 +335,58 @@ function registerIpc() {
                 return "PTU";
             return "LIVE";
         }
-        // Strategy 1: RSI Comm-Link Patch Notes RSS feeds
-        const RSS_URLS = [
-            "https://robertsspaceindustries.com/comm-link/patch-notes.rss",
-            "https://robertsspaceindustries.com/comm-link/19.rss",
-            "https://robertsspaceindustries.com/feed/19",
-        ];
-        for (const url of RSS_URLS) {
-            const xml = await netGet(url, { Accept: "application/rss+xml,application/xml,text/xml,*/*" });
-            if (!xml || !xml.includes("<item>"))
-                continue;
-            const items = [];
-            const rx = /<item>([\s\S]*?)<\/item>/g;
-            let m;
-            while ((m = rx.exec(xml)) !== null && items.length < 30) {
-                const block = m[1];
-                const title = extractTag(block, "title");
-                if (!title.toLowerCase().includes("patch"))
-                    continue;
-                const link = extractTag(block, "link") || extractTag(block, "guid");
-                const date = extractTag(block, "pubDate") || extractTag(block, "dc:date");
-                items.push({ title, link, date, channel: channelFromTitle(title) });
+        // RSI Hub API — returns the latest featured comm-link articles as HTML fragment
+        const body = JSON.stringify({});
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 14000);
+        let hubHtml = "";
+        try {
+            const res = await electron_1.net.fetch("https://robertsspaceindustries.com/api/hub/getCommlinkItems", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "X-Rsi-Token": "",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                },
+                body,
+                signal: controller.signal,
+            });
+            if (res.ok) {
+                const json = await res.json();
+                if (json.success === 1)
+                    hubHtml = json.data;
             }
-            if (items.length > 0)
-                return { ok: true, items };
         }
-        // Strategy 2: Scrape the Patch Notes comm-link page
-        const html = await netGet("https://robertsspaceindustries.com/comm-link/patch-notes", { Accept: "text/html,application/xhtml+xml,*/*" });
-        if (html) {
+        catch { /* timeout or network error */ }
+        finally {
+            clearTimeout(timer);
+        }
+        if (hubHtml) {
             const items = [];
-            const seen = new Set();
-            const linkRx = /href="(\/comm-link\/[^"#?]*patch[^"#?]*)"/gi;
+            const linkRx = /href="(\/comm-link\/[^"]+)"/g;
+            const titleRx = /<div class="title[^"]*">([\s\S]*?)<\/div>/g;
+            const links = [];
+            const titles = [];
             let m;
-            while ((m = linkRx.exec(html)) !== null && items.length < 30) {
-                const slug = m[1];
-                if (seen.has(slug))
+            while ((m = linkRx.exec(hubHtml)) !== null)
+                links.push(m[1]);
+            while ((m = titleRx.exec(hubHtml)) !== null) {
+                titles.push(m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+            }
+            for (let i = 0; i < links.length; i++) {
+                const slug = links[i];
+                const title = titles[i] ?? slug.replace(/.*\/\d+-/, "").replace(/-/g, " ");
+                // Filter for patch note articles: slugs containing Alpha/PTU/EPTU + version number
+                if (!/(?:Alpha|PTU|EPTU|Live.Update|Patch)\s*[\d.]/i.test(title) &&
+                    !/(?:-Alpha-|-PTU-|-EPTU-|-Live-|-Patch-)[\d]/i.test(slug))
                     continue;
-                seen.add(slug);
-                const block = html.slice(Math.max(0, m.index - 200), m.index + 800);
-                const hm = block.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)
-                    || block.match(/title="([^"]+)"/i)
-                    || block.match(/alt="([^"]+)"/i);
-                if (!hm)
-                    continue;
-                const title = hm[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-                if (title.length < 8 || !title.toLowerCase().includes("patch"))
-                    continue;
-                items.push({ title, link: `https://robertsspaceindustries.com${slug}`, date: "", channel: channelFromTitle(title) });
+                items.push({
+                    title,
+                    link: `https://robertsspaceindustries.com${slug}`,
+                    date: "",
+                    channel: channelFromTitle(title || slug),
+                });
             }
             if (items.length > 0)
                 return { ok: true, items };
@@ -400,8 +399,8 @@ function registerIpc() {
         const indexHtml = await netGet("https://robertsspaceindustries.com/en/comm-link/transmission/");
         if (!indexHtml)
             return { ok: false, item: null };
-        // Find TWISK article links — look for "this-week-in-star-citizen" slugs
-        const slugRe = /href="(\/en\/comm-link\/[^"]*this-week-in-star-citizen[^"]*)"/gi;
+        // Find TWISK article links — RSI uses /comm-link/ (no /en/ prefix) in href attributes
+        const slugRe = /href="(\/(?:en\/)?comm-link\/[^"]*[Tt]his-[Ww]eek[^"]*)"/g;
         const slugs = [];
         let sm;
         while ((sm = slugRe.exec(indexHtml)) !== null) {
@@ -409,9 +408,9 @@ function registerIpc() {
             if (!slugs.includes(s))
                 slugs.push(s);
         }
-        // Also try generic article links from this page and pick newest-looking one
+        // Also try generic transmission article links from this page
         if (slugs.length === 0) {
-            const genericRe = /href="(\/en\/comm-link\/transmission\/\d+[^"]*)"/gi;
+            const genericRe = /href="(\/(?:en\/)?comm-link\/transmission\/\d+[^"]*)"/g;
             let gm;
             while ((gm = genericRe.exec(indexHtml)) !== null) {
                 const s = gm[1].split("?")[0];
@@ -427,7 +426,8 @@ function registerIpc() {
         if (!articleHtml)
             return { ok: false, item: null };
         // Extract title
-        const titleM = articleHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
+        const titleM = articleHtml.match(/<meta property="og:title" content="([^"]+)"/i)
+            || articleHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
             || articleHtml.match(/<title>([\s\S]*?)<\/title>/i);
         const title = titleM ? titleM[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim() : "This Week in Star Citizen";
         // Extract date
@@ -438,10 +438,16 @@ function registerIpc() {
         const imgM = articleHtml.match(/<meta property="og:image" content="([^"]+)"/i)
             || articleHtml.match(/class="[^"]*hero[^"]*"[^>]*src="([^"]+)"/i);
         const imageUrl = imgM ? imgM[1] : null;
-        // Extract description/summary (og:description or first paragraph)
-        const descM = articleHtml.match(/<meta[^>]+name="description"[^>]+content="([^"]+)"/i)
-            || articleHtml.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i);
-        const description = descM ? descM[1].trim() : "";
+        // Extract description from article body paragraphs (og:description is generic RSI site text)
+        const paragraphs = [];
+        const paraRx = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+        let pm;
+        while ((pm = paraRx.exec(articleHtml)) !== null) {
+            const text = pm[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+            if (text.length > 40)
+                paragraphs.push(text);
+        }
+        const description = paragraphs.slice(0, 2).join(" ").slice(0, 400);
         const item = { title, link: articleUrl, date, imageUrl, description };
         return { ok: true, item };
     });
@@ -455,25 +461,14 @@ async function createWindow() {
         backgroundColor: "#060402",
         autoHideMenuBar: true,
         titleBarStyle: "hidden",
-        titleBarOverlay: { color: "#060402", symbolColor: "#060402", height: 1 },
+        titleBarOverlay: { color: "#060402", symbolColor: "#060402", height: 36 },
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
             contextIsolation: true,
             nodeIntegration: false,
         },
-        show: false,
     });
     mainWindow.webContents.setWindowOpenHandler(({ url }) => { electron_1.shell.openExternal(url); return { action: "deny" }; });
-    mainWindow.webContents.on("did-finish-load", () => {
-        if (settings.zoom && settings.zoom !== 1)
-            mainWindow?.webContents.setZoomFactor(settings.zoom);
-    });
-    mainWindow.once("ready-to-show", () => mainWindow?.show());
-    // Fallback: show after 8 s if ready-to-show never fires (e.g. slow first load)
-    setTimeout(() => { if (mainWindow && !mainWindow.isVisible())
-        mainWindow.show(); }, 8000);
-    mainWindow.webContents.on("did-fail-load", () => { if (mainWindow && !mainWindow.isVisible())
-        mainWindow.show(); });
     if (!electron_1.app.isPackaged) {
         await mainWindow.loadURL("http://localhost:5173");
         mainWindow.webContents.openDevTools();

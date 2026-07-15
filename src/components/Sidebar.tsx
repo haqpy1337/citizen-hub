@@ -23,20 +23,19 @@ function GearIcon({ className }: { className?: string }) {
 }
 
 const NAV_ITEMS = [
-  { label: "Dashboard",     key: "dashboard"    },
-  { label: "Refining Jobs", key: "jobs"         },
-  { label: "History",       key: "history"      },
-  { label: "Commodities",   key: "commodities"  },
-  { label: "Refineries",    key: "refineries"   },
+  { label: "Dashboard",     key: "dashboard"      },
+  { label: "Refinery Jobs", key: "refinery-jobs"  },
+  { label: "Commodities",   key: "commodities"    },
+  { label: "Refineries",    key: "refineries"     },
 ] as const;
 
-type PageKey = "dashboard" | "jobs" | "history" | "commodities" | "refineries";
+type PageKey = "dashboard" | "refinery-jobs" | "commodities" | "refineries";
 
 export default function Sidebar() {
   const { page, setPage } = usePage();
   const { lang, setLang } = useLang();
   const [activeTheme, setActiveTheme] = useState<string>(
-    () => localStorage.getItem("ch-theme") ?? "mole"
+    () => localStorage.getItem("hma-design") ?? "mole"
   );
   const [themeOpen, setThemeOpen]     = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -101,7 +100,7 @@ export default function Sidebar() {
     const html = document.documentElement;
     themes.forEach(t => html.classList.remove(`theme-${t.key}`));
     html.classList.add(`theme-${key}`);
-    localStorage.setItem("ch-theme", key);
+    localStorage.setItem("hma-design", key);
     setActiveTheme(key);
     openDrop(false);
     const t = themes.find(t => t.key === key);

@@ -22,6 +22,7 @@ electron_1.contextBridge.exposeInMainWorld("api", {
     fetchTwisk: () => electron_1.ipcRenderer.invoke("twisk:fetch"),
     isFirstRunAfterUpdate: () => electron_1.ipcRenderer.invoke("app:isFirstRunAfterUpdate"),
     setTitlebarColors: (color, symbolColor) => electron_1.ipcRenderer.invoke("titlebar:setColors", color, symbolColor),
+    expandWindow: () => electron_1.ipcRenderer.invoke("window:expand"),
     getVersion: () => electron_1.ipcRenderer.invoke("app:version"),
     getZoom: () => electron_1.ipcRenderer.invoke("app:getZoom"),
     setZoom: (factor) => electron_1.ipcRenderer.invoke("app:setZoom", factor),
