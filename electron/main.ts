@@ -458,6 +458,9 @@ async function createWindow() {
     if (settings.zoom && settings.zoom !== 1) mainWindow?.webContents.setZoomFactor(settings.zoom);
   });
   mainWindow.once("ready-to-show", () => mainWindow?.show());
+  // Fallback: show after 8 s if ready-to-show never fires (e.g. slow first load)
+  setTimeout(() => { if (mainWindow && !mainWindow.isVisible()) mainWindow.show(); }, 8000);
+  mainWindow.webContents.on("did-fail-load", () => { if (mainWindow && !mainWindow.isVisible()) mainWindow.show(); });
 
   if (!app.isPackaged) {
     await mainWindow.loadURL("http://localhost:5173");

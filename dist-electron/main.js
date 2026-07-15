@@ -299,9 +299,17 @@ function registerIpc() {
     electron_1.ipcMain.handle("app:isFirstRunAfterUpdate", () => !!settings.isFirstRunAfterUpdate);
     electron_1.ipcMain.handle("titlebar:setColors", (_, color, symbolColor) => {
         try {
-            mainWindow?.setTitleBarOverlay({ color, symbolColor });
+            mainWindow?.setTitleBarOverlay({ color, symbolColor, height: 36 });
         }
         catch { }
+    });
+    electron_1.ipcMain.handle("window:expand", () => {
+        if (!mainWindow || mainWindow.isDestroyed())
+            return;
+        mainWindow.setResizable(true);
+        mainWindow.setMinimumSize(900, 600);
+        mainWindow.setSize(1280, 800);
+        mainWindow.center();
     });
     electron_1.ipcMain.handle("app:getZoom", () => settings.zoom ?? 1);
     electron_1.ipcMain.handle("app:setZoom", (_e, factor) => {
@@ -437,12 +445,13 @@ function registerIpc() {
 // ── Window ───────────────────────────────────────────────────────────────────
 async function createWindow() {
     mainWindow = new electron_1.BrowserWindow({
-        width: 1280, height: 800, minWidth: 900, minHeight: 600,
+        width: 660, height: 580, minWidth: 660, minHeight: 580,
+        resizable: false,
         title: "Citizen Hub",
         backgroundColor: "#060402",
         autoHideMenuBar: true,
         titleBarStyle: "hidden",
-        titleBarOverlay: { color: "#060402", symbolColor: "#e05010", height: 36 },
+        titleBarOverlay: { color: "#060402", symbolColor: "#060402", height: 1 },
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
             contextIsolation: true,
@@ -456,6 +465,11 @@ async function createWindow() {
             mainWindow?.webContents.setZoomFactor(settings.zoom);
     });
     mainWindow.once("ready-to-show", () => mainWindow?.show());
+    // Fallback: show after 8 s if ready-to-show never fires (e.g. slow first load)
+    setTimeout(() => { if (mainWindow && !mainWindow.isVisible())
+        mainWindow.show(); }, 8000);
+    mainWindow.webContents.on("did-fail-load", () => { if (mainWindow && !mainWindow.isVisible())
+        mainWindow.show(); });
     if (!electron_1.app.isPackaged) {
         await mainWindow.loadURL("http://localhost:5173");
         mainWindow.webContents.openDevTools();

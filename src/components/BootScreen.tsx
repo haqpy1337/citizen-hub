@@ -203,8 +203,8 @@ export default function BootScreen({ onComplete }: Props) {
         </div>
       ))}
 
-      {/* Center panel */}
-      <div className="relative flex flex-col items-center w-72" style={{ gap: "1.1rem" }}>
+      {/* Center panel — no-drag so all clicks register */}
+      <div className="relative flex flex-col items-center w-72" style={{ gap: "1.1rem", WebkitAppRegion: "no-drag" } as React.CSSProperties}>
 
         <svg width="88" height="88" viewBox="0 0 110 110" fill="none">
           <circle className="boot-ring" cx="55" cy="55" r="50" stroke={Q} strokeWidth="0.7" opacity="0.2" />
@@ -262,7 +262,8 @@ export default function BootScreen({ onComplete }: Props) {
               border: `1px solid ${Q}`,
               color: Q,
               opacity: 0.85,
-            }}
+              WebkitAppRegion: "no-drag",
+            } as React.CSSProperties}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
           >
