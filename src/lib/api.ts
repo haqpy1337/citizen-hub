@@ -52,6 +52,7 @@ declare global {
       fetchNews(): Promise<{ ok: boolean; source?: string; items: { title: string; link: string; date: string }[] }>;
       fetchPatchNotes(): Promise<{ ok: boolean; items: { title: string; link: string; date: string; channel: string }[] }>;
       fetchTwisk(): Promise<{ ok: boolean; item: { title: string; link: string; date: string; imageUrl: string | null; description: string } | null }>;
+      fetchServerStatus(): Promise<{ ok: boolean; indicator?: string; description?: string; incidents?: string[] }>;
       isFirstRunAfterUpdate(): Promise<boolean>;
       setTitlebarColors(color: string, symbolColor: string): Promise<void>;
       expandWindow(): Promise<void>;

@@ -346,18 +346,16 @@ function registerIpc() {
 
     if (hubHtml) {
       const items: PatchItem[] = [];
-      const linkRx = /href="(\/comm-link\/[^"]+)"/g;
-      const titleRx = /<div class="title[^"]*">([\s\S]*?)<\/div>/g;
-      const links: string[] = [];
-      const titles: string[] = [];
+      // Extract link+title pairs together from each card to avoid index misalignment
+      const cardRx = /href="(\/comm-link\/[^"]+)"[\s\S]*?<div class="title[^"]*">([\s\S]*?)<\/div>/g;
       let m: RegExpExecArray | null;
-      while ((m = linkRx.exec(hubHtml)) !== null) links.push(m[1]);
-      while ((m = titleRx.exec(hubHtml)) !== null) {
-        titles.push(m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+      const pairs: { slug: string; title: string }[] = [];
+      while ((m = cardRx.exec(hubHtml)) !== null) {
+        const slug = m[1];
+        const title = m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        if (!pairs.some(p => p.slug === slug)) pairs.push({ slug, title });
       }
-      for (let i = 0; i < links.length; i++) {
-        const slug = links[i];
-        const title = titles[i] ?? slug.replace(/.*\/\d+-/, "").replace(/-/g, " ");
+      for (const { slug, title } of pairs) {
         // Filter for patch note articles: slugs containing Alpha/PTU/EPTU + version number
         if (!/(?:Alpha|PTU|EPTU|Live.Update|Patch)\s*[\d.]/i.test(title) &&
             !/(?:-Alpha-|-PTU-|-EPTU-|-Live-|-Patch-)[\d]/i.test(slug)) continue;
@@ -372,6 +370,27 @@ function registerIpc() {
     }
 
     return { ok: false, items: [] };
+  });
+
+  ipcMain.handle("serverstatus:fetch", async () => {
+    const json = await netGet(
+      "https://status.robertsspaceindustries.com/api/v2/summary.json",
+      { "Accept": "application/json" }
+    );
+    if (!json) return { ok: false };
+    try {
+      const data = JSON.parse(json) as {
+        status: { indicator: string; description: string };
+        components: { name: string; status: string }[];
+        incidents: { name: string; status: string }[];
+      };
+      return {
+        ok: true,
+        indicator: data.status.indicator,
+        description: data.status.description,
+        incidents: data.incidents.map(i => i.name),
+      };
+    } catch { return { ok: false }; }
   });
 
   // "This Week in Star Citizen" — scrapes latest article from transmission page
@@ -424,13 +443,18 @@ function registerIpc() {
       || articleHtml.match(/class="[^"]*hero[^"]*"[^>]*src="([^"]+)"/i);
     const imageUrl = imgM ? imgM[1] : null;
 
-    // Extract description from article body paragraphs (og:description is generic RSI site text)
+    // Extract description from article body — strip template/script sections first
+    const stripped = articleHtml
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<template[\s\S]*?<\/template>/gi, "");
     const paragraphs: string[] = [];
     const paraRx = /<p[^>]*>([\s\S]*?)<\/p>/gi;
     let pm: RegExpExecArray | null;
-    while ((pm = paraRx.exec(articleHtml)) !== null) {
+    while ((pm = paraRx.exec(stripped)) !== null) {
       const text = pm[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-      if (text.length > 40) paragraphs.push(text);
+      if (text.length > 50 && !text.includes("{/") && !text.includes("CONTACT") && !/^\s*©/.test(text))
+        paragraphs.push(text);
     }
     const description = paragraphs.slice(0, 2).join(" ").slice(0, 400);
 

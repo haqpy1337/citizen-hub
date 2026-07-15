@@ -20,6 +20,7 @@ electron_1.contextBridge.exposeInMainWorld("api", {
     fetchNews: () => electron_1.ipcRenderer.invoke("news:fetch"),
     fetchPatchNotes: () => electron_1.ipcRenderer.invoke("patchnotes:fetch"),
     fetchTwisk: () => electron_1.ipcRenderer.invoke("twisk:fetch"),
+    fetchServerStatus: () => electron_1.ipcRenderer.invoke("serverstatus:fetch"),
     isFirstRunAfterUpdate: () => electron_1.ipcRenderer.invoke("app:isFirstRunAfterUpdate"),
     setTitlebarColors: (color, symbolColor) => electron_1.ipcRenderer.invoke("titlebar:setColors", color, symbolColor),
     expandWindow: () => electron_1.ipcRenderer.invoke("window:expand"),
