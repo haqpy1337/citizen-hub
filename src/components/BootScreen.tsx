@@ -170,7 +170,7 @@ export default function BootScreen({ onComplete }: Props) {
     s === "pending" ? "· · ·" : s === "running" ? "LOADING" : s === "ok" ? "ONLINE" : "OFFLINE";
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden select-none" style={{ backgroundColor: BG, WebkitAppRegion: "drag" } as React.CSSProperties}>
+    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden select-none" style={{ backgroundColor: BG }}>
 
       {/* Grid — uses theme quant-dim */}
       <div className="boot-grid absolute inset-0 opacity-0 pointer-events-none" style={{
@@ -203,8 +203,8 @@ export default function BootScreen({ onComplete }: Props) {
         </div>
       ))}
 
-      {/* Center panel — no-drag so all clicks register */}
-      <div className="relative flex flex-col items-center w-72" style={{ gap: "1.1rem", WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+      {/* Center panel */}
+      <div className="relative flex flex-col items-center w-72" style={{ gap: "1.1rem" }}>
 
         <svg width="88" height="88" viewBox="0 0 110 110" fill="none">
           <circle className="boot-ring" cx="55" cy="55" r="50" stroke={Q} strokeWidth="0.7" opacity="0.2" />
@@ -254,7 +254,7 @@ export default function BootScreen({ onComplete }: Props) {
         </div>
 
         {/* ENTER button */}
-        <div className="boot-enter w-full" style={{ opacity: 0, pointerEvents: ready ? "auto" : "none", WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+        <div className="boot-enter w-full" style={{ opacity: 0, pointerEvents: ready ? "auto" : "none" }}>
           <button
             onClick={handleStart}
             className="w-full py-2.5 text-sm font-mono font-semibold tracking-[0.25em] uppercase rounded transition-all active:scale-95"
@@ -262,8 +262,7 @@ export default function BootScreen({ onComplete }: Props) {
               border: `1px solid ${Q}`,
               color: Q,
               opacity: 0.85,
-              WebkitAppRegion: "no-drag",
-            } as React.CSSProperties}
+            }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
           >
