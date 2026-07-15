@@ -56,8 +56,9 @@ export default function App() {
           origin:  { bg: "#f0f2f5", sym: "#0e6faa" },
           gatac:   { bg: "#060410", sym: "#b848ff" },
           hornet:  { bg: "#06080e", sym: "#2898d8" },
+          odin:    { bg: "#0a0a0e", sym: "#c8a050" },
         };
-        const theme = localStorage.getItem("ch-theme") ?? "mole";
+        const theme = localStorage.getItem("hma-design") ?? "mole";
         const c = themeColors[theme] ?? themeColors.mole;
         window.api.setTitlebarColors(c.bg, c.sym).catch(() => {});
         setAppState("ready");

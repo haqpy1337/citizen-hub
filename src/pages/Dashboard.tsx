@@ -381,11 +381,10 @@ export default function Dashboard() {
           )}
           {visibleTiles.length > 0 && (
             <div
-              className="grid gap-4"
-              style={{ gridTemplateColumns: `repeat(${Math.min(visibleTiles.length, 4)}, minmax(0, 1fr))` }}
+              className="flex flex-wrap gap-4"
             >
               {visibleTiles.map(id => (
-                <div key={id} className="panel p-4 relative">
+                <div key={id} className="panel p-4 relative" style={{ width: 200 }}>
                   {tileContent[id]}
                   {customize && (
                     <button
