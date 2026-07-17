@@ -477,7 +477,7 @@ function registerIpc() {
 
 async function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 500, height: 500,
+    width: 700, height: 700,
     resizable: false,
     center: true,
     frame: false,
