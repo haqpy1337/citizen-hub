@@ -335,21 +335,21 @@ export default function BootScreen({ onComplete }: Props) {
       className="fixed inset-0 flex items-center justify-center select-none"
       style={{ background: "transparent", WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {/* Outer wrapper: border-radius + box-shadow here, NO overflow:hidden so shadow isn't clipped */}
+      {/* Planet wrapper */}
       <div style={{
         position: "relative",
         width: 340, height: 340,
-        borderRadius: "50%",
         flexShrink: 0,
-        boxShadow: "0 0 22px 8px rgba(85,42,168,.50), 0 0 55px 22px rgba(55,22,120,.28)",
         WebkitAppRegion: "no-drag",
       } as React.CSSProperties}>
-      {/* Inner clip div: overflow:hidden here, separate from the shadow element */}
+      {/* Soft-edge clip: mask fades the planet into transparency — no hard circular border */}
       <div style={{
         position: "absolute", inset: 0,
         borderRadius: "50%",
         overflow: "hidden",
-      }}>
+        WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 52%, transparent 72%)",
+        maskImage: "radial-gradient(circle at 50% 50%, black 52%, transparent 72%)",
+      } as React.CSSProperties}>
         {/* WebGL canvas */}
         <canvas
           ref={canvasRef}
