@@ -354,7 +354,7 @@ export default function BootScreen({ onComplete }: Props) {
           <div
             ref={logoRef}
             style={{
-              position: "absolute", top: 40, left: 0, right: 0,
+              position: "absolute", top: 68, left: 0, right: 0,
               display: "flex", flexDirection: "column", alignItems: "center", gap: 0,
               opacity: 0,
             }}
@@ -378,7 +378,7 @@ export default function BootScreen({ onComplete }: Props) {
 
           {/* Version — bottom center of planet */}
           <div style={{
-            position: "absolute", bottom: 38, left: 0, right: 0,
+            position: "absolute", bottom: 48, left: 0, right: 0,
             textAlign: "center",
             fontFamily: "Courier New, monospace", fontSize: 8,
             letterSpacing: "0.22em",
@@ -390,7 +390,7 @@ export default function BootScreen({ onComplete }: Props) {
           <div
             ref={progRef}
             style={{
-              position: "absolute", bottom: 52, left: 0, right: 0,
+              position: "absolute", bottom: 68, left: 0, right: 0,
               display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
               opacity: 0,
             }}
