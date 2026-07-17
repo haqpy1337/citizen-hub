@@ -82,7 +82,7 @@ void main(){
   vec3 n=normalize(vN);
   float ndv=abs(dot(n,vec3(0,0,1)));
   float lit=smoothstep(-0.5,0.6,dot(n,normalize(uSun)));
-  gl_FragColor=vec4(mix(vec3(0.04,0.02,0.30),vec3(0.16,0.10,0.58),lit),pow(1.0-ndv,2.2)*0.52*max(lit,0.08));
+  gl_FragColor=vec4(mix(vec3(0.14,0.05,0.42),vec3(0.32,0.14,0.72),lit),pow(1.0-ndv,3.5)*0.38*max(lit,0.05));
 }`;
 
 function buildSphere(seg: number) {
@@ -186,8 +186,8 @@ export default function BootScreen({ onComplete }: Props) {
     };
 
     const proj   = persp(0.70, 1, 0.1, 100);
-    const mP     = trans(0, 0, -3.92);
-    const mA     = mul4(trans(0, 0, -3.92), scl(1.14));
+    const mP     = trans(0, 0, -4.04);
+    const mA     = mul4(trans(0, 0, -4.04), scl(1.045));
     const mvpP   = mul4(proj, mP);
     const mvpA   = mul4(proj, mA);
     const sun    = [1.4, 0.9, 0.7];
