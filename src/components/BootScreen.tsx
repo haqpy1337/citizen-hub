@@ -335,31 +335,25 @@ export default function BootScreen({ onComplete }: Props) {
       className="fixed inset-0 flex items-center justify-center select-none"
       style={{ background: "transparent", WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {/* Planet wrapper — glow sits outside overflow:hidden so it renders correctly */}
+      {/* Planet — clean circle, no external glow */}
       <div style={{
         position: "relative",
         width: 340, height: 340,
         flexShrink: 0,
         borderRadius: "50%",
-        boxShadow: "0 0 28px 10px rgba(90,45,175,.55), 0 0 65px 28px rgba(55,22,120,.30)",
+        overflow: "hidden",
         WebkitAppRegion: "no-drag",
       } as React.CSSProperties}>
-      {/* Inner clip */}
-      <div style={{
-        position: "absolute", inset: 0,
-        borderRadius: "50%",
-        overflow: "hidden",
-      }}>
         {/* WebGL canvas */}
         <canvas
           ref={canvasRef}
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
         />
 
-        {/* Vignette — heavy at edges so hard clip blends into dark/transparent */}
+        {/* Subtle vignette — just enough for depth, not dark edges */}
         <div aria-hidden="true" style={{
           position: "absolute", inset: 0, pointerEvents: "none",
-          boxShadow: "inset 0 0 55px 35px rgba(2,0,10,.88)",
+          boxShadow: "inset 0 0 40px 10px rgba(2,0,10,.45)",
         }} />
 
         {/* UI overlay */}
@@ -496,7 +490,6 @@ export default function BootScreen({ onComplete }: Props) {
             </div>
           )}
         </div>
-      </div>
       </div>
 
       {/* Update footer — outside the circle, only when update downloaded */}
