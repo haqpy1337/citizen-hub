@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import HubEmblem from "./HubEmblem";
 import anime from "animejs";
 import { getOreCommodities, getRefineryStations, getRefineryMethods } from "../lib/uex/endpoints";
 
@@ -115,30 +116,6 @@ function persp(fov: number, ar: number, nr: number, fr: number) {
 function trans(x: number, y: number, z: number) { const m = id4(); m[12]=x; m[13]=y; m[14]=z; return m; }
 function scl(s: number) { const m = id4(); m[0]=m[5]=m[10]=s; return m; }
 
-// ── Hub-Node SVG Emblem ────────────────────────────────────────────────────────
-
-function HubEmblem() {
-  return (
-    <svg width="38" height="38" viewBox="0 0 38 38" fill="none" style={{ filter: "drop-shadow(0 0 6px rgba(180,140,255,.5))" }}>
-      <circle cx="19" cy="19" r="17" stroke="rgba(175,140,255,.12)" strokeWidth=".7" strokeDasharray="2 3"/>
-      <line x1="19" y1="19" x2="19"   y2="3.5"  stroke="rgba(175,140,255,.30)" strokeWidth=".7"/>
-      <line x1="19" y1="19" x2="32.7" y2="10.5" stroke="rgba(175,140,255,.30)" strokeWidth=".7"/>
-      <line x1="19" y1="19" x2="32.7" y2="27.5" stroke="rgba(175,140,255,.30)" strokeWidth=".7"/>
-      <line x1="19" y1="19" x2="19"   y2="34.5" stroke="rgba(175,140,255,.30)" strokeWidth=".7"/>
-      <line x1="19" y1="19" x2="5.3"  y2="27.5" stroke="rgba(175,140,255,.30)" strokeWidth=".7"/>
-      <line x1="19" y1="19" x2="5.3"  y2="10.5" stroke="rgba(175,140,255,.30)" strokeWidth=".7"/>
-      <circle cx="19"   cy="3.5"  r="1.8" fill="rgba(185,150,255,.55)" stroke="rgba(210,185,255,.5)" strokeWidth=".6"/>
-      <circle cx="32.7" cy="10.5" r="1.8" fill="rgba(185,150,255,.55)" stroke="rgba(210,185,255,.5)" strokeWidth=".6"/>
-      <circle cx="32.7" cy="27.5" r="1.8" fill="rgba(185,150,255,.55)" stroke="rgba(210,185,255,.5)" strokeWidth=".6"/>
-      <circle cx="19"   cy="34.5" r="1.8" fill="rgba(185,150,255,.55)" stroke="rgba(210,185,255,.5)" strokeWidth=".6"/>
-      <circle cx="5.3"  cy="27.5" r="1.8" fill="rgba(185,150,255,.55)" stroke="rgba(210,185,255,.5)" strokeWidth=".6"/>
-      <circle cx="5.3"  cy="10.5" r="1.8" fill="rgba(185,150,255,.55)" stroke="rgba(210,185,255,.5)" strokeWidth=".6"/>
-      <circle cx="19" cy="19" r="5"   fill="rgba(170,125,255,.18)" stroke="rgba(200,165,255,.65)" strokeWidth="1"/>
-      <circle cx="19" cy="19" r="2.5" fill="rgba(210,180,255,.80)"/>
-      <circle cx="19" cy="19" r="1.2" fill="rgba(248,242,255,.98)"/>
-    </svg>
-  );
-}
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
@@ -305,8 +282,6 @@ export default function BootScreen({ onComplete }: Props) {
 
         setStatuses(prev => { const n = [...prev]; n[i] = result ? "ok" : "fail"; return n; });
         setProgress(Math.round(((i + 1) / CHECKS.length) * 100));
-        setCheckText(`${CHECKS[i].label}  ✓`);
-        setCheckDone(true);
         setDots(prev => { const n = [...prev]; n[i] = true; return n; });
 
         await new Promise(r => setTimeout(r, 200));
@@ -389,25 +364,25 @@ export default function BootScreen({ onComplete }: Props) {
           <div
             ref={logoRef}
             style={{
-              position: "absolute", top: 44, left: 0, right: 0,
+              position: "absolute", top: 40, left: 0, right: 0,
               display: "flex", flexDirection: "column", alignItems: "center", gap: 0,
               opacity: 0,
             }}
           >
-            <HubEmblem />
+            <HubEmblem size={52} />
             <div style={{
-              marginTop: 8,
-              fontSize: 12, fontWeight: 700, letterSpacing: "0.58em",
-              paddingLeft: "0.58em", fontFamily: "Courier New, monospace",
-              color: "rgba(235,220,255,.90)",
-              textShadow: "0 0 10px rgba(175,135,255,.6), 0 0 28px rgba(140,90,255,.3)",
+              marginTop: 11,
+              fontSize: 16, fontWeight: 700, letterSpacing: "0.55em",
+              paddingLeft: "0.55em", fontFamily: "Courier New, monospace",
+              color: "rgba(240,228,255,.92)",
+              textShadow: "0 0 12px rgba(185,145,255,.65), 0 0 32px rgba(150,100,255,.35)",
             }}>CITIZEN HUB</div>
             <div style={{
-              marginTop: 5,
-              fontSize: 7, letterSpacing: "0.45em", paddingLeft: "0.45em",
+              marginTop: 6,
+              fontSize: 9, letterSpacing: "0.40em", paddingLeft: "0.40em",
               fontFamily: "Courier New, monospace",
-              color: "rgba(185,160,255,.58)", fontWeight: 400,
-              textShadow: "0 0 10px rgba(155,115,255,.35)",
+              color: "rgba(190,165,255,.62)", fontWeight: 400,
+              textShadow: "0 0 10px rgba(160,120,255,.38)",
             }}>STAR CITIZEN COMPANION</div>
           </div>
 
@@ -421,7 +396,7 @@ export default function BootScreen({ onComplete }: Props) {
             }}
           >
             {/* Bar with corner brackets */}
-            <div style={{ position: "relative", width: 180, height: 12, display: "flex", alignItems: "center", gap: 0 }}>
+            <div style={{ position: "relative", width: 230, height: 14, display: "flex", alignItems: "center", gap: 0 }}>
               {/* Left bracket */}
               <div style={{ flexShrink: 0, width: 5, height: 10, border: "1px solid rgba(160,110,255,.40)", borderRight: "none" }} />
               {/* Fill track */}
@@ -453,12 +428,11 @@ export default function BootScreen({ onComplete }: Props) {
 
             {/* Check text */}
             <div style={{
-              fontSize: 6, letterSpacing: "0.28em", paddingLeft: "0.28em",
+              fontSize: 9, letterSpacing: "0.25em", paddingLeft: "0.25em",
               fontFamily: "Courier New, monospace",
-              color: checkDone ? "rgba(160,205,255,.45)" : "rgba(170,145,255,.35)",
-              textAlign: "center", minHeight: 10,
+              color: "rgba(170,145,255,.45)",
+              textAlign: "center", minHeight: 13,
               textShadow: "0 0 8px rgba(150,110,255,.3)",
-              transition: "color 0.25s",
             }}>
               {checkText}
             </div>
@@ -481,7 +455,7 @@ export default function BootScreen({ onComplete }: Props) {
                   display: "block", position: "relative",
                   background: "none", border: "none", cursor: "pointer",
                   fontFamily: "Courier New, monospace",
-                  fontSize: 10, fontWeight: 700, letterSpacing: "0.9em",
+                  fontSize: 14, fontWeight: 700, letterSpacing: "0.9em",
                   padding: "0.9em 1.8em", paddingLeft: "calc(1.8em + 0.9em)",
                   color: "rgba(225,205,255,.85)",
                   textShadow: "0 0 8px rgba(175,135,255,.65), 0 0 22px rgba(140,95,255,.3)",

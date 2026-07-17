@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { usePage, useLang } from "../App";
-import CrestLogo from "./CrestLogo";
+import HubEmblem from "./HubEmblem";
 import SettingsModal from "./SettingsModal";
 import anime from "animejs";
 
@@ -147,8 +147,9 @@ export default function Sidebar() {
 
         {/* Logo + custom window controls (frame: false) */}
         <div className="px-5 py-4 border-b border-edge shrink-0 flex items-center" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
-          <div className="flex-1">
-            <CrestLogo height={28} />
+          <div className="flex-1 flex items-center gap-2.5">
+            <HubEmblem size={28} />
+            <span className="text-xs font-mono font-semibold tracking-widest" style={{ color: "rgba(215,200,255,.75)", letterSpacing: "0.22em" }}>CITIZEN HUB</span>
           </div>
           {/* Window control buttons — no-drag so they're clickable */}
           <div className="flex items-center gap-1 ml-2 shrink-0" style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
