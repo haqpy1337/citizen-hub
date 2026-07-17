@@ -480,7 +480,6 @@ export default function BootScreen({ onComplete }: Props) {
               </button>
             </div>
           )}
-        </div>
       </div>
 
       {/* Update footer — outside the circle, only when update downloaded */}
