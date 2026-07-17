@@ -152,11 +152,11 @@ export default function BootScreen({ onComplete }: Props) {
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv) return;
-    const gl = cv.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false });
+    const gl = cv.getContext("webgl", { antialias: true, alpha: false });
     if (!gl) return;
 
-    cv.width = 500; cv.height = 500;
-    gl.viewport(0, 0, 500, 500);
+    cv.width = 340; cv.height = 340;
+    gl.viewport(0, 0, 340, 340);
 
     const sh = (t: GLenum, src: string) => {
       const s = gl.createShader(t)!;
@@ -186,8 +186,8 @@ export default function BootScreen({ onComplete }: Props) {
     };
 
     const proj   = persp(0.70, 1, 0.1, 100);
-    const mP     = trans(0, 0, -4.04);
-    const mA     = mul4(trans(0, 0, -4.04), scl(1.045));
+    const mP     = trans(0, 0, -2.82);
+    const mA     = mul4(trans(0, 0, -2.82), scl(1.048));
     const mvpP   = mul4(proj, mP);
     const mvpA   = mul4(proj, mA);
     const sun    = [1.4, 0.9, 0.7];
@@ -196,7 +196,7 @@ export default function BootScreen({ onComplete }: Props) {
     const render = (now: number) => {
       rafRef.current = requestAnimationFrame(render);
       const t = (now - t0) / 1000;
-      gl.clearColor(0, 0, 0, 0);
+      gl.clearColor(0.01, 0.008, 0.04, 1);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.enable(gl.DEPTH_TEST);
 
@@ -332,29 +332,30 @@ export default function BootScreen({ onComplete }: Props) {
 
   return (
     <div
-      className="fixed inset-0 select-none"
+      className="fixed inset-0 flex items-center justify-center select-none"
       style={{ background: "transparent", WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {/* Full-window WebGL canvas — sphere is 70% of 500px = 350px, glow extends naturally */}
-      <canvas
-        ref={canvasRef}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
-      />
-
-      {/* UI overlay — 420px centered over planet sphere area */}
+      {/* Outer: border-radius + box-shadow WITHOUT overflow:hidden */}
       <div style={{
-        position: "absolute",
-        top: "50%", left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: 420, height: 420,
+        position: "relative", width: 340, height: 340, flexShrink: 0,
+        borderRadius: "50%",
+        boxShadow: "0 0 22px 8px rgba(85,42,168,.45), 0 0 55px 22px rgba(55,22,120,.22)",
         WebkitAppRegion: "no-drag",
       } as React.CSSProperties}>
+        {/* Inner: overflow:hidden clips canvas to circle, separate from shadow */}
+        <div style={{ position: "absolute", inset: 0, borderRadius: "50%", overflow: "hidden" }}>
+          <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }} />
+          <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", boxShadow: "inset 0 0 45px 14px rgba(2,0,10,.55)" }} />
+        </div>
+
+        {/* UI overlay */}
+        <div style={{ position: "absolute", inset: 0 }}>
 
           {/* Logo */}
           <div
             ref={logoRef}
             style={{
-              position: "absolute", top: 68, left: 0, right: 0,
+              position: "absolute", top: 40, left: 0, right: 0,
               display: "flex", flexDirection: "column", alignItems: "center", gap: 0,
               opacity: 0,
             }}
@@ -378,7 +379,7 @@ export default function BootScreen({ onComplete }: Props) {
 
           {/* Version — bottom center of planet */}
           <div style={{
-            position: "absolute", bottom: 48, left: 0, right: 0,
+            position: "absolute", bottom: 16, left: 0, right: 0,
             textAlign: "center",
             fontFamily: "Courier New, monospace", fontSize: 8,
             letterSpacing: "0.22em",
@@ -390,7 +391,7 @@ export default function BootScreen({ onComplete }: Props) {
           <div
             ref={progRef}
             style={{
-              position: "absolute", bottom: 68, left: 0, right: 0,
+              position: "absolute", bottom: 52, left: 0, right: 0,
               display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
               opacity: 0,
             }}
@@ -480,6 +481,7 @@ export default function BootScreen({ onComplete }: Props) {
               </button>
             </div>
           )}
+        </div>
       </div>
 
       {/* Update footer — outside the circle, only when update downloaded */}
