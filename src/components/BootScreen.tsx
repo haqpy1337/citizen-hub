@@ -335,16 +335,20 @@ export default function BootScreen({ onComplete }: Props) {
       className="fixed inset-0 flex items-center justify-center select-none"
       style={{ background: "transparent", WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {/* The planet circle — no-drag so clicks on UI elements work */}
+      {/* Glow wrapper — drop-shadow follows circle shape, not bounding box */}
+      <div style={{
+        flexShrink: 0,
+        filter: "drop-shadow(0 0 18px rgba(90,45,175,.65)) drop-shadow(0 0 48px rgba(55,22,120,.40))",
+        WebkitAppRegion: "no-drag",
+      } as React.CSSProperties}>
+      {/* The planet circle */}
       <div style={{
         position: "relative",
         width: 340, height: 340,
         borderRadius: "50%",
         overflow: "hidden",
         flexShrink: 0,
-        boxShadow: "0 0 0 1px rgba(110,60,200,.22), 0 0 30px 12px rgba(80,40,160,.38), 0 0 80px 32px rgba(55,22,120,.22)",
-        WebkitAppRegion: "no-drag",
-      } as React.CSSProperties}>
+      }}>
         {/* WebGL canvas */}
         <canvas
           ref={canvasRef}
@@ -491,6 +495,7 @@ export default function BootScreen({ onComplete }: Props) {
             </div>
           )}
         </div>
+      </div>
       </div>
 
       {/* Update footer — outside the circle, only when update downloaded */}
