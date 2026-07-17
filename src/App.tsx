@@ -44,7 +44,7 @@ export default function App() {
 
   const handleLang = (l: Lang) => { setLang(l); localStorage.setItem("ch-lang", l); };
 
-  if (appState === "booting") return <div className="h-screen bg-void" />;
+  if (appState === "booting") return <div className="h-screen" style={{ background: "transparent" }} />;
 
   if (appState === "animating") {
     return (

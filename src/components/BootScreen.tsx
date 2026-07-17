@@ -143,6 +143,16 @@ function HubEmblem() {
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function BootScreen({ onComplete }: Props) {
+  // Force body transparent during boot so the OS sees through the rectangle
+  useEffect(() => {
+    document.body.style.background = "transparent";
+    document.documentElement.style.background = "transparent";
+    return () => {
+      document.body.style.background = "";
+      document.documentElement.style.background = "";
+    };
+  }, []);
+
   const canvasRef   = useRef<HTMLCanvasElement>(null);
   const rafRef      = useRef<number>(0);
   const flashRef    = useRef<HTMLDivElement>(null);
