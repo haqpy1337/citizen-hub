@@ -56,6 +56,9 @@ declare global {
       isFirstRunAfterUpdate(): Promise<boolean>;
       setTitlebarColors(color: string, symbolColor: string): Promise<void>;
       expandWindow(): Promise<void>;
+      minimizeWindow(): Promise<void>;
+      maximizeWindow(): Promise<void>;
+      closeWindow(): Promise<void>;
       getVersion(): Promise<string>;
       getZoom(): Promise<number>;
       setZoom(factor: number): Promise<void>;

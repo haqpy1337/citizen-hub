@@ -78,17 +78,7 @@ export default function App() {
     <LangContext.Provider value={{ lang, setLang: handleLang }}>
       <AuthContext.Provider value={{ user, token }}>
         <PageContext.Provider value={{ page, setPage }}>
-          {/* Transparent drag region covering the hidden titlebar area */}
-          <div
-            aria-hidden
-            style={{
-              position: "fixed", top: 0, left: 0, right: 0,
-              height: "env(titlebar-area-height, 36px)",
-              WebkitAppRegion: "drag",
-              zIndex: 9999,
-            } as React.CSSProperties}
-          />
-          <div className="flex bg-void overflow-hidden" style={{ height: "100vh", paddingTop: "env(titlebar-area-height, 0px)" }}>
+          <div className="flex bg-void overflow-hidden" style={{ height: "100vh" }}>
             <Sidebar />
             <main key={page} className="page-enter flex-1 overflow-y-auto p-6">
               {pageMap[page]}

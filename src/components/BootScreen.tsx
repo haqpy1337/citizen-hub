@@ -348,9 +348,9 @@ export default function BootScreen({ onComplete }: Props) {
   return (
     <div
       className="fixed inset-0 flex items-center justify-center select-none"
-      style={{ background: "#0a0010" }}
+      style={{ background: "transparent", WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {/* The planet circle */}
+      {/* The planet circle — no-drag so clicks on UI elements work */}
       <div style={{
         position: "relative",
         width: 340, height: 340,
@@ -358,7 +358,8 @@ export default function BootScreen({ onComplete }: Props) {
         overflow: "hidden",
         flexShrink: 0,
         boxShadow: "0 0 0 1px rgba(110,60,200,.22), 0 0 30px 12px rgba(80,40,160,.38), 0 0 80px 32px rgba(55,22,120,.22)",
-      }}>
+        WebkitAppRegion: "no-drag",
+      } as React.CSSProperties}>
         {/* WebGL canvas */}
         <canvas
           ref={canvasRef}

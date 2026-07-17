@@ -145,9 +145,32 @@ export default function Sidebar() {
     <>
       <aside className="w-56 shrink-0 flex flex-col h-full border-r border-edge bg-panel sticky top-0">
 
-        {/* Logo — also serves as window drag handle (titleBar: hidden) */}
-        <div className="px-5 py-5 border-b border-edge shrink-0" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
-          <CrestLogo height={32} />
+        {/* Logo + custom window controls (frame: false) */}
+        <div className="px-5 py-4 border-b border-edge shrink-0 flex items-center" style={{ WebkitAppRegion: "drag" } as React.CSSProperties}>
+          <div className="flex-1">
+            <CrestLogo height={28} />
+          </div>
+          {/* Window control buttons — no-drag so they're clickable */}
+          <div className="flex items-center gap-1 ml-2 shrink-0" style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+            <button
+              onClick={() => window.api.minimizeWindow().catch(() => {})}
+              className="w-5 h-5 flex items-center justify-center rounded-sm opacity-30 hover:opacity-80 transition-opacity text-quant"
+              title="Minimieren"
+              style={{ fontSize: 14, lineHeight: 1, paddingBottom: 2 }}
+            >−</button>
+            <button
+              onClick={() => window.api.maximizeWindow().catch(() => {})}
+              className="w-5 h-5 flex items-center justify-center rounded-sm opacity-30 hover:opacity-80 transition-opacity text-quant"
+              title="Maximieren"
+              style={{ fontSize: 10, lineHeight: 1 }}
+            >□</button>
+            <button
+              onClick={() => window.api.closeWindow().catch(() => {})}
+              className="w-5 h-5 flex items-center justify-center rounded-sm opacity-30 hover:opacity-90 hover:text-red-400 transition-all text-quant"
+              title="Schließen"
+              style={{ fontSize: 13, lineHeight: 1 }}
+            >×</button>
+          </div>
         </div>
 
         {/* Navigation */}
