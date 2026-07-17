@@ -335,19 +335,26 @@ export default function BootScreen({ onComplete }: Props) {
       className="fixed inset-0 flex items-center justify-center select-none"
       style={{ background: "transparent", WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {/* Glow wrapper — drop-shadow follows circle shape, not bounding box */}
-      <div style={{
-        flexShrink: 0,
-        filter: "drop-shadow(0 0 18px rgba(90,45,175,.65)) drop-shadow(0 0 48px rgba(55,22,120,.40))",
-        WebkitAppRegion: "no-drag",
-      } as React.CSSProperties}>
-      {/* The planet circle */}
+      {/* Glow wrapper — radial-gradient is inherently circular, no box-shadow artifacts */}
       <div style={{
         position: "relative",
         width: 340, height: 340,
+        flexShrink: 0,
+        WebkitAppRegion: "no-drag",
+      } as React.CSSProperties}>
+        {/* Circular glow as radial-gradient pseudo-element — always round */}
+        <div aria-hidden="true" style={{
+          position: "absolute",
+          inset: "-80px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle at 50% 50%, transparent 38%, rgba(85,42,168,.42) 48%, rgba(60,25,130,.22) 58%, transparent 72%)",
+          pointerEvents: "none",
+        }} />
+      {/* The planet circle */}
+      <div style={{
+        position: "absolute", inset: 0,
         borderRadius: "50%",
         overflow: "hidden",
-        flexShrink: 0,
       }}>
         {/* WebGL canvas */}
         <canvas
