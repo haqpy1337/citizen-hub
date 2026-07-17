@@ -386,6 +386,16 @@ export default function BootScreen({ onComplete }: Props) {
             }}>STAR CITIZEN COMPANION</div>
           </div>
 
+          {/* Version — bottom center of planet */}
+          <div style={{
+            position: "absolute", bottom: 14, left: 0, right: 0,
+            textAlign: "center",
+            fontFamily: "Courier New, monospace", fontSize: 8,
+            letterSpacing: "0.22em",
+            color: "rgba(160,130,200,.38)",
+            pointerEvents: "none",
+          }}>v{version}</div>
+
           {/* Progress area */}
           <div
             ref={progRef}
@@ -443,7 +453,7 @@ export default function BootScreen({ onComplete }: Props) {
             <div
               ref={pressRef}
               style={{
-                position: "absolute", top: "50%", left: "50%",
+                position: "absolute", top: "63%", left: "50%",
                 transform: "translate(-50%, -50%)",
                 opacity: 0,
                 animation: "planet-press-pulse 2.8s ease-in-out infinite",
@@ -483,17 +493,18 @@ export default function BootScreen({ onComplete }: Props) {
         </div>
       </div>
 
-      {/* Version + update footer — outside the circle */}
-      <div style={{
-        position: "fixed", bottom: 24, left: 0, right: 0,
-        display: "flex", justifyContent: "center", gap: 24,
-        fontFamily: "Courier New, monospace", fontSize: 9,
-        color: "rgba(160,130,200,.35)", letterSpacing: "0.2em",
-        pointerEvents: updateState === "downloaded" ? "auto" : "none",
-      }}>
-        <span>v{version}</span>
-        <UpdateFooter state={updateState} version={updateVersion} onInstall={handlePress} />
-      </div>
+      {/* Update footer — outside the circle, only when update downloaded */}
+      {updateState === "downloaded" && (
+        <div style={{
+          position: "fixed", bottom: 20, left: 0, right: 0,
+          display: "flex", justifyContent: "center",
+          fontFamily: "Courier New, monospace", fontSize: 9,
+          color: "rgba(160,130,200,.55)", letterSpacing: "0.2em",
+          pointerEvents: "auto",
+        }}>
+          <UpdateFooter state={updateState} version={updateVersion} onInstall={handlePress} />
+        </div>
+      )}
 
       {/* Flash overlay */}
       <div
