@@ -335,15 +335,38 @@ export default function BootScreen({ onComplete }: Props) {
       className="fixed inset-0 flex items-center justify-center select-none"
       style={{ background: "transparent", WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {/* Planet — clean circle, no external glow */}
+      {/* Planet + glow container */}
       <div style={{
         position: "relative",
         width: 340, height: 340,
         flexShrink: 0,
-        borderRadius: "50%",
-        overflow: "hidden",
         WebkitAppRegion: "no-drag",
       } as React.CSSProperties}>
+
+        {/* SVG glow — radial gradient is mathematically circular, no CSS compositing artifacts */}
+        <svg
+          aria-hidden="true"
+          style={{ position: "absolute", inset: "-70px", pointerEvents: "none", zIndex: 0 }}
+          width={480} height={480} viewBox="0 0 480 480"
+        >
+          <defs>
+            <radialGradient id="planetGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="71%" stopColor="rgba(80,38,165,0)" />
+              <stop offset="79%" stopColor="rgba(90,45,175,0.48)" />
+              <stop offset="90%" stopColor="rgba(55,22,120,0.22)" />
+              <stop offset="100%" stopColor="rgba(30,10,80,0)" />
+            </radialGradient>
+          </defs>
+          <circle cx="240" cy="240" r="240" fill="url(#planetGlow)" />
+        </svg>
+
+        {/* Planet circle — clipped */}
+      <div style={{
+        position: "absolute", inset: 0,
+        borderRadius: "50%",
+        overflow: "hidden",
+        zIndex: 1,
+      }}>
         {/* WebGL canvas */}
         <canvas
           ref={canvasRef}
@@ -356,8 +379,10 @@ export default function BootScreen({ onComplete }: Props) {
           boxShadow: "inset 0 0 40px 10px rgba(2,0,10,.45)",
         }} />
 
+        </div>{/* end planet clip */}
+
         {/* UI overlay */}
-        <div style={{ position: "absolute", inset: 0 }}>
+        <div style={{ position: "absolute", inset: 0, zIndex: 2 }}>
 
           {/* Logo */}
           <div
