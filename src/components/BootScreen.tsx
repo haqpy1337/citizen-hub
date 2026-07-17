@@ -155,8 +155,8 @@ export default function BootScreen({ onComplete }: Props) {
     const gl = cv.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false });
     if (!gl) return;
 
-    cv.width = 420; cv.height = 420;
-    gl.viewport(0, 0, 420, 420);
+    cv.width = 500; cv.height = 500;
+    gl.viewport(0, 0, 500, 500);
 
     const sh = (t: GLenum, src: string) => {
       const s = gl.createShader(t)!;
@@ -186,8 +186,8 @@ export default function BootScreen({ onComplete }: Props) {
     };
 
     const proj   = persp(0.70, 1, 0.1, 100);
-    const mP     = trans(0, 0, -3.28);
-    const mA     = mul4(trans(0, 0, -3.28), scl(1.14));
+    const mP     = trans(0, 0, -3.92);
+    const mA     = mul4(trans(0, 0, -3.92), scl(1.14));
     const mvpP   = mul4(proj, mP);
     const mvpA   = mul4(proj, mA);
     const sun    = [1.4, 0.9, 0.7];
@@ -332,24 +332,23 @@ export default function BootScreen({ onComplete }: Props) {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center select-none"
+      className="fixed inset-0 select-none"
       style={{ background: "transparent", WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {/* Planet container — WebGL canvas IS the circle, no CSS clipping needed */}
+      {/* Full-window WebGL canvas — sphere is 70% of 500px = 350px, glow extends naturally */}
+      <canvas
+        ref={canvasRef}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
+      />
+
+      {/* UI overlay — 420px centered over planet sphere area */}
       <div style={{
-        position: "relative",
+        position: "absolute",
+        top: "50%", left: "50%",
+        transform: "translate(-50%, -50%)",
         width: 420, height: 420,
-        flexShrink: 0,
         WebkitAppRegion: "no-drag",
       } as React.CSSProperties}>
-        {/* WebGL canvas — alpha:true, transparent background, sphere is naturally circular */}
-        <canvas
-          ref={canvasRef}
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
-        />
-
-        {/* UI overlay */}
-        <div style={{ position: "absolute", inset: 0 }}>
 
           {/* Logo */}
           <div
@@ -379,7 +378,7 @@ export default function BootScreen({ onComplete }: Props) {
 
           {/* Version — bottom center of planet */}
           <div style={{
-            position: "absolute", bottom: 14, left: 0, right: 0,
+            position: "absolute", bottom: 38, left: 0, right: 0,
             textAlign: "center",
             fontFamily: "Courier New, monospace", fontSize: 8,
             letterSpacing: "0.22em",
