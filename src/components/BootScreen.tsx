@@ -152,11 +152,11 @@ export default function BootScreen({ onComplete }: Props) {
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv) return;
-    const gl = cv.getContext("webgl", { antialias: true, alpha: false });
+    const gl = cv.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false });
     if (!gl) return;
 
-    cv.width = 340; cv.height = 340;
-    gl.viewport(0, 0, 340, 340);
+    cv.width = 420; cv.height = 420;
+    gl.viewport(0, 0, 420, 420);
 
     const sh = (t: GLenum, src: string) => {
       const s = gl.createShader(t)!;
@@ -186,8 +186,8 @@ export default function BootScreen({ onComplete }: Props) {
     };
 
     const proj   = persp(0.70, 1, 0.1, 100);
-    const mP     = trans(0, 0, -2.82);
-    const mA     = mul4(trans(0, 0, -2.82), scl(1.048));
+    const mP     = trans(0, 0, -3.28);
+    const mA     = mul4(trans(0, 0, -3.28), scl(1.14));
     const mvpP   = mul4(proj, mP);
     const mvpA   = mul4(proj, mA);
     const sun    = [1.4, 0.9, 0.7];
@@ -196,7 +196,7 @@ export default function BootScreen({ onComplete }: Props) {
     const render = (now: number) => {
       rafRef.current = requestAnimationFrame(render);
       const t = (now - t0) / 1000;
-      gl.clearColor(0.01, 0.008, 0.04, 1);
+      gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.enable(gl.DEPTH_TEST);
 
@@ -335,54 +335,21 @@ export default function BootScreen({ onComplete }: Props) {
       className="fixed inset-0 flex items-center justify-center select-none"
       style={{ background: "transparent", WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {/* Planet + glow container */}
+      {/* Planet container — WebGL canvas IS the circle, no CSS clipping needed */}
       <div style={{
         position: "relative",
-        width: 340, height: 340,
+        width: 420, height: 420,
         flexShrink: 0,
         WebkitAppRegion: "no-drag",
       } as React.CSSProperties}>
-
-        {/* SVG glow — radial gradient is mathematically circular, no CSS compositing artifacts */}
-        <svg
-          aria-hidden="true"
-          style={{ position: "absolute", inset: "-70px", pointerEvents: "none", zIndex: 0 }}
-          width={480} height={480} viewBox="0 0 480 480"
-        >
-          <defs>
-            <radialGradient id="planetGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="71%" stopColor="rgba(80,38,165,0)" />
-              <stop offset="79%" stopColor="rgba(90,45,175,0.48)" />
-              <stop offset="90%" stopColor="rgba(55,22,120,0.22)" />
-              <stop offset="100%" stopColor="rgba(30,10,80,0)" />
-            </radialGradient>
-          </defs>
-          <circle cx="240" cy="240" r="240" fill="url(#planetGlow)" />
-        </svg>
-
-        {/* Planet circle — clipped */}
-      <div style={{
-        position: "absolute", inset: 0,
-        borderRadius: "50%",
-        overflow: "hidden",
-        zIndex: 1,
-      }}>
-        {/* WebGL canvas */}
+        {/* WebGL canvas — alpha:true, transparent background, sphere is naturally circular */}
         <canvas
           ref={canvasRef}
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
         />
 
-        {/* Subtle vignette — just enough for depth, not dark edges */}
-        <div aria-hidden="true" style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          boxShadow: "inset 0 0 40px 10px rgba(2,0,10,.45)",
-        }} />
-
-        </div>{/* end planet clip */}
-
         {/* UI overlay */}
-        <div style={{ position: "absolute", inset: 0, zIndex: 2 }}>
+        <div style={{ position: "absolute", inset: 0 }}>
 
           {/* Logo */}
           <div
