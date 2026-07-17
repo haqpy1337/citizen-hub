@@ -335,31 +335,31 @@ export default function BootScreen({ onComplete }: Props) {
       className="fixed inset-0 flex items-center justify-center select-none"
       style={{ background: "transparent", WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {/* Planet wrapper */}
+      {/* Planet wrapper — glow sits outside overflow:hidden so it renders correctly */}
       <div style={{
         position: "relative",
         width: 340, height: 340,
         flexShrink: 0,
+        borderRadius: "50%",
+        boxShadow: "0 0 28px 10px rgba(90,45,175,.55), 0 0 65px 28px rgba(55,22,120,.30)",
         WebkitAppRegion: "no-drag",
       } as React.CSSProperties}>
-      {/* Soft-edge clip: mask fades the planet into transparency — no hard circular border */}
+      {/* Inner clip */}
       <div style={{
         position: "absolute", inset: 0,
         borderRadius: "50%",
         overflow: "hidden",
-        WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 52%, transparent 72%)",
-        maskImage: "radial-gradient(circle at 50% 50%, black 52%, transparent 72%)",
-      } as React.CSSProperties}>
+      }}>
         {/* WebGL canvas */}
         <canvas
           ref={canvasRef}
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
         />
 
-        {/* Vignette */}
+        {/* Vignette — heavy at edges so hard clip blends into dark/transparent */}
         <div aria-hidden="true" style={{
           position: "absolute", inset: 0, pointerEvents: "none",
-          boxShadow: "inset 0 0 60px 22px rgba(2,0,10,.60)",
+          boxShadow: "inset 0 0 55px 35px rgba(2,0,10,.88)",
         }} />
 
         {/* UI overlay */}

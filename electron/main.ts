@@ -482,6 +482,7 @@ async function createWindow() {
     center: true,
     frame: false,
     transparent: true,
+    backgroundColor: '#00000000',
     title: "Citizen Hub",
     autoHideMenuBar: true,
     webPreferences: {
