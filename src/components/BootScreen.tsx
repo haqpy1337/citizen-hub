@@ -335,22 +335,16 @@ export default function BootScreen({ onComplete }: Props) {
       className="fixed inset-0 flex items-center justify-center select-none"
       style={{ background: "transparent", WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {/* Glow wrapper — radial-gradient is inherently circular, no box-shadow artifacts */}
+      {/* Outer wrapper: border-radius + box-shadow here, NO overflow:hidden so shadow isn't clipped */}
       <div style={{
         position: "relative",
         width: 340, height: 340,
+        borderRadius: "50%",
         flexShrink: 0,
+        boxShadow: "0 0 22px 8px rgba(85,42,168,.50), 0 0 55px 22px rgba(55,22,120,.28)",
         WebkitAppRegion: "no-drag",
       } as React.CSSProperties}>
-        {/* Circular glow as radial-gradient pseudo-element — always round */}
-        <div aria-hidden="true" style={{
-          position: "absolute",
-          inset: "-80px",
-          borderRadius: "50%",
-          background: "radial-gradient(circle at 50% 50%, transparent 38%, rgba(85,42,168,.42) 48%, rgba(60,25,130,.22) 58%, transparent 72%)",
-          pointerEvents: "none",
-        }} />
-      {/* The planet circle */}
+      {/* Inner clip div: overflow:hidden here, separate from the shadow element */}
       <div style={{
         position: "absolute", inset: 0,
         borderRadius: "50%",
