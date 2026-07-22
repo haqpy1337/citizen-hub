@@ -16,27 +16,36 @@ function useNow(intervalMs = 1000) {
 
 function ServerStatusPanel() {
   const [status, setStatus] = useState<{ indicator: string; description: string; incidents: string[] } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState]   = useState<"loading" | "ok" | "error">("loading");
 
-  useEffect(() => {
+  function load() {
+    setState("loading");
+    // frontend-side timeout so "Checking…" never hangs indefinitely
+    const guard = setTimeout(() => setState(s => s === "loading" ? "error" : s), 10_000);
     window.api.fetchServerStatus()
-      .then(res => { if (res.ok) setStatus(res); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+      .then(res => { if (res.ok) { setStatus(res as typeof status); setState("ok"); } else setState("error"); })
+      .catch(() => setState("error"))
+      .finally(() => clearTimeout(guard));
+  }
+
+  useEffect(() => { load(); }, []);
 
   const dotColor =
-    !status || loading ? "bg-muted/40" :
-    status.indicator === "none" ? "bg-green-500" :
-    status.indicator === "minor" ? "bg-amber-400" :
+    state === "loading" ? "bg-muted/40 animate-pulse" :
+    state === "error"   ? "bg-muted/30" :
+    status?.indicator === "none"  ? "bg-green-500" :
+    status?.indicator === "minor" ? "bg-amber-400" :
     "bg-danger";
 
   const label =
-    !status || loading ? "Checking…" :
-    status.description;
+    state === "loading" ? "Checking…" :
+    state === "error"   ? "Unavailable" :
+    status?.description ?? "Unknown";
 
   return (
-    <div className="flex items-center gap-2.5 px-4 py-2.5 panel">
+    <button onClick={load}
+      className="flex items-center gap-2.5 px-4 py-2.5 panel hover:bg-hull/60 transition-colors"
+      title="Click to refresh">
       <span className="text-[9px] font-mono uppercase tracking-widest text-muted/50 shrink-0">RSI Status</span>
       <div className="flex items-center gap-1.5">
         <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor} ${status?.indicator === "none" ? "shadow-[0_0_6px_1px_rgba(74,222,128,0.5)]" : ""}`} />
@@ -45,7 +54,7 @@ function ServerStatusPanel() {
       {status?.incidents && status.incidents.length > 0 && (
         <span className="text-[10px] text-amber-400 ml-1 truncate">{status.incidents[0]}</span>
       )}
-    </div>
+    </button>
   );
 }
 

@@ -201,18 +201,22 @@ const HEADERS = {
   "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 };
 
-async function netGet(url: string, extraHeaders: Record<string, string> = {}, timeoutMs = 14000): Promise<string | null> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await net.fetch(url, {
-      signal: controller.signal as AbortSignal,
-      headers: { ...HEADERS, ...extraHeaders },
-    });
-    if (!res.ok) return null;
-    return await res.text();
-  } catch { return null; }
-  finally { clearTimeout(timer); }
+async function netGet(url: string, extraHeaders: Record<string, string> = {}, timeoutMs = 8000): Promise<string | null> {
+  const fetchP = net.fetch(url, { headers: { ...HEADERS, ...extraHeaders } })
+    .then(r => r.ok ? r.text() : null)
+    .catch(() => null);
+  const timeoutP = new Promise<null>(resolve => setTimeout(() => resolve(null), timeoutMs));
+  return Promise.race([fetchP, timeoutP]);
+}
+
+async function netPost(url: string, body: unknown, extraHeaders: Record<string, string> = {}, timeoutMs = 8000): Promise<string | null> {
+  const fetchP = net.fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json", ...HEADERS, ...extraHeaders },
+    body: JSON.stringify(body),
+  }).then(r => r.ok ? r.text() : null).catch(() => null);
+  const timeoutP = new Promise<null>(resolve => setTimeout(() => resolve(null), timeoutMs));
+  return Promise.race([fetchP, timeoutP]);
 }
 
 // ── IPC Handlers ─────────────────────────────────────────────────────────────
@@ -324,85 +328,74 @@ function registerIpc() {
   ipcMain.handle("patchnotes:fetch", async () => {
     type PatchItem = { title: string; link: string; date: string; channel: string };
 
-    function channelFromTitle(title: string): string {
-      const t = title.toUpperCase();
-      if (t.includes("EPTU")) return "EPTU";
-      if (t.includes("PTU"))  return "PTU";
+    function channelFromSlug(slug: string): string {
+      const s = slug.toUpperCase();
+      if (s.includes("EPTU")) return "EPTU";
+      if (s.includes("PTU"))  return "PTU";
       return "LIVE";
     }
 
     function titleFromSlug(slug: string): string {
-      // e.g. "/comm-link/patch-notes/19573-Star-Citizen-Alpha-4-0-1" → "Star Citizen Alpha 4.0.1"
       const part = slug.split("/").pop() ?? "";
-      // strip leading numeric ID
       const noId = part.replace(/^\d+-/, "");
-      // replace dashes with spaces, then fix version numbers (4-0-1 → 4.0.1)
+      // collapse groups of digits separated by single dashes into version numbers
       return noId
+        .replace(/-(\d+)-(\d+)-(\d+)(?=[-\s]|$)/g, " $1.$2.$3")
+        .replace(/-(\d+)-(\d+)(?=[-\s]|$)/g, " $1.$2")
         .replace(/-/g, " ")
-        .replace(/(\d+) (\d+) (\d+)/g, "$1.$2.$3")
-        .replace(/(\d+) (\d+)/g, "$1.$2")
+        .replace(/\s+/g, " ")
         .trim();
     }
 
-    function decodeEntities(s: string): string {
-      return s
-        .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-        .replace(/&apos;/g, "'").replace(/&rsquo;/g, "'").replace(/&lsquo;/g, "'")
-        .replace(/&mdash;/g, "—").replace(/&ndash;/g, "–");
-    }
-
-    function extractFromHtml(html: string): PatchItem[] {
+    function extractLinks(html: string): PatchItem[] {
       const items: PatchItem[] = [];
       const seen = new Set<string>();
-      // Only extract the href — title comes from the slug, not the noisy anchor content
-      const hrefRx = /href="(\/(?:en\/)?comm-link\/patch-notes\/[^"?#]+)"/gi;
+      // Match any comm-link href — patch notes live at /comm-link/patch-notes/XXXX or /comm-link/XXXX
+      const rx = /href="(\/(?:en\/)?comm-link\/[^"?#\s]+)"/gi;
       let m: RegExpExecArray | null;
-      while ((m = hrefRx.exec(html)) !== null) {
-        const slug = m[1].replace(/^\/en\//, "/");
-        if (seen.has(slug)) continue;
-        const title = decodeEntities(titleFromSlug(slug));
-        if (!title) continue;
-        // Only actual patch notes: must contain a version number
-        if (!/\d+\.\d+/.test(title) && !/(?:Alpha|PTU|EPTU|Patch)/i.test(title)) continue;
-        seen.add(slug);
+      while ((m = rx.exec(html)) !== null) {
+        const raw = m[1].replace(/^\/en\//, "/");
+        if (seen.has(raw)) continue;
+        const slug = raw.split("/").pop() ?? "";
+        // must look like a patch note: version number present
+        if (!/\d+\.\d+/.test(slug) && !/(?:Alpha|PTU|EPTU|Patch)/i.test(slug)) continue;
+        seen.add(raw);
         items.push({
-          title,
-          link: `https://robertsspaceindustries.com${slug}`,
-          date: "",
-          channel: channelFromTitle(slug),
+          title: titleFromSlug(raw),
+          link:  `https://robertsspaceindustries.com${raw}`,
+          date:  "",
+          channel: channelFromSlug(raw),
         });
       }
       return items;
     }
 
-    // Primary: scrape patch-notes listing page directly
-    const listHtml = await netGet("https://robertsspaceindustries.com/comm-link/patch-notes");
-    if (listHtml) {
-      const items = extractFromHtml(listHtml);
-      if (items.length > 0) return { ok: true, items };
+    // Strategy 1: RSI Hub API — filtered to patch-notes category
+    for (const body of [
+      { category: "patch-notes", startsWith: 0, limit: 40 },
+      { type: "patch-notes" },
+      {},
+    ]) {
+      const raw = await netPost("https://robertsspaceindustries.com/api/hub/getCommlinkItems", body);
+      if (raw) {
+        try {
+          const json = JSON.parse(raw) as { success?: number; data?: string };
+          if (json.data) {
+            const items = extractLinks(json.data);
+            if (items.length > 0) return { ok: true, items };
+          }
+        } catch { /* not JSON, try as HTML */ }
+        const items = extractLinks(raw);
+        if (items.length > 0) return { ok: true, items };
+      }
     }
 
-    // Fallback: RSI Hub API
-    try {
-      const res = await net.fetch("https://robertsspaceindustries.com/api/hub/getCommlinkItems", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-Rsi-Token": "",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        },
-        body: JSON.stringify({}),
-      });
-      if (res.ok) {
-        const json = await res.json() as { success: number; data: string };
-        if (json.success === 1 && json.data) {
-          const items = extractFromHtml(json.data);
-          if (items.length > 0) return { ok: true, items };
-        }
-      }
-    } catch { /* ignore */ }
+    // Strategy 2: scrape the listing page (works when RSI uses SSR)
+    const listHtml = await netGet("https://robertsspaceindustries.com/comm-link/patch-notes", {}, 10000);
+    if (listHtml) {
+      const items = extractLinks(listHtml);
+      if (items.length > 0) return { ok: true, items };
+    }
 
     return { ok: false, items: [] };
   });
