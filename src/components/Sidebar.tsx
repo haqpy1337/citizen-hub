@@ -12,6 +12,16 @@ const themes = [
   { key: "hornet",  color: "#2898d8", title: "Hornet",  sub: "Anvil Military",  titleBg: "#06080e" },
 ];
 
+function PowerIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
+      strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+      <line x1="12" y1="2" x2="12" y2="12" />
+    </svg>
+  );
+}
+
 function GearIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
@@ -244,10 +254,14 @@ export default function Sidebar() {
             </button>
             <button
               onClick={() => window.api.closeWindow().catch(() => {})}
-              className="flex items-center justify-center px-2 py-1.5 text-muted/40 hover:text-red-400 transition-colors"
-              title="App beenden"
-              style={{ fontSize: 15, lineHeight: 1 }}
-            >✕</button>
+              className="flex items-center gap-1.5 px-2 py-1.5 text-muted/40 hover:text-red-400 transition-colors text-xs font-mono"
+              title="Quit"
+            >
+              <span style={{ display: "inline-flex", width: 13, height: 13 }}>
+                <PowerIcon className="w-full h-full" />
+              </span>
+              <span className="uppercase tracking-wide text-[10px]">Quit</span>
+            </button>
           </div>
         </div>
       </aside>

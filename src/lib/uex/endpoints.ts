@@ -159,23 +159,22 @@ export async function getCommoditiesWithPrices(): Promise<CommodityWithPrices[]>
   return getCommodities();
 }
 
-/** All mineable raw ores with average sell price per SCU. */
+/**
+ * All commodities that have at least one sell price in the UEX price feed.
+ * Used for the ticker — includes Bexalite and anything else UEX prices.
+ * On every call we also check formerly price-less entries so new prices appear.
+ */
 export async function getOreCommodities(): Promise<OreCommodity[]> {
   const [commodities, prices] = await Promise.all([
     uexFetch<UexCommodity>("commodities"),
     uexFetch<UexCommodityPrice>("commodities_prices").catch(() => [] as UexCommodityPrice[]),
   ]);
 
-  // Include anything raw/mineable/refinable; fall back to all if nothing matches
-  const ores = commodities.filter(c => c.is_refinable === 1 || c.is_raw === 1 || c.is_extractable === 1);
-  const list = ores.length > 0 ? ores : commodities;
-
-  // Build average sell price per commodity from terminal-specific prices
-  // price_sell = what the NPC pays the player (i.e. player receives this amount)
+  // Build best sell price per commodity id from terminal price feed
   const sellMap = new Map<number, number[]>();
   for (const p of prices) {
     if (p.id_commodity == null) continue;
-    const price = p.price_sell_avg ?? p.scu_sell_avg ?? p.price_sell;
+    const price = p.price_sell_avg ?? p.price_sell ?? p.scu_sell_avg;
     if (price && price > 0) {
       const arr = sellMap.get(p.id_commodity) ?? [];
       arr.push(price);
@@ -183,21 +182,34 @@ export async function getOreCommodities(): Promise<OreCommodity[]> {
     }
   }
 
-  return list
-    .map((c) => {
-      const arr = sellMap.get(c.id);
-      const fromPrices = arr?.length
-        ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)
-        : null;
-      // price_sell = what the NPC pays the player when selling ore; price_buy = what player pays to buy back
-      const fromCommodity = (c.price_sell && c.price_sell > 0 ? c.price_sell : null)
-        ?? (c.price_buy && c.price_buy > 0 ? c.price_buy : null);
-      return {
-        id: c.id,
-        name: c.name,
-        code: c.code ?? null,
-        pricePerScu: fromPrices ?? fromCommodity,
-      };
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
+  // Build commodity lookup by id
+  const byId = new Map(commodities.map(c => [c.id, c]));
+
+  // Take every commodity that appears in the price feed (regardless of is_raw flags)
+  // and fall back to the commodity's own price_sell/price_buy if not in the feed.
+  const result: OreCommodity[] = [];
+
+  // First: price-feed entries
+  for (const [id, arr] of sellMap) {
+    const c = byId.get(id);
+    if (!c) continue;
+    result.push({
+      id: c.id,
+      name: c.name,
+      code: c.code ?? null,
+      pricePerScu: Math.round(arr.reduce((a, b) => a + b, 0) / arr.length),
+    });
+  }
+
+  // Second: commodities with built-in price but not yet in feed (catches newly added)
+  const inFeed = new Set(sellMap.keys());
+  for (const c of commodities) {
+    if (inFeed.has(c.id)) continue;
+    const p = (c.price_sell && c.price_sell > 0 ? c.price_sell : null)
+           ?? (c.price_buy  && c.price_buy  > 0 ? c.price_buy  : null);
+    if (p == null) continue;
+    result.push({ id: c.id, name: c.name, code: c.code ?? null, pricePerScu: p });
+  }
+
+  return result.sort((a, b) => a.name.localeCompare(b.name));
 }

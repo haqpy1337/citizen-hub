@@ -50,11 +50,12 @@ function OreTicker() {
     return () => clearInterval(id);
   }, []);
 
-  if (loading || items.length === 0) return null;
+  const priced = items.filter(i => i.ore.pricePerScu != null);
+  if (loading || priced.length === 0) return null;
 
-  const COPIES   = Math.max(8, Math.ceil(2400 / Math.max(1, items.length * 130)));
+  const COPIES   = Math.max(8, Math.ceil(2400 / Math.max(1, priced.length * 130)));
   const pct      = (100 / COPIES).toFixed(4);
-  const duration = Math.max(20, items.length * 2.5);
+  const duration = Math.max(20, priced.length * 2.5);
 
   const trendColor = (t: Trend) =>
     t === "up"   ? "#4ade80" :
@@ -90,7 +91,7 @@ function OreTicker() {
 
       <div className="ore-ticker-track">
         {Array.from({ length: COPIES }, (_, copy) =>
-          items.map(({ ore, trend }, i) => (
+          priced.map(({ ore, trend }, i) => (
             <span key={`${copy}-${i}`} className="flex items-center gap-1.5 px-4 whitespace-nowrap">
               <span className="text-[10px] font-mono font-bold tracking-widest"
                 style={{ color: "rgba(180,170,210,0.5)" }}>
