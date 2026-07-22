@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth, usePage } from "../App";
 import { api, Job } from "../lib/api";
 import { formatDuration, secondsLeft } from "../lib/format";
+import { getOreCommodities } from "../lib/uex/endpoints";
+import type { OreCommodity } from "../lib/uex/types";
 
 function useNow(intervalMs = 1000) {
   const [now, setNow] = useState(Date.now());
@@ -10,6 +12,71 @@ function useNow(intervalMs = 1000) {
     return () => clearInterval(id);
   }, [intervalMs]);
   return now;
+}
+
+// ── Ore Price Ticker ──────────────────────────────────────────────────────────
+
+const TICKER_REFRESH_MS = 5 * 60 * 1000;
+
+function OreTicker() {
+  const [ores, setOres]       = useState<OreCommodity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  function load() {
+    getOreCommodities()
+      .then(data => setOres(data.filter(o => o.pricePerScu != null)))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    load();
+    const id = setInterval(load, TICKER_REFRESH_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  if (loading || ores.length === 0) return null;
+
+  // Duplicate items so the scroll loops seamlessly
+  const items = [...ores, ...ores];
+
+  return (
+    <div className="relative overflow-hidden border-b border-edge/40 bg-hull/30"
+      style={{ height: 26 }}>
+      <style>{`
+        @keyframes ore-scroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .ore-ticker-track {
+          animation: ore-scroll ${Math.max(20, ores.length * 4)}s linear infinite;
+          will-change: transform;
+        }
+        .ore-ticker-track:hover { animation-play-state: paused; }
+      `}</style>
+
+      {/* left/right fade masks */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-12 z-10"
+        style={{ background: "linear-gradient(to right, var(--color-hull,#0d0d12), transparent)" }} />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-12 z-10"
+        style={{ background: "linear-gradient(to left, var(--color-hull,#0d0d12), transparent)" }} />
+
+      <div ref={trackRef} className="ore-ticker-track flex items-center h-full gap-0 whitespace-nowrap">
+        {items.map((ore, i) => (
+          <span key={i} className="flex items-center gap-1.5 px-4">
+            <span className="text-[10px] font-mono font-semibold text-muted/60 uppercase tracking-widest">
+              {ore.name.replace(" (Raw)", "").replace(" (Ore)", "")}
+            </span>
+            <span className="text-[10px] font-mono text-quant tabular-nums">
+              {ore.pricePerScu!.toLocaleString()} aUEC
+            </span>
+            <span className="text-muted/20 text-[10px]">·</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ── Server Status ─────────────────────────────────────────────────────────────
@@ -294,6 +361,11 @@ export default function Dashboard() {
       <div className="flex items-center justify-between shrink-0">
         <h1 className="eyebrow">Dashboard</h1>
         <ServerStatusPanel />
+      </div>
+
+      {/* Ore price ticker */}
+      <div className="shrink-0 -mx-4 -mt-2">
+        <OreTicker />
       </div>
 
       {/* 2-column layout */}
