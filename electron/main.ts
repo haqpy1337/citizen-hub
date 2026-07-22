@@ -14,7 +14,7 @@ import type { Database } from "sql.js";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface User { id: string; username: string; avatarUrl: string | null }
-interface JobMaterial { id: string; commodityId: number | null; name: string; quantity: number; unit: string; yieldPercent: number | null }
+interface JobMaterial { id: string; commodityId: number | null; name: string; quantity: number; unit: string; yieldPercent: number | null; quality: number | null }
 interface Job { id: string; stationId: number | null; stationName: string; systemName: string | null; method: string | null; startedAt: string; durationSec: number; finishesAt: string; status: string; note: string | null; materials: JobMaterial[] }
 
 // ── Globals ──────────────────────────────────────────────────────────────────
@@ -141,6 +141,8 @@ async function initDb() {
       yield_percent REAL
     );
   `);
+  // Migration: add quality_percent if it doesn't exist yet
+  try { db.run("ALTER TABLE job_materials ADD COLUMN quality_percent REAL"); } catch {}
   save();
 }
 
@@ -183,12 +185,13 @@ function requireUser(token: string): string {
 
 function getJobMaterials(jobId: string): JobMaterial[] {
   return all("SELECT * FROM job_materials WHERE job_id = ?", [jobId]).map((r) => ({
-    id: r.id as string,
+    id:          r.id as string,
     commodityId: r.commodity_id as number | null,
     name: r.name as string,
-    quantity: r.quantity as number,
-    unit: r.unit as string,
+    quantity:     r.quantity as number,
+    unit:         r.unit as string,
     yieldPercent: r.yield_percent as number | null,
+    quality:      r.quality_percent as number | null,
   }));
 }
 
@@ -264,8 +267,8 @@ function registerIpc() {
        data.status ?? "running", data.note ?? null]
     );
     for (const m of data.materials ?? []) {
-      run("INSERT INTO job_materials (id,job_id,commodity_id,name,quantity,unit,yield_percent) VALUES (?,?,?,?,?,?,?)",
-        [uid(), jobId, m.commodityId ?? null, m.name, m.quantity, m.unit ?? "SCU", m.yieldPercent ?? null]);
+      run("INSERT INTO job_materials (id,job_id,commodity_id,name,quantity,unit,yield_percent,quality_percent) VALUES (?,?,?,?,?,?,?,?)",
+        [uid(), jobId, m.commodityId ?? null, m.name, m.quantity, m.unit ?? "SCU", m.yieldPercent ?? null, (m as JobMaterial).quality ?? null]);
     }
     return rowToJob(get("SELECT * FROM refinery_jobs WHERE id = ?", [jobId])!);
   });

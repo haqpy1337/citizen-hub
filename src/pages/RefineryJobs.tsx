@@ -36,15 +36,24 @@ function JobCard({ job, onMarkDone }: { job: Job; onMarkDone: () => void }) { //
 
       {job.materials.length > 0 && (
         <ul className="flex flex-col gap-1">
-          {job.materials.map(m => (
-            <li key={m.id} className="flex items-center justify-between text-xs">
-              <span className="text-ink">{m.name}</span>
-              <span className="text-muted tabular-nums">
-                {m.quantity} {m.unit}
-                {m.yieldPercent != null && <span className="ml-1 text-quant">{m.yieldPercent}%</span>}
-              </span>
-            </li>
-          ))}
+          {job.materials.map(m => {
+            const output = m.yieldPercent != null
+              ? (m.quality != null
+                  ? m.quantity * (m.yieldPercent / 100) * (m.quality / 100)
+                  : m.quantity * (m.yieldPercent / 100))
+              : null;
+            return (
+              <li key={m.id} className="flex items-center justify-between text-xs gap-2">
+                <span className="text-ink">{m.name}</span>
+                <span className="text-muted tabular-nums flex items-center gap-1.5">
+                  {m.quantity} {m.unit}
+                  {m.yieldPercent != null && <span className="text-quant/70">{m.yieldPercent}%</span>}
+                  {m.quality != null && <span className="text-muted/50">Q{m.quality}%</span>}
+                  {output != null && <span className="text-quant font-semibold">→ {output.toFixed(1)}</span>}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
 

@@ -13,6 +13,7 @@ export interface JobMaterial {
   quantity: number;
   unit: string;
   yieldPercent: number | null;
+  quality: number | null;
 }
 
 export interface Job {
