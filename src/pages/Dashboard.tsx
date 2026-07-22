@@ -36,7 +36,11 @@ function OreTicker() {
 
   if (loading || ores.length === 0) return null;
 
-  const duration = Math.max(30, ores.length * 3);
+  // Enough copies so the track is always wider than the viewport.
+  // We animate by exactly 1/COPIES of the total width → seamless loop.
+  const COPIES = Math.max(8, Math.ceil(2400 / Math.max(1, ores.length * 160)));
+  const pct    = (100 / COPIES).toFixed(4);
+  const duration = Math.max(20, ores.length * 2.5);
 
   return (
     <div className="relative overflow-hidden border-y border-edge/30 bg-hull/40"
@@ -44,7 +48,7 @@ function OreTicker() {
       <style>{`
         @keyframes ore-scroll {
           0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+          100% { transform: translateX(-${pct}%); }
         }
         .ore-ticker-track {
           display: flex;
@@ -57,31 +61,27 @@ function OreTicker() {
         .ore-ticker-track:hover { animation-play-state: paused; }
       `}</style>
 
-      {/* left/right fade masks */}
       <div className="pointer-events-none absolute inset-y-0 left-0 w-16 z-10"
         style={{ background: "linear-gradient(to right, var(--color-hull,#0d0d12) 40%, transparent)" }} />
       <div className="pointer-events-none absolute inset-y-0 right-0 w-16 z-10"
         style={{ background: "linear-gradient(to left, var(--color-hull,#0d0d12) 40%, transparent)" }} />
 
-      {/* Track: duplicated for seamless loop — second half must be identical to first */}
       <div className="ore-ticker-track">
-        {[0, 1].map(copy => (
-          <span key={copy} style={{ display: "contents" }}>
-            {ores.map((ore, i) => (
-              <span key={`${copy}-${i}`} className="flex items-center gap-2 px-5 whitespace-nowrap">
-                <span className="text-[11px] font-mono font-semibold tracking-wider"
-                  style={{ color: "var(--color-muted, #666)" }}>
-                  {ore.name.replace(/\s*\((Raw|Ore)\)/i, "").toUpperCase()}
-                </span>
-                <span className="text-[11px] font-mono tabular-nums"
-                  style={{ color: "var(--color-quant, #7fffb2)" }}>
-                  {ore.pricePerScu!.toLocaleString()} aUEC
-                </span>
-                <span style={{ color: "var(--color-edge, #333)", fontSize: 10 }}>▪</span>
+        {Array.from({ length: COPIES }, (_, copy) =>
+          ores.map((ore, i) => (
+            <span key={`${copy}-${i}`} className="flex items-center gap-2 px-5 whitespace-nowrap">
+              <span className="text-[11px] font-mono font-semibold tracking-wider"
+                style={{ color: "var(--color-muted, #666)" }}>
+                {ore.name.replace(/\s*\((Raw|Ore)\)/i, "").toUpperCase()}
               </span>
-            ))}
-          </span>
-        ))}
+              <span className="text-[11px] font-mono tabular-nums"
+                style={{ color: "var(--color-quant, #7fffb2)" }}>
+                {ore.pricePerScu!.toLocaleString()} aUEC
+              </span>
+              <span style={{ color: "var(--color-edge, #333)", fontSize: 10 }}>▪</span>
+            </span>
+          ))
+        )}
       </div>
     </div>
   );
