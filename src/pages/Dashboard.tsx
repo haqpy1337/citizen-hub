@@ -136,19 +136,33 @@ function channelStyle(ch: string) {
 }
 
 function PatchNotesPanel() {
-  const [items, setItems]   = useState<PatchItem[]>([]);
+  const [items, setItems]     = useState<PatchItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState(false);
-  const [tab, setTab]       = useState<PatchTab>("All");
+  const [error, setError]     = useState(false);
+  const [tab, setTab]         = useState<PatchTab>("All");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [detailCache, setDetailCache] = useState<Record<string, string>>({});
+  const [detailLoading, setDetailLoading] = useState<string | null>(null);
 
   function fetchNotes() {
-    setLoading(true); setError(false); setItems([]);
+    setLoading(true); setError(false); setItems([]); setExpanded(null);
     window.api.fetchPatchNotes()
       .then(res => { if (res.ok && res.items.length > 0) setItems(res.items); else setError(true); })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }
   useEffect(() => { fetchNotes(); }, []);
+
+  function toggleExpand(link: string) {
+    if (expanded === link) { setExpanded(null); return; }
+    setExpanded(link);
+    if (detailCache[link] !== undefined) return;
+    setDetailLoading(link);
+    window.api.fetchPatchNoteDetail(link)
+      .then(res => setDetailCache(c => ({ ...c, [link]: res.ok ? res.content : "" })))
+      .catch(() => setDetailCache(c => ({ ...c, [link]: "" })))
+      .finally(() => setDetailLoading(null));
+  }
 
   const tabs: PatchTab[] = ["All", "LIVE", "PTU", "EPTU"];
   const filtered = tab === "All" ? items : items.filter(i => i.channel === tab);
@@ -194,34 +208,50 @@ function PatchNotesPanel() {
           <span className="text-xs text-muted/60">No {tab} patches found.</span>
         </div>
       ) : (
-        <div className="overflow-y-auto flex-1 [scrollbar-width:thin]">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-edge sticky top-0 bg-panel z-10">
-                <th className="px-4 py-2 text-left text-[9px] font-mono uppercase tracking-widest text-muted/50 w-14">Channel</th>
-                <th className="px-3 py-2 text-left text-[9px] font-mono uppercase tracking-widest text-muted/50">Title</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((item, i) => {
-                const cs = channelStyle(item.channel);
-                const date = fmtDate(item.date);
-                return (
-                  <tr key={i}
-                    onClick={() => window.open(item.link || "https://robertsspaceindustries.com/comm-link/patch-notes")}
-                    className="border-b border-edge/20 hover:bg-hull/40 cursor-pointer transition-colors group">
-                    <td className="px-4 py-2.5 shrink-0">
-                      <span className={`text-[9px] font-mono px-1.5 py-0.5 border ${cs.badge}`}>{item.channel}</span>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span className="text-ink/90 group-hover:text-ink font-medium leading-tight block">{item.title}</span>
-                      {date && <span className="text-[9px] font-mono text-muted/40 mt-0.5 block">{date}</span>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="overflow-y-auto flex-1">
+          {filtered.map((item, i) => {
+            const cs = channelStyle(item.channel);
+            const date = fmtDate(item.date);
+            const isOpen = expanded === item.link;
+            const content = detailCache[item.link];
+            const isDetailLoading = detailLoading === item.link;
+            return (
+              <div key={i} className="border-b border-edge/20">
+                {/* Row */}
+                <button
+                  onClick={() => toggleExpand(item.link)}
+                  className="w-full flex items-start gap-3 px-4 py-2.5 hover:bg-hull/40 transition-colors text-left"
+                >
+                  <span className={`text-[9px] font-mono px-1.5 py-0.5 border shrink-0 mt-0.5 ${cs.badge}`}>{item.channel}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-ink/90 font-medium leading-tight block text-xs">{item.title}</span>
+                    {date && <span className="text-[9px] font-mono text-muted/40 mt-0.5 block">{date}</span>}
+                  </div>
+                  <span className="text-[10px] font-mono text-muted/30 shrink-0 mt-0.5 transition-transform"
+                    style={{ transform: isOpen ? "rotate(180deg)" : undefined }}>▾</span>
+                </button>
+                {/* Expanded content */}
+                {isOpen && (
+                  <div className="px-4 pb-4 pt-1 border-t border-edge/10">
+                    {isDetailLoading ? (
+                      <div className="flex items-center gap-2 py-3">
+                        <div className="w-3 h-3 border border-quant/40 border-t-quant rounded-full animate-spin" />
+                        <span className="text-[10px] font-mono text-muted/40">Loading content…</span>
+                      </div>
+                    ) : content ? (
+                      <p className="text-[11px] leading-relaxed text-muted/70 whitespace-pre-wrap">{content}</p>
+                    ) : (
+                      <div className="flex items-center gap-3 py-2">
+                        <span className="text-[10px] text-muted/40">Content not available.</span>
+                        <button onClick={e => { e.stopPropagation(); window.open(item.link); }}
+                          className="text-[10px] font-mono text-quant hover:underline">Open on RSI ↗</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

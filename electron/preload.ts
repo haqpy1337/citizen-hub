@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld("api", {
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   fetchNews: () => ipcRenderer.invoke("news:fetch"),
   fetchPatchNotes: () => ipcRenderer.invoke("patchnotes:fetch"),
+  fetchPatchNoteDetail: (url: string) => ipcRenderer.invoke("patchnote:detail", url),
   fetchTwisk: () => ipcRenderer.invoke("twisk:fetch"),
   fetchServerStatus: () => ipcRenderer.invoke("serverstatus:fetch"),
   isFirstRunAfterUpdate: () => ipcRenderer.invoke("app:isFirstRunAfterUpdate"),

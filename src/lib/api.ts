@@ -51,6 +51,7 @@ declare global {
       checkForUpdates(): Promise<{ ok: boolean; error?: string }>;
       fetchNews(): Promise<{ ok: boolean; source?: string; items: { title: string; link: string; date: string }[] }>;
       fetchPatchNotes(): Promise<{ ok: boolean; items: { title: string; link: string; date: string; channel: string }[] }>;
+      fetchPatchNoteDetail(url: string): Promise<{ ok: boolean; content: string }>;
       fetchTwisk(): Promise<{ ok: boolean; item: { title: string; link: string; date: string; imageUrl: string | null; description: string } | null }>;
       fetchServerStatus(): Promise<{ ok: boolean; indicator?: string; description?: string; incidents?: string[] }>;
       isFirstRunAfterUpdate(): Promise<boolean>;

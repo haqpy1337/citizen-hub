@@ -414,6 +414,30 @@ function registerIpc() {
     return { ok: false, items: [] };
   });
 
+  ipcMain.handle("patchnote:detail", async (_e, url: string) => {
+    const html = await netGet(url, {}, 12000);
+    if (!html) return { ok: false, content: "" };
+    try {
+      // RSI comm-link articles embed content in .body-content or .entry-content
+      const bodyMatch = html.match(/<(?:div|section)[^>]+class="[^"]*(?:body-content|entry-content|rsi-article-content|article-body)[^"]*"[^>]*>([\s\S]*?)<\/(?:div|section)>/i);
+      let raw = bodyMatch ? bodyMatch[1] : html;
+
+      // Strip all HTML tags and decode basic entities
+      const text = raw
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+        .replace(/&nbsp;/g, " ").replace(/&#\d+;/g, " ")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+
+      // Return first ~800 chars as excerpt
+      const excerpt = text.length > 800 ? text.slice(0, 800).replace(/\s\S*$/, "") + "…" : text;
+      return { ok: true, content: excerpt };
+    } catch { return { ok: false, content: "" }; }
+  });
+
   ipcMain.handle("serverstatus:fetch", async () => {
     // Try Atlassian statuspage v2 summary (most detailed)
     const urls = [

@@ -2,9 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hide all scrollbars globally */
-* { scrollbar-width: none; -ms-overflow-style: none; }
-*::-webkit-scrollbar { display: none; }
+/* Hide all scrollbars globally (important overrides Tailwind utility classes) */
+* { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+*::-webkit-scrollbar { display: none !important; }
+
+/* Hide number input spinners */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    MOLE  —  ARGO Astronautics MOLE mining barge
@@ -458,6 +463,19 @@ body {
   .field:focus {
     border-color: var(--color-quant);
     box-shadow: var(--shadow-glow);
+  }
+  select.field {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23808080' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+  }
+  select.field option {
+    background-color: var(--color-hull);
+    color: var(--color-ink);
   }
   .label {
     @apply mb-1 block font-mono text-[11px] uppercase tracking-widest text-muted;
