@@ -3,7 +3,8 @@ import { useAuth } from "../App";
 import { api, Job } from "../lib/api";
 import { formatDuration } from "../lib/format";
 
-type Filter = "all" | "done" | "collected" | "cancelled";
+type DateSort = "newest" | "oldest";
+type ScuSort  = "none" | "high" | "low";
 
 const STATUS_LABELS: Record<string, string> = {
   done: "Done",
@@ -21,7 +22,9 @@ export default function History() {
   const { token } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [dateSort,  setDateSort]  = useState<DateSort>("newest");
+  const [scuSort,   setScuSort]   = useState<ScuSort>("none");
+  const [matFilter, setMatFilter] = useState("");
 
   async function load() {
     if (!token) return;
@@ -38,37 +41,65 @@ export default function History() {
     setJobs(prev => prev.filter(j => j.id !== id));
   }
 
-  const historical = jobs.filter(j => j.status !== "running");
-  const filtered = filter === "all"
-    ? historical
-    : historical.filter(j => j.status === filter);
+  const totalScu = (job: Job) => job.materials.reduce((s, m) => s + m.quantity, 0);
 
-  const filters: { key: Filter; label: string }[] = [
-    { key: "all",       label: "All" },
-    { key: "done",      label: "Done" },
-    { key: "collected", label: "Collected" },
-    { key: "cancelled", label: "Cancelled" },
-  ];
+  const historical = jobs.filter(j => j.status !== "running");
+
+  const filtered = historical
+    .filter(job => {
+      if (!matFilter.trim()) return true;
+      const q = matFilter.trim().toLowerCase();
+      return job.materials.some(m => m.name.toLowerCase().includes(q));
+    })
+    .sort((a, b) => {
+      if (scuSort !== "none") {
+        const diff = totalScu(a) - totalScu(b);
+        return scuSort === "high" ? -diff : diff;
+      }
+      const diff = new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime();
+      return dateSort === "newest" ? -diff : diff;
+    });
+
+  function toggleDate() { setDateSort(d => d === "newest" ? "oldest" : "newest"); }
+  function toggleScu()  { setScuSort(s => s === "none" ? "high" : s === "high" ? "low" : "none"); }
+
+  const scuLabel = scuSort === "high" ? "SCU ↓" : scuSort === "low" ? "SCU ↑" : "SCU";
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="eyebrow">History</h1>
 
-      <div className="flex gap-2">
-        {filters.map(f => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={[
-              "px-3 py-1.5 text-xs font-mono uppercase tracking-wider rounded-md border transition-all",
-              filter === f.key
-                ? "border-quant text-quant bg-quant/10"
-                : "border-edge text-muted hover:text-ink",
-            ].join(" ")}
-          >
-            {f.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={toggleDate}
+          className={[
+            "px-3 py-1.5 text-xs font-mono uppercase tracking-wider border transition-all",
+            "border-quant text-quant bg-quant/10",
+          ].join(" ")}
+        >
+          {dateSort === "newest" ? "Date ↓" : "Date ↑"}
+        </button>
+        <button
+          onClick={toggleScu}
+          className={[
+            "px-3 py-1.5 text-xs font-mono uppercase tracking-wider border transition-all",
+            scuSort !== "none"
+              ? "border-quant text-quant bg-quant/10"
+              : "border-edge text-muted hover:text-ink",
+          ].join(" ")}
+        >
+          {scuLabel}
+        </button>
+        <input
+          type="text"
+          value={matFilter}
+          onChange={e => setMatFilter(e.target.value)}
+          placeholder="Filter material…"
+          className="px-3 py-1.5 text-xs font-mono bg-transparent border border-edge text-ink placeholder:text-muted/40 outline-none focus:border-quant/60 transition-colors min-w-[140px]"
+        />
+        {matFilter && (
+          <button onClick={() => setMatFilter("")} className="text-xs font-mono text-muted/50 hover:text-ink transition-colors">✕</button>
+        )}
       </div>
 
       {loading ? (

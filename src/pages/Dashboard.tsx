@@ -64,7 +64,9 @@ function Alerts({ jobs }: { jobs: Job[] }) {
   const { setPage } = usePage();
   const now = useNow();
 
-  const readyJobs = jobs.filter(j => j.status === "done");
+  const readyJobs = jobs.filter(j =>
+    j.status === "done" || (j.status === "running" && secondsLeft(j.finishesAt, now) <= 0)
+  );
   const soonJobs  = jobs.filter(j =>
     j.status === "running" &&
     secondsLeft(j.finishesAt, now) < 30 * 60 &&

@@ -14,7 +14,7 @@ function useNow(intervalMs = 1000) {
 
 // ── Job Card ──────────────────────────────────────────────────────────────────
 
-function JobCard({ job, onMarkDone }: { job: Job; onMarkDone: () => void }) {
+function JobCard({ job, onMarkDone }: { job: Job; onMarkDone: () => void }) { // onMarkDone = mark collected
   const now  = useNow();
   const secs = secondsLeft(job.finishesAt, now);
   const done = secs === 0;
@@ -69,7 +69,7 @@ function JobCard({ job, onMarkDone }: { job: Job; onMarkDone: () => void }) {
             <span className="text-sm font-mono text-quant tabular-nums">{formatDuration(secs)}</span>
           )}
         </div>
-        <button onClick={onMarkDone} className="btn btn-primary text-xs px-3 py-1">Mark Done</button>
+        <button onClick={onMarkDone} className="btn btn-primary text-xs px-3 py-1">Mark Collected</button>
       </div>
     </div>
   );
@@ -226,8 +226,8 @@ export default function RefineryJobs() {
 
   async function markDone(id: string) {
     if (!token) return;
-    await api.jobs.update(token, id, { status: "done" });
-    setJobs(prev => prev.map(j => j.id === id ? { ...j, status: "done" } : j));
+    await api.jobs.update(token, id, { status: "collected" });
+    setJobs(prev => prev.map(j => j.id === id ? { ...j, status: "collected" } : j));
   }
 
   async function deleteJob(id: string) {

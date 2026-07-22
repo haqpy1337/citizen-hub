@@ -338,34 +338,48 @@ function registerIpc() {
     function titleFromSlug(slug: string): string {
       const part = slug.split("/").pop() ?? "";
       const noId = part.replace(/^\d+-/, "");
-      // collapse groups of digits separated by single dashes into version numbers
-      return noId
+      const spaced = noId
         .replace(/-(\d+)-(\d+)-(\d+)(?=[-\s]|$)/g, " $1.$2.$3")
         .replace(/-(\d+)-(\d+)(?=[-\s]|$)/g, " $1.$2")
         .replace(/-/g, " ")
         .replace(/\s+/g, " ")
         .trim();
+      // title-case
+      return spaced.replace(/\b\w/g, c => c.toUpperCase());
     }
 
     function extractLinks(html: string): PatchItem[] {
       const items: PatchItem[] = [];
       const seen = new Set<string>();
-      // Match any comm-link href — patch notes live at /comm-link/patch-notes/XXXX or /comm-link/XXXX
-      const rx = /href="(\/(?:en\/)?comm-link\/[^"?#\s]+)"/gi;
-      let m: RegExpExecArray | null;
-      while ((m = rx.exec(html)) !== null) {
-        const raw = m[1].replace(/^\/en\//, "/");
-        if (seen.has(raw)) continue;
+      // Try to grab anchor text alongside each comm-link href for a clean title
+      // Pattern: href="..." optionally more attrs then >CLEAN TEXT</a>
+      const rxFull = /href="(\/(?:en\/)?comm-link\/[^"?#\s]+)"[^>]*>([^<]{4,120})<\/a>/gi;
+      const rxHref = /href="(\/(?:en\/)?comm-link\/[^"?#\s]+)"/gi;
+
+      const pushItem = (raw: string, anchorText?: string) => {
+        if (seen.has(raw)) return;
         const slug = raw.split("/").pop() ?? "";
-        // must look like a patch note: version number present
-        if (!/\d+\.\d+/.test(slug) && !/(?:Alpha|PTU|EPTU|Patch)/i.test(slug)) continue;
+        if (!/\d+[\.\-]\d+/.test(slug) && !/(?:Alpha|PTU|EPTU|Patch)/i.test(slug)) return;
         seen.add(raw);
+        const title = anchorText
+          ? anchorText.trim().replace(/\s+/g, " ")
+          : titleFromSlug(raw);
         items.push({
-          title: titleFromSlug(raw),
-          link:  `https://robertsspaceindustries.com${raw}`,
-          date:  "",
+          title,
+          link:    `https://robertsspaceindustries.com${raw}`,
+          date:    "",
           channel: channelFromSlug(raw),
         });
+      };
+
+      let m: RegExpExecArray | null;
+      // First pass: anchors with clean text
+      while ((m = rxFull.exec(html)) !== null) {
+        pushItem(m[1].replace(/^\/en\//, "/"), m[2]);
+      }
+      // Second pass: bare hrefs not yet seen
+      while ((m = rxHref.exec(html)) !== null) {
+        pushItem(m[1].replace(/^\/en\//, "/"));
       }
       return items;
     }
@@ -401,24 +415,43 @@ function registerIpc() {
   });
 
   ipcMain.handle("serverstatus:fetch", async () => {
-    const json = await netGet(
+    // Try Atlassian statuspage v2 summary (most detailed)
+    const urls = [
       "https://status.robertsspaceindustries.com/api/v2/summary.json",
-      { "Accept": "application/json" }
-    );
-    if (!json) return { ok: false };
-    try {
-      const data = JSON.parse(json) as {
-        status: { indicator: string; description: string };
-        components: { name: string; status: string }[];
-        incidents: { name: string; status: string }[];
-      };
-      return {
-        ok: true,
-        indicator: data.status.indicator,
-        description: data.status.description,
-        incidents: data.incidents.map(i => i.name),
-      };
-    } catch { return { ok: false }; }
+      "https://status.robertsspaceindustries.com/api/v2/status.json",
+    ];
+    for (const url of urls) {
+      const json = await netGet(url, { "Accept": "application/json" });
+      if (!json) continue;
+      try {
+        const data = JSON.parse(json) as {
+          status: { indicator: string; description: string };
+          incidents?: { name: string; status: string }[];
+        };
+        if (!data?.status?.indicator) continue;
+        return {
+          ok: true,
+          indicator: data.status.indicator,
+          description: data.status.description,
+          incidents: (data.incidents ?? []).map((i: { name: string }) => i.name),
+        };
+      } catch { /* try next */ }
+    }
+    // Fallback: scrape the status page HTML
+    const html = await netGet("https://status.robertsspaceindustries.com/", {}, 8000);
+    if (html) {
+      // Atlassian pages embed status in <span class="status font-large colorGreen">All Systems Operational</span>
+      const m = html.match(/<span[^>]+class="[^"]*status[^"]*"[^>]*>([^<]+)<\/span>/i);
+      if (m) {
+        const desc = m[1].trim();
+        const lower = desc.toLowerCase();
+        const indicator = lower.includes("operational") ? "none"
+          : lower.includes("degraded") || lower.includes("partial") ? "minor"
+          : "major";
+        return { ok: true, indicator, description: desc, incidents: [] };
+      }
+    }
+    return { ok: false };
   });
 
   // "This Week in Star Citizen" — scrapes latest article from transmission page
