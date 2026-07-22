@@ -19,11 +19,12 @@ function useNow(intervalMs = 1000) {
 const TICKER_REFRESH_MS = 5 * 60 * 1000;
 
 type Trend = "up" | "down" | "flat";
-interface TickerOre { ore: OreCommodity; trend: Trend }
+interface TickerOre { ore: OreCommodity; trend: Trend; changePct: number | null }
 
 function OreTicker() {
   const [items, setItems]     = useState<TickerOre[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showRoi, setShowRoi] = useState(false);
   const prevPrices            = useRef<Map<number, number>>(new Map());
 
   function load() {
@@ -32,12 +33,16 @@ function OreTicker() {
       const next = new Map<number, number>();
       const result: TickerOre[] = data.map(ore => {
         let trend: Trend = "flat";
+        let changePct: number | null = null;
         if (ore.pricePerScu != null) {
           const old = prev.get(ore.id);
-          if (old != null) trend = ore.pricePerScu > old ? "up" : ore.pricePerScu < old ? "down" : "flat";
+          if (old != null && old > 0) {
+            changePct = ((ore.pricePerScu - old) / old) * 100;
+            trend = changePct > 0 ? "up" : changePct < 0 ? "down" : "flat";
+          }
           next.set(ore.id, ore.pricePerScu);
         }
-        return { ore, trend };
+        return { ore, trend, changePct };
       });
       prevPrices.current = next;
       setItems(result);
@@ -50,24 +55,30 @@ function OreTicker() {
     return () => clearInterval(id);
   }, []);
 
+  // Toggle between price and ROI % every 3 seconds
+  useEffect(() => {
+    const id = setInterval(() => setShowRoi(v => !v), 3000);
+    return () => clearInterval(id);
+  }, []);
+
   const priced = items.filter(i => i.ore.pricePerScu != null);
   if (loading || priced.length === 0) return null;
 
-  const COPIES   = Math.max(8, Math.ceil(2400 / Math.max(1, priced.length * 130)));
+  const COPIES   = Math.max(8, Math.ceil(2400 / Math.max(1, priced.length * 140)));
   const pct      = (100 / COPIES).toFixed(4);
-  const duration = Math.max(20, priced.length * 2.5);
+  const duration = Math.max(25, priced.length * 3);
 
   const trendColor = (t: Trend) =>
-    t === "up"   ? "#4ade80" :
-    t === "down" ? "#f87171" :
-                   "rgba(200,195,220,0.7)";
+    t === "up"   ? "#22c55e" :   // green-500
+    t === "down" ? "#ef4444" :   // red-500
+                   "#e2e8f0";    // slate-200 — bright neutral
 
   const shortName = (ore: OreCommodity) =>
     (ore.code ?? ore.name.replace(/\s*\((Raw|Ore)\)/i, "")).toUpperCase();
 
   return (
-    <div className="relative overflow-hidden border-y border-edge/30 bg-hull/50"
-      style={{ height: 34 }}>
+    <div className="relative overflow-hidden border-y border-edge/40"
+      style={{ height: 34, background: "rgba(0,0,0,0.35)" }}>
       <style>{`
         @keyframes ore-scroll {
           0%   { transform: translateX(0); }
@@ -82,37 +93,50 @@ function OreTicker() {
           will-change: transform;
         }
         .ore-ticker-track:hover { animation-play-state: paused; }
+        .ticker-val {
+          transition: opacity 0.4s ease;
+        }
       `}</style>
 
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-12 z-10"
-        style={{ background: "linear-gradient(to right, var(--color-panel,#0d0d12) 30%, transparent)" }} />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-12 z-10"
-        style={{ background: "linear-gradient(to left, var(--color-panel,#0d0d12) 30%, transparent)" }} />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-10 z-10"
+        style={{ background: "linear-gradient(to right, rgba(0,0,0,0.8), transparent)" }} />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-10 z-10"
+        style={{ background: "linear-gradient(to left, rgba(0,0,0,0.8), transparent)" }} />
+
+      {/* mode label */}
+      <div className="pointer-events-none absolute inset-y-0 right-12 z-10 flex items-center">
+        <span className="text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 border border-edge/30"
+          style={{ color: "rgba(180,170,210,0.4)", background: "rgba(0,0,0,0.5)" }}>
+          {showRoi ? "ROI %" : "PRICE"}
+        </span>
+      </div>
 
       <div className="ore-ticker-track">
         {Array.from({ length: COPIES }, (_, copy) =>
-          priced.map(({ ore, trend }, i) => (
-            <span key={`${copy}-${i}`} className="flex items-center gap-1.5 px-4 whitespace-nowrap">
-              <span className="text-[10px] font-mono font-bold tracking-widest"
-                style={{ color: "rgba(180,170,210,0.5)" }}>
+          priced.map(({ ore, trend, changePct }, i) => (
+            <span key={`${copy}-${i}`} className="flex items-center gap-2 px-5 whitespace-nowrap">
+              {/* Ore code — always bright */}
+              <span className="text-[11px] font-mono font-bold tracking-widest"
+                style={{ color: "rgba(210,205,230,0.9)" }}>
                 {shortName(ore)}
               </span>
-              {ore.pricePerScu != null ? (
-                <>
-                  <span className="text-[10px] font-mono tabular-nums"
-                    style={{ color: trendColor(trend) }}>
-                    {ore.pricePerScu.toLocaleString()}
-                  </span>
-                  {trend !== "flat" && (
-                    <span style={{ fontSize: 8, color: trendColor(trend), lineHeight: 1 }}>
-                      {trend === "up" ? "▲" : "▼"}
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className="text-[10px] font-mono" style={{ color: "rgba(150,140,170,0.3)" }}>—</span>
+              {/* Value — price or ROI % */}
+              <span className="ticker-val text-[11px] font-mono font-semibold tabular-nums"
+                style={{ color: trendColor(trend) }}>
+                {showRoi
+                  ? changePct != null
+                    ? `${changePct >= 0 ? "+" : ""}${changePct.toFixed(2)}%`
+                    : "n/a"
+                  : ore.pricePerScu!.toLocaleString()
+                }
+              </span>
+              {/* trend arrow */}
+              {trend !== "flat" && (
+                <span style={{ fontSize: 9, color: trendColor(trend), lineHeight: 1 }}>
+                  {trend === "up" ? "▲" : "▼"}
+                </span>
               )}
-              <span style={{ color: "rgba(255,255,255,0.08)", fontSize: 8 }}>|</span>
+              <span style={{ color: "rgba(255,255,255,0.1)", fontSize: 9, margin: "0 1px" }}>·</span>
             </span>
           ))
         )}
