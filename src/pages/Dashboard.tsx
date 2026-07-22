@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth, usePage } from "../App";
 import { api, Job } from "../lib/api";
 import { formatDuration, secondsLeft } from "../lib/format";
@@ -21,8 +21,6 @@ const TICKER_REFRESH_MS = 5 * 60 * 1000;
 function OreTicker() {
   const [ores, setOres]       = useState<OreCommodity[]>([]);
   const [loading, setLoading] = useState(true);
-  const trackRef = useRef<HTMLDivElement>(null);
-
   function load() {
     getOreCommodities()
       .then(data => setOres(data.filter(o => o.pricePerScu != null)))
@@ -38,40 +36,50 @@ function OreTicker() {
 
   if (loading || ores.length === 0) return null;
 
-  // Duplicate items so the scroll loops seamlessly
-  const items = [...ores, ...ores];
+  const duration = Math.max(30, ores.length * 3);
 
   return (
-    <div className="relative overflow-hidden border-b border-edge/40 bg-hull/30"
-      style={{ height: 26 }}>
+    <div className="relative overflow-hidden border-y border-edge/30 bg-hull/40"
+      style={{ height: 36 }}>
       <style>{`
         @keyframes ore-scroll {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
         .ore-ticker-track {
-          animation: ore-scroll ${Math.max(20, ores.length * 4)}s linear infinite;
+          display: flex;
+          align-items: center;
+          height: 100%;
+          width: max-content;
+          animation: ore-scroll ${duration}s linear infinite;
           will-change: transform;
         }
         .ore-ticker-track:hover { animation-play-state: paused; }
       `}</style>
 
       {/* left/right fade masks */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-12 z-10"
-        style={{ background: "linear-gradient(to right, var(--color-hull,#0d0d12), transparent)" }} />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-12 z-10"
-        style={{ background: "linear-gradient(to left, var(--color-hull,#0d0d12), transparent)" }} />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 z-10"
+        style={{ background: "linear-gradient(to right, var(--color-hull,#0d0d12) 40%, transparent)" }} />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 z-10"
+        style={{ background: "linear-gradient(to left, var(--color-hull,#0d0d12) 40%, transparent)" }} />
 
-      <div ref={trackRef} className="ore-ticker-track flex items-center h-full gap-0 whitespace-nowrap">
-        {items.map((ore, i) => (
-          <span key={i} className="flex items-center gap-1.5 px-4">
-            <span className="text-[10px] font-mono font-semibold text-muted/60 uppercase tracking-widest">
-              {ore.name.replace(" (Raw)", "").replace(" (Ore)", "")}
-            </span>
-            <span className="text-[10px] font-mono text-quant tabular-nums">
-              {ore.pricePerScu!.toLocaleString()} aUEC
-            </span>
-            <span className="text-muted/20 text-[10px]">·</span>
+      {/* Track: duplicated for seamless loop — second half must be identical to first */}
+      <div className="ore-ticker-track">
+        {[0, 1].map(copy => (
+          <span key={copy} style={{ display: "contents" }}>
+            {ores.map((ore, i) => (
+              <span key={`${copy}-${i}`} className="flex items-center gap-2 px-5 whitespace-nowrap">
+                <span className="text-[11px] font-mono font-semibold tracking-wider"
+                  style={{ color: "var(--color-muted, #666)" }}>
+                  {ore.name.replace(/\s*\((Raw|Ore)\)/i, "").toUpperCase()}
+                </span>
+                <span className="text-[11px] font-mono tabular-nums"
+                  style={{ color: "var(--color-quant, #7fffb2)" }}>
+                  {ore.pricePerScu!.toLocaleString()} aUEC
+                </span>
+                <span style={{ color: "var(--color-edge, #333)", fontSize: 10 }}>▪</span>
+              </span>
+            ))}
           </span>
         ))}
       </div>
