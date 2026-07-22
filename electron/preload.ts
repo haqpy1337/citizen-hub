@@ -35,7 +35,8 @@ contextBridge.exposeInMainWorld("api", {
   maximizeWindow: () => ipcRenderer.invoke("window:maximize"),
   closeWindow:    () => ipcRenderer.invoke("window:close"),
   getVersion: () => ipcRenderer.invoke("app:version"),
-  getZoom: () => ipcRenderer.invoke("app:getZoom"),
-  setZoom: (factor: number) => ipcRenderer.invoke("app:setZoom", factor),
+  getZoom:     () => ipcRenderer.invoke("app:getZoom"),
+  getAutoZoom: () => ipcRenderer.invoke("app:getAutoZoom"),
+  setZoom: (factor: number | null) => ipcRenderer.invoke("app:setZoom", factor),
   dbPing: () => ipcRenderer.invoke("db:ping"),
 });

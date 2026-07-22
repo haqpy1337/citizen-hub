@@ -15,6 +15,7 @@ export default function SettingsModal({ open, onClose, gearRef }: Props) {
   const prevOpen    = useRef(false);
 
   const [zoom, setZoom]             = useState(1);
+  const [autoZoom, setAutoZoom]     = useState(1);
   const [volume, setVolume]         = useState(() => parseInt(localStorage.getItem("ch-volume") ?? "50"));
   const [appVersion, setAppVersion] = useState<string | null>(null);
   const [updateState, setUpdateState] = useState<UpdateState>("idle");
@@ -23,6 +24,7 @@ export default function SettingsModal({ open, onClose, gearRef }: Props) {
   useEffect(() => {
     window.api.getVersion().then(setAppVersion).catch(() => {});
     window.api.getZoom().then(setZoom).catch(() => {});
+    window.api.getAutoZoom().then(setAutoZoom).catch(() => {});
     window.api.onUpdateAvailable((v) => { setUpdateVersion(v); setUpdateState("available"); });
     window.api.onUpdateDownloaded((v) => { setUpdateVersion(v); setUpdateState("downloaded"); });
     window.api.onUpdateError(() => setUpdateState("error"));
@@ -64,6 +66,10 @@ export default function SettingsModal({ open, onClose, gearRef }: Props) {
   function handleZoom(v: number) {
     setZoom(v);
     window.api.setZoom(v);
+  }
+  function resetZoom() {
+    setZoom(autoZoom);
+    window.api.setZoom(null); // clears override → uses auto
   }
   function handleVolume(v: number) {
     setVolume(v);
@@ -119,10 +125,13 @@ export default function SettingsModal({ open, onClose, gearRef }: Props) {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm text-ink">UI Scale</label>
-                  <span className="text-xs font-mono text-quant">{Math.round(zoom * 100)}%</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-muted/40">Auto: {Math.round(autoZoom * 100)}%</span>
+                    <span className="text-xs font-mono text-quant">{Math.round(zoom * 100)}%</span>
+                  </div>
                 </div>
                 <input
-                  type="range" min={0.7} max={1.4} step={0.05}
+                  type="range" min={0.5} max={1.5} step={0.05}
                   value={zoom}
                   onChange={e => handleZoom(parseFloat(e.target.value))}
                   className="w-full accent-quant"
@@ -132,10 +141,10 @@ export default function SettingsModal({ open, onClose, gearRef }: Props) {
                 </div>
               </div>
               <button
-                onClick={() => handleZoom(1)}
+                onClick={resetZoom}
                 className="self-start text-xs font-mono text-muted hover:text-quant transition-colors"
               >
-                Reset to 100%
+                Reset to Auto ({Math.round(autoZoom * 100)}%)
               </button>
             </div>
           </section>

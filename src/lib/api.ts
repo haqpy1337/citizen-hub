@@ -62,7 +62,8 @@ declare global {
       closeWindow(): Promise<void>;
       getVersion(): Promise<string>;
       getZoom(): Promise<number>;
-      setZoom(factor: number): Promise<void>;
+      getAutoZoom(): Promise<number>;
+      setZoom(factor: number | null): Promise<void>;
       dbPing(): Promise<boolean>;
     };
   }

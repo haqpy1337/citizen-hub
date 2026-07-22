@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog, net, protocol } from "electron";
+import { app, BrowserWindow, ipcMain, shell, dialog, net, protocol, screen } from "electron";
 
 // Register custom protocol before app is ready so localStorage persists across restarts
 // (random HTTP port = different origin each time = localStorage wiped)
@@ -22,6 +22,20 @@ interface Job { id: string; stationId: number | null; stationName: string; syste
 let mainWindow: BrowserWindow | null = null;
 let isInstallingUpdate = false;
 const sessions = new Map<string, string>(); // token → userId
+
+// Calculated once on startup; used as default zoom if user hasn't set one
+let autoZoom = 1;
+
+function calcAutoZoom(): number {
+  const { bounds } = screen.getPrimaryDisplay();
+  // Normalise relative to 1920×1080 baseline — take the smaller axis so nothing clips
+  const raw = Math.min(bounds.width / 1920, bounds.height / 1080);
+  return Math.max(0.65, Math.min(1.4, raw));
+}
+
+function effectiveZoom(): number {
+  return settings.zoom ?? autoZoom;
+}
 let db: Database;
 let dbPath: string;
 
@@ -297,11 +311,15 @@ function registerIpc() {
 
   ipcMain.handle("window:expand", () => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
-    if (settings.zoom && settings.zoom !== 1) mainWindow.webContents.setZoomFactor(settings.zoom);
+    const { bounds } = screen.getPrimaryDisplay();
+    // 90 % of logical screen, capped so nothing looks stretched on huge monitors
+    const w = Math.round(Math.min(bounds.width  * 0.90, 1600));
+    const h = Math.round(Math.min(bounds.height * 0.90, 1000));
     mainWindow.setResizable(true);
-    mainWindow.setMinimumSize(900, 600);
-    mainWindow.setSize(1100, 720, false);
+    mainWindow.setMinimumSize(Math.round(w * 0.6), Math.round(h * 0.6));
+    mainWindow.setSize(w, h, false);
     mainWindow.center();
+    mainWindow.webContents.setZoomFactor(effectiveZoom());
     mainWindow.maximize();
   });
 
@@ -313,11 +331,16 @@ function registerIpc() {
   });
   ipcMain.handle("window:close", () => mainWindow?.close());
 
-  ipcMain.handle("app:getZoom", () => settings.zoom ?? 1);
-  ipcMain.handle("app:setZoom", (_e, factor: number) => {
-    settings.zoom = Math.max(0.5, Math.min(2, factor));
+  ipcMain.handle("app:getZoom",     () => effectiveZoom());
+  ipcMain.handle("app:getAutoZoom", () => autoZoom);
+  ipcMain.handle("app:setZoom", (_e, factor: number | null) => {
+    if (factor === null) {
+      delete settings.zoom;   // reset to auto
+    } else {
+      settings.zoom = Math.max(0.5, Math.min(2, factor));
+    }
     saveSettings();
-    mainWindow?.webContents.setZoomFactor(settings.zoom);
+    mainWindow?.webContents.setZoomFactor(effectiveZoom());
   });
 
   ipcMain.handle("db:ping", () => {
@@ -560,8 +583,13 @@ function registerIpc() {
 // ── Window ───────────────────────────────────────────────────────────────────
 
 async function createWindow() {
+  const { bounds } = screen.getPrimaryDisplay();
+
+  // Boot window: circular design — scale relative to screen height, baseline 700 @ 1080p
+  const bootSize = Math.round(Math.max(500, Math.min(700, bounds.height * 0.65)));
+
   mainWindow = new BrowserWindow({
-    width: 700, height: 700,
+    width: bootSize, height: bootSize,
     resizable: false,
     center: true,
     frame: false,
@@ -574,6 +602,11 @@ async function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
     },
+  });
+
+  // Apply zoom: user override wins; otherwise auto-computed baseline
+  mainWindow.webContents.once("did-finish-load", () => {
+    mainWindow?.webContents.setZoomFactor(effectiveZoom());
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: "deny" }; });
@@ -639,6 +672,7 @@ process.on("unhandledRejection", (reason) => {
 app.whenReady().then(async () => {
   try {
     loadSettings();
+    autoZoom = calcAutoZoom();   // screen is available after app is ready
     await initDb();
     registerIpc();
 
