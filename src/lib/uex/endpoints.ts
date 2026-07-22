@@ -195,6 +195,7 @@ export async function getOreCommodities(): Promise<OreCommodity[]> {
       return {
         id: c.id,
         name: c.name,
+        code: c.code ?? null,
         pricePerScu: fromPrices ?? fromCommodity,
       };
     })

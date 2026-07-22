@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth, usePage } from "../App";
 import { api, Job } from "../lib/api";
 import { formatDuration, secondsLeft } from "../lib/format";
@@ -18,14 +18,30 @@ function useNow(intervalMs = 1000) {
 
 const TICKER_REFRESH_MS = 5 * 60 * 1000;
 
+type Trend = "up" | "down" | "flat";
+interface TickerOre { ore: OreCommodity; trend: Trend }
+
 function OreTicker() {
-  const [ores, setOres]       = useState<OreCommodity[]>([]);
+  const [items, setItems]     = useState<TickerOre[]>([]);
   const [loading, setLoading] = useState(true);
+  const prevPrices            = useRef<Map<number, number>>(new Map());
+
   function load() {
-    getOreCommodities()
-      .then(data => setOres(data.filter(o => o.pricePerScu != null)))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    getOreCommodities().then(data => {
+      const prev = prevPrices.current;
+      const next = new Map<number, number>();
+      const result: TickerOre[] = data.map(ore => {
+        let trend: Trend = "flat";
+        if (ore.pricePerScu != null) {
+          const old = prev.get(ore.id);
+          if (old != null) trend = ore.pricePerScu > old ? "up" : ore.pricePerScu < old ? "down" : "flat";
+          next.set(ore.id, ore.pricePerScu);
+        }
+        return { ore, trend };
+      });
+      prevPrices.current = next;
+      setItems(result);
+    }).catch(() => {}).finally(() => setLoading(false));
   }
 
   useEffect(() => {
@@ -34,17 +50,23 @@ function OreTicker() {
     return () => clearInterval(id);
   }, []);
 
-  if (loading || ores.length === 0) return null;
+  if (loading || items.length === 0) return null;
 
-  // Enough copies so the track is always wider than the viewport.
-  // We animate by exactly 1/COPIES of the total width → seamless loop.
-  const COPIES = Math.max(8, Math.ceil(2400 / Math.max(1, ores.length * 160)));
-  const pct    = (100 / COPIES).toFixed(4);
-  const duration = Math.max(20, ores.length * 2.5);
+  const COPIES   = Math.max(8, Math.ceil(2400 / Math.max(1, items.length * 130)));
+  const pct      = (100 / COPIES).toFixed(4);
+  const duration = Math.max(20, items.length * 2.5);
+
+  const trendColor = (t: Trend) =>
+    t === "up"   ? "#4ade80" :
+    t === "down" ? "#f87171" :
+                   "rgba(200,195,220,0.7)";
+
+  const shortName = (ore: OreCommodity) =>
+    (ore.code ?? ore.name.replace(/\s*\((Raw|Ore)\)/i, "")).toUpperCase();
 
   return (
-    <div className="relative overflow-hidden border-y border-edge/30 bg-hull/40"
-      style={{ height: 36 }}>
+    <div className="relative overflow-hidden border-b border-edge/30 bg-hull/50"
+      style={{ height: 34 }}>
       <style>{`
         @keyframes ore-scroll {
           0%   { transform: translateX(0); }
@@ -61,24 +83,35 @@ function OreTicker() {
         .ore-ticker-track:hover { animation-play-state: paused; }
       `}</style>
 
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 z-10"
-        style={{ background: "linear-gradient(to right, var(--color-hull,#0d0d12) 40%, transparent)" }} />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 z-10"
-        style={{ background: "linear-gradient(to left, var(--color-hull,#0d0d12) 40%, transparent)" }} />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-12 z-10"
+        style={{ background: "linear-gradient(to right, var(--color-panel,#0d0d12) 30%, transparent)" }} />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-12 z-10"
+        style={{ background: "linear-gradient(to left, var(--color-panel,#0d0d12) 30%, transparent)" }} />
 
       <div className="ore-ticker-track">
         {Array.from({ length: COPIES }, (_, copy) =>
-          ores.map((ore, i) => (
-            <span key={`${copy}-${i}`} className="flex items-center gap-2 px-5 whitespace-nowrap">
-              <span className="text-[11px] font-mono font-semibold tracking-wider"
-                style={{ color: "var(--color-muted, #666)" }}>
-                {ore.name.replace(/\s*\((Raw|Ore)\)/i, "").toUpperCase()}
+          items.map(({ ore, trend }, i) => (
+            <span key={`${copy}-${i}`} className="flex items-center gap-1.5 px-4 whitespace-nowrap">
+              <span className="text-[10px] font-mono font-bold tracking-widest"
+                style={{ color: "rgba(180,170,210,0.5)" }}>
+                {shortName(ore)}
               </span>
-              <span className="text-[11px] font-mono tabular-nums"
-                style={{ color: "var(--color-quant, #7fffb2)" }}>
-                {ore.pricePerScu!.toLocaleString()} aUEC
-              </span>
-              <span style={{ color: "var(--color-edge, #333)", fontSize: 10 }}>▪</span>
+              {ore.pricePerScu != null ? (
+                <>
+                  <span className="text-[10px] font-mono tabular-nums"
+                    style={{ color: trendColor(trend) }}>
+                    {ore.pricePerScu.toLocaleString()}
+                  </span>
+                  {trend !== "flat" && (
+                    <span style={{ fontSize: 8, color: trendColor(trend), lineHeight: 1 }}>
+                      {trend === "up" ? "▲" : "▼"}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-[10px] font-mono" style={{ color: "rgba(150,140,170,0.3)" }}>—</span>
+              )}
+              <span style={{ color: "rgba(255,255,255,0.08)", fontSize: 8 }}>|</span>
             </span>
           ))
         )}
@@ -365,15 +398,15 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col gap-4" style={{ height: "100%", minHeight: 0 }}>
+      {/* Ore ticker — edge to edge, above the heading */}
+      <div className="shrink-0 -mx-6 -mt-6 mb-2">
+        <OreTicker />
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <h1 className="eyebrow">Dashboard</h1>
         <ServerStatusPanel />
-      </div>
-
-      {/* Ore price ticker */}
-      <div className="shrink-0 -mx-4 -mt-2">
-        <OreTicker />
       </div>
 
       {/* 2-column layout */}

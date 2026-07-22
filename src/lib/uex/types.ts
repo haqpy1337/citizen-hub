@@ -145,6 +145,7 @@ export interface RefineryMethod {
 export interface OreCommodity {
   id: number;
   name: string;
+  code: string | null;
   /** Average sell price per SCU in UEC, if known. */
   pricePerScu: number | null;
 }
