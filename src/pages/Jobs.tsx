@@ -30,15 +30,12 @@ function stationYieldFor(station: RefineryStation | null, commodityId: number | 
   return hit?.yieldPercent != null ? String(hit.yieldPercent) : "";
 }
 
-/** Expected refined output: qty × (yield/100) × (quality/100) */
-function calcOutput(qty: string, yieldPct: string, quality: string): string | null {
-  const q  = parseFloat(qty);
-  const y  = parseFloat(yieldPct);
-  const qu = parseFloat(quality);
+/** Expected refined output: qty × (yield/100) — quality is informational only */
+function calcOutput(qty: string, yieldPct: string): string | null {
+  const q = parseFloat(qty);
+  const y = parseFloat(yieldPct);
   if (!isFinite(q) || q <= 0 || !isFinite(y) || y <= 0) return null;
-  const base = q * (y / 100);
-  const out  = isFinite(qu) && qu > 0 ? base * (qu / 100) : base;
-  return out.toFixed(2);
+  return (q * (y / 100)).toFixed(2);
 }
 
 export default function Jobs() {
@@ -198,7 +195,7 @@ export default function Jobs() {
             <p className="text-[10px] font-mono uppercase tracking-widest text-muted/70">Materials</p>
 
             {materials.map(mat => {
-              const output = calcOutput(mat.quantity, mat.yieldPercent, mat.quality);
+              const output = calcOutput(mat.quantity, mat.yieldPercent);
               return (
                 <div key={mat._key} className="flex flex-col gap-1.5">
                   <div className="grid grid-cols-[1fr_72px_68px_72px_72px_28px] gap-2 items-end">
@@ -245,10 +242,10 @@ export default function Jobs() {
                       <input type="number" className="field" value={mat.yieldPercent} min={0} max={100}
                         onChange={e => updateMaterial(mat._key, { yieldPercent: e.target.value })} placeholder="—" />
                     </div>
-                    {/* Quality % */}
+                    {/* Quality (1–1000, informational) */}
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-mono uppercase tracking-widest text-muted">Quality %</label>
-                      <input type="number" className="field" value={mat.quality} min={0} max={100}
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-muted">Quality</label>
+                      <input type="number" className="field" value={mat.quality} min={1} max={1000}
                         onChange={e => updateMaterial(mat._key, { quality: e.target.value })} placeholder="—" />
                     </div>
                     {/* Remove */}
@@ -261,9 +258,7 @@ export default function Jobs() {
                     <p className="text-[10px] font-mono text-muted/50 pl-1">
                       Expected output:{" "}
                       <span className="text-quant font-semibold">{output} {mat.unit}</span>
-                      {mat.quality
-                        ? <span className="ml-1">({mat.yieldPercent}% yield × {mat.quality}% quality)</span>
-                        : <span className="ml-1">({mat.yieldPercent}% yield)</span>}
+                      <span className="ml-1">({mat.yieldPercent}% yield)</span>
                     </p>
                   )}
                 </div>
