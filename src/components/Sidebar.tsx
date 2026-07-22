@@ -231,17 +231,23 @@ export default function Sidebar() {
             </div>
           </div>
 
-          {/* Settings gear */}
-          <div className="pt-1 border-t border-edge/50">
+          {/* Settings gear + close button */}
+          <div className="pt-1 border-t border-edge/50 flex items-center gap-1">
             <button
               onClick={() => setSettingsOpen(o => !o)}
-              className="w-full flex items-center gap-2 px-2 py-1.5 text-muted hover:text-quant transition-colors text-xs font-mono"
+              className="flex-1 flex items-center gap-2 px-2 py-1.5 text-muted hover:text-quant transition-colors text-xs font-mono"
             >
               <span ref={gearIconRef} className="shrink-0" style={{ display: "inline-flex", width: 15, height: 15 }}>
                 <GearIcon className="w-full h-full" />
               </span>
               <span className="uppercase tracking-wide text-[10px] truncate">Settings</span>
             </button>
+            <button
+              onClick={() => window.api.closeWindow().catch(() => {})}
+              className="flex items-center justify-center px-2 py-1.5 text-muted/40 hover:text-red-400 transition-colors"
+              title="App beenden"
+              style={{ fontSize: 15, lineHeight: 1 }}
+            >✕</button>
           </div>
         </div>
       </aside>

@@ -65,7 +65,7 @@ function OreTicker() {
     (ore.code ?? ore.name.replace(/\s*\((Raw|Ore)\)/i, "")).toUpperCase();
 
   return (
-    <div className="relative overflow-hidden border-b border-edge/30 bg-hull/50"
+    <div className="relative overflow-hidden border-y border-edge/30 bg-hull/50"
       style={{ height: 34 }}>
       <style>{`
         @keyframes ore-scroll {

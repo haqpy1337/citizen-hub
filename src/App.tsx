@@ -80,35 +80,9 @@ export default function App() {
         <PageContext.Provider value={{ page, setPage }}>
           <div className="flex bg-void overflow-hidden" style={{ height: "100vh" }}>
             <Sidebar />
-            <div className="relative flex flex-col flex-1 overflow-hidden">
-              {/* Window controls — top right, above all content */}
-              <div
-                className="absolute top-0 right-0 z-50 flex items-center gap-0.5 px-3"
-                style={{ height: 34, WebkitAppRegion: "no-drag" } as React.CSSProperties}
-              >
-                <button
-                  onClick={() => window.api.minimizeWindow().catch(() => {})}
-                  className="w-7 h-7 flex items-center justify-center opacity-25 hover:opacity-70 transition-opacity text-muted hover:text-ink"
-                  title="Minimieren"
-                  style={{ fontSize: 16, lineHeight: 1, paddingBottom: 2 }}
-                >−</button>
-                <button
-                  onClick={() => window.api.maximizeWindow().catch(() => {})}
-                  className="w-7 h-7 flex items-center justify-center opacity-25 hover:opacity-70 transition-opacity text-muted hover:text-ink"
-                  title="Maximieren"
-                  style={{ fontSize: 10, lineHeight: 1 }}
-                >□</button>
-                <button
-                  onClick={() => window.api.closeWindow().catch(() => {})}
-                  className="w-7 h-7 flex items-center justify-center opacity-25 hover:opacity-90 transition-all text-muted hover:text-red-400"
-                  title="Schließen"
-                  style={{ fontSize: 15, lineHeight: 1 }}
-                >×</button>
-              </div>
-              <main key={page} className="page-enter flex-1 overflow-y-auto p-6">
-                {pageMap[page]}
-              </main>
-            </div>
+            <main key={page} className="page-enter flex-1 overflow-y-auto p-6">
+              {pageMap[page]}
+            </main>
           </div>
         </PageContext.Provider>
       </AuthContext.Provider>

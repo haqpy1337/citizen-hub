@@ -166,8 +166,8 @@ export async function getOreCommodities(): Promise<OreCommodity[]> {
     uexFetch<UexCommodityPrice>("commodities_prices").catch(() => [] as UexCommodityPrice[]),
   ]);
 
-  // is_refinable === 1: raw ores that go INTO a refinery
-  const ores = commodities.filter((c) => c.is_refinable === 1);
+  // Include anything raw/mineable/refinable; fall back to all if nothing matches
+  const ores = commodities.filter(c => c.is_refinable === 1 || c.is_raw === 1 || c.is_extractable === 1);
   const list = ores.length > 0 ? ores : commodities;
 
   // Build average sell price per commodity from terminal-specific prices
