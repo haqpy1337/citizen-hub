@@ -212,7 +212,7 @@ async function netGet(url: string, extraHeaders: Record<string, string> = {}, ti
 async function netPost(url: string, body: unknown, extraHeaders: Record<string, string> = {}, timeoutMs = 8000): Promise<string | null> {
   const fetchP = net.fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Accept": "application/json", ...HEADERS, ...extraHeaders },
+    headers: { ...HEADERS, "Content-Type": "application/json", "Accept": "application/json", ...extraHeaders },
     body: JSON.stringify(body),
   }).then(r => r.ok ? r.text() : null).catch(() => null);
   const timeoutP = new Promise<null>(resolve => setTimeout(() => resolve(null), timeoutMs));
