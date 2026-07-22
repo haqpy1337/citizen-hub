@@ -331,11 +331,38 @@ function registerIpc() {
       return "LIVE";
     }
 
-    // RSI Hub API — returns the latest featured comm-link articles as HTML fragment
-    const body = JSON.stringify({});
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 14000);
-    let hubHtml = "";
+    function extractFromHtml(html: string): PatchItem[] {
+      const items: PatchItem[] = [];
+      const seen = new Set<string>();
+      // Match any anchor whose href points to a comm-link, capture inline text
+      const linkRx = /href="(\/(?:en\/)?comm-link\/[^"?#]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+      let m: RegExpExecArray | null;
+      while ((m = linkRx.exec(html)) !== null) {
+        const slug  = m[1].replace(/^\/en\//, "/");
+        const title = m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        if (!title || seen.has(slug)) continue;
+        // Only keep patch note articles
+        if (!/(?:Alpha|PTU|EPTU|Live[\s._-]?Update|Patch)\s*[\d.]/i.test(title) &&
+            !/(?:-Alpha-|-PTU-|-EPTU-|-Live-|-Patch-)[\d]/i.test(slug)) continue;
+        seen.add(slug);
+        items.push({
+          title,
+          link: `https://robertsspaceindustries.com${slug}`,
+          date: "",
+          channel: channelFromTitle(title + slug),
+        });
+      }
+      return items;
+    }
+
+    // Primary: scrape patch-notes listing page directly
+    const listHtml = await netGet("https://robertsspaceindustries.com/comm-link/patch-notes");
+    if (listHtml) {
+      const items = extractFromHtml(listHtml);
+      if (items.length > 0) return { ok: true, items };
+    }
+
+    // Fallback: RSI Hub API
     try {
       const res = await net.fetch("https://robertsspaceindustries.com/api/hub/getCommlinkItems", {
         method: "POST",
@@ -343,41 +370,18 @@ function registerIpc() {
           "Content-Type": "application/json",
           "Accept": "application/json",
           "X-Rsi-Token": "",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         },
-        body,
-        signal: controller.signal as AbortSignal,
+        body: JSON.stringify({}),
       });
       if (res.ok) {
         const json = await res.json() as { success: number; data: string };
-        if (json.success === 1) hubHtml = json.data;
+        if (json.success === 1 && json.data) {
+          const items = extractFromHtml(json.data);
+          if (items.length > 0) return { ok: true, items };
+        }
       }
-    } catch { /* timeout or network error */ } finally { clearTimeout(timer); }
-
-    if (hubHtml) {
-      const items: PatchItem[] = [];
-      // Extract link+title pairs together from each card to avoid index misalignment
-      const cardRx = /href="(\/comm-link\/[^"]+)"[\s\S]*?<div class="title[^"]*">([\s\S]*?)<\/div>/g;
-      let m: RegExpExecArray | null;
-      const pairs: { slug: string; title: string }[] = [];
-      while ((m = cardRx.exec(hubHtml)) !== null) {
-        const slug = m[1];
-        const title = m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-        if (!pairs.some(p => p.slug === slug)) pairs.push({ slug, title });
-      }
-      for (const { slug, title } of pairs) {
-        // Filter for patch note articles: slugs containing Alpha/PTU/EPTU + version number
-        if (!/(?:Alpha|PTU|EPTU|Live.Update|Patch)\s*[\d.]/i.test(title) &&
-            !/(?:-Alpha-|-PTU-|-EPTU-|-Live-|-Patch-)[\d]/i.test(slug)) continue;
-        items.push({
-          title,
-          link: `https://robertsspaceindustries.com${slug}`,
-          date: "",
-          channel: channelFromTitle(title || slug),
-        });
-      }
-      if (items.length > 0) return { ok: true, items };
-    }
+    } catch { /* ignore */ }
 
     return { ok: false, items: [] };
   });
@@ -411,21 +415,30 @@ function registerIpc() {
     const indexHtml = await netGet("https://robertsspaceindustries.com/en/comm-link/transmission/");
     if (!indexHtml) return { ok: false, item: null };
 
-    // Find TWISK article links — RSI uses /comm-link/ (no /en/ prefix) in href attributes
-    const slugRe = /href="(\/(?:en\/)?comm-link\/[^"]*[Tt]his-[Ww]eek[^"]*)"/g;
+    // Find TWISK article links — prefer "This Week" in URL/title, fallback to any transmission article
+    const slugRe = /href="(\/(?:en\/)?comm-link\/[^"?#]+)"[^>]*>([^<]*(?:[Tt]his\s*[Ww]eek|TWIS)[^<]*)</g;
     const slugs: string[] = [];
     let sm: RegExpExecArray | null;
     while ((sm = slugRe.exec(indexHtml)) !== null) {
-      const s = sm[1].split("?")[0];
+      const s = sm[1].replace(/^\/en\//, "/").split("?")[0];
       if (!slugs.includes(s)) slugs.push(s);
     }
 
-    // Also try generic transmission article links from this page
+    // Fallback 1: TWISK keyword in the URL itself
     if (slugs.length === 0) {
-      const genericRe = /href="(\/(?:en\/)?comm-link\/transmission\/\d+[^"]*)"/g;
+      const urlRe = /href="(\/(?:en\/)?comm-link\/[^"]*[Tt]his-[Ww]eek[^"?#]*)"/g;
+      while ((sm = urlRe.exec(indexHtml)) !== null) {
+        const s = sm[1].replace(/^\/en\//, "/").split("?")[0];
+        if (!slugs.includes(s)) slugs.push(s);
+      }
+    }
+
+    // Fallback 2: any transmission article (first = newest)
+    if (slugs.length === 0) {
+      const genericRe = /href="(\/(?:en\/)?comm-link\/transmission\/\d[^"?#]*)"/g;
       let gm: RegExpExecArray | null;
       while ((gm = genericRe.exec(indexHtml)) !== null) {
-        const s = gm[1].split("?")[0];
+        const s = gm[1].replace(/^\/en\//, "/").split("?")[0];
         if (!slugs.includes(s)) slugs.push(s);
       }
     }

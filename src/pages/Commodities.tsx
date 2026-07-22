@@ -156,7 +156,7 @@ function LocationTable({
                 topSell || topBuy ? "bg-quant/[0.04]" : "hover:bg-hull/40",
               ].join(" ")}>
                 <td className="px-3 py-2 font-medium text-ink">{loc.terminalName}</td>
-                <td className="px-3 py-2 text-muted">{loc.system ?? "—"}</td>
+                <td className="px-3 py-2 text-ink/70">{loc.system ?? "—"}</td>
                 <td className="px-3 py-2 text-muted">{loc.station ?? "—"}</td>
                 <td className="px-3 py-2 text-muted/60">{loc.orbit ?? "—"}</td>
                 <td className="px-3 py-2 text-muted/60">{loc.faction ?? "—"}</td>
@@ -166,7 +166,7 @@ function LocationTable({
                         {loc.priceSell.toLocaleString()}
                         {topSell && <span className="ml-1 text-[8px] opacity-50">★</span>}
                       </span>
-                    : <span className="text-muted/25">—</span>}
+                    : <span className="text-muted/30">—</span>}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums font-mono text-muted/60 text-[10px]">
                   {loc.scuSellAvg != null
@@ -175,10 +175,10 @@ function LocationTable({
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums font-mono">
                   {loc.priceBuy != null
-                    ? <span className={topBuy ? "text-amber font-bold" : "text-muted"}>
+                    ? <span className={topBuy ? "text-amber font-bold" : "text-ink"}>
                         {loc.priceBuy.toLocaleString()}
                       </span>
-                    : <span className="text-muted/25">—</span>}
+                    : <span className="text-muted/30">—</span>}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums font-mono text-muted/60 text-[10px]">
                   {loc.scuBuyAvg != null
