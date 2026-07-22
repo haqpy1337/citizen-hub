@@ -191,11 +191,17 @@ function HistorySection({ jobs, loading, onDelete }: {
                   </td>
                   <td className="px-4 py-3 text-muted text-xs">{job.method ?? "—"}</td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-col gap-1">
                       {job.materials.length === 0 ? (
                         <span className="text-muted text-xs">—</span>
                       ) : job.materials.map(m => (
-                        <span key={m.id} className="tag">{m.name}</span>
+                        <span key={m.id} className="text-xs text-ink">
+                          {m.name}
+                          <span className="text-muted ml-1 tabular-nums">{m.quantity} {m.unit}</span>
+                          {m.yieldPercent != null && (
+                            <span className="text-quant/60 ml-1">{m.yieldPercent}%</span>
+                          )}
+                        </span>
                       ))}
                     </div>
                   </td>

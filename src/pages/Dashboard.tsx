@@ -64,8 +64,9 @@ function Alerts({ jobs }: { jobs: Job[] }) {
   const { setPage } = usePage();
   const now = useNow();
 
+  // Only show running jobs whose timer has expired — "collected"/"done" never appear
   const readyJobs = jobs.filter(j =>
-    j.status === "done" || (j.status === "running" && secondsLeft(j.finishesAt, now) <= 0)
+    j.status === "running" && secondsLeft(j.finishesAt, now) <= 0
   );
   const soonJobs  = jobs.filter(j =>
     j.status === "running" &&
@@ -92,7 +93,14 @@ function Alerts({ jobs }: { jobs: Job[] }) {
           <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_2px_rgba(74,222,128,0.4)] shrink-0 animate-pulse" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-green-400 leading-tight">Ready to collect</p>
-            <p className="text-[10px] font-mono text-muted/60 truncate mt-0.5">{job.stationName} · {job.materials.map(m => m.name).join(", ")}</p>
+            <p className="text-[10px] font-mono text-muted/60 truncate mt-0.5">{job.stationName}</p>
+            <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+              {job.materials.map(m => (
+                <span key={m.id} className="text-[10px] font-mono text-muted/50">
+                  {m.name} <span className="text-quant/70">{m.quantity} {m.unit}</span>
+                </span>
+              ))}
+            </div>
           </div>
           <span className="text-[10px] font-mono text-muted/40 shrink-0">Refinery Jobs →</span>
         </button>
@@ -110,7 +118,14 @@ function Alerts({ jobs }: { jobs: Job[] }) {
               <p className="text-sm font-semibold text-amber-400 leading-tight">
                 Finishing in {formatDuration(left)}
               </p>
-              <p className="text-[10px] font-mono text-muted/60 truncate mt-0.5">{job.stationName} · {job.materials.map(m => m.name).join(", ")}</p>
+              <p className="text-[10px] font-mono text-muted/60 truncate mt-0.5">{job.stationName}</p>
+              <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                {job.materials.map(m => (
+                  <span key={m.id} className="text-[10px] font-mono text-muted/50">
+                    {m.name} <span className="text-amber-400/70">{m.quantity} {m.unit}</span>
+                  </span>
+                ))}
+              </div>
             </div>
             <span className="text-[10px] font-mono text-muted/40 shrink-0">Refinery Jobs →</span>
           </button>
