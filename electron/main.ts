@@ -331,25 +331,46 @@ function registerIpc() {
       return "LIVE";
     }
 
+    function titleFromSlug(slug: string): string {
+      // e.g. "/comm-link/patch-notes/19573-Star-Citizen-Alpha-4-0-1" → "Star Citizen Alpha 4.0.1"
+      const part = slug.split("/").pop() ?? "";
+      // strip leading numeric ID
+      const noId = part.replace(/^\d+-/, "");
+      // replace dashes with spaces, then fix version numbers (4-0-1 → 4.0.1)
+      return noId
+        .replace(/-/g, " ")
+        .replace(/(\d+) (\d+) (\d+)/g, "$1.$2.$3")
+        .replace(/(\d+) (\d+)/g, "$1.$2")
+        .trim();
+    }
+
+    function decodeEntities(s: string): string {
+      return s
+        .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+        .replace(/&apos;/g, "'").replace(/&rsquo;/g, "'").replace(/&lsquo;/g, "'")
+        .replace(/&mdash;/g, "—").replace(/&ndash;/g, "–");
+    }
+
     function extractFromHtml(html: string): PatchItem[] {
       const items: PatchItem[] = [];
       const seen = new Set<string>();
-      // Match any anchor whose href points to a comm-link, capture inline text
-      const linkRx = /href="(\/(?:en\/)?comm-link\/[^"?#]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+      // Only extract the href — title comes from the slug, not the noisy anchor content
+      const hrefRx = /href="(\/(?:en\/)?comm-link\/patch-notes\/[^"?#]+)"/gi;
       let m: RegExpExecArray | null;
-      while ((m = linkRx.exec(html)) !== null) {
-        const slug  = m[1].replace(/^\/en\//, "/");
-        const title = m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-        if (!title || seen.has(slug)) continue;
-        // Only keep patch note articles
-        if (!/(?:Alpha|PTU|EPTU|Live[\s._-]?Update|Patch)\s*[\d.]/i.test(title) &&
-            !/(?:-Alpha-|-PTU-|-EPTU-|-Live-|-Patch-)[\d]/i.test(slug)) continue;
+      while ((m = hrefRx.exec(html)) !== null) {
+        const slug = m[1].replace(/^\/en\//, "/");
+        if (seen.has(slug)) continue;
+        const title = decodeEntities(titleFromSlug(slug));
+        if (!title) continue;
+        // Only actual patch notes: must contain a version number
+        if (!/\d+\.\d+/.test(title) && !/(?:Alpha|PTU|EPTU|Patch)/i.test(title)) continue;
         seen.add(slug);
         items.push({
           title,
           link: `https://robertsspaceindustries.com${slug}`,
           date: "",
-          channel: channelFromTitle(title + slug),
+          channel: channelFromTitle(slug),
         });
       }
       return items;

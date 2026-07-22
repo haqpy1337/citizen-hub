@@ -128,20 +128,22 @@ function LocationTable({
     );
   }
 
+  // Max SCU values for inventory bars
+  const maxSellScu = Math.max(1, ...filtered.map(l => l.scuSellAvg ?? 0));
+  const maxBuyScu  = Math.max(1, ...filtered.map(l => l.scuBuyAvg  ?? 0));
+
   return (
     <div className="overflow-y-auto flex-1 [scrollbar-width:thin]">
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-edge sticky top-0 bg-panel z-10">
-            <th className={`${TH} text-left`}>Terminal</th>
-            <th className={`${TH} text-left`}>System</th>
             <th className={`${TH} text-left`}>Location</th>
-            <th className={`${TH} text-left`}>Orbit</th>
+            <th className={`${TH} text-left`}>Region</th>
             <th className={`${TH} text-left`}>Faction</th>
-            <th className={`${TH} text-right text-quant`}>Sell / SCU</th>
-            <th className={`${TH} text-right`}>Sell Stock ø</th>
-            <th className={`${TH} text-right text-amber`}>Buy / SCU</th>
-            <th className={`${TH} text-right`}>Buy Demand ø</th>
+            <th className={`${TH} text-right text-quant`}>Sell</th>
+            <th className={`${TH} text-left`} style={{ width: 90 }}>Sell Inv</th>
+            <th className={`${TH} text-right text-amber`}>Buy</th>
+            <th className={`${TH} text-left`} style={{ width: 90 }}>Buy Inv</th>
             <th className={`${TH} text-right`}>ROI</th>
           </tr>
         </thead>
@@ -150,41 +152,65 @@ function LocationTable({
             const topSell = loc.priceSell != null && loc.priceSell === bestSell;
             const topBuy  = loc.priceBuy  != null && loc.priceBuy  === bestBuy;
             const roi     = calcRoi(loc.priceSell, loc.priceBuy);
+            const sellPct = loc.scuSellAvg != null ? Math.min(100, (loc.scuSellAvg / maxSellScu) * 100) : 0;
+            const buyPct  = loc.scuBuyAvg  != null ? Math.min(100, (loc.scuBuyAvg  / maxBuyScu)  * 100) : 0;
             return (
               <tr key={i} className={[
                 "border-b border-edge/20 transition-colors",
-                topSell || topBuy ? "bg-quant/[0.04]" : "hover:bg-hull/40",
+                topSell ? "bg-quant/[0.03]" : topBuy ? "bg-amber/[0.03]" : "hover:bg-hull/40",
               ].join(" ")}>
-                <td className="px-3 py-2 font-medium text-ink">{loc.terminalName}</td>
-                <td className="px-3 py-2 text-ink/70">{loc.system ?? "—"}</td>
-                <td className="px-3 py-2 text-muted">{loc.station ?? "—"}</td>
-                <td className="px-3 py-2 text-muted/60">{loc.orbit ?? "—"}</td>
-                <td className="px-3 py-2 text-muted/60">{loc.faction ?? "—"}</td>
+                <td className="px-3 py-2 font-medium text-ink leading-tight">
+                  {loc.terminalName}
+                  {loc.station && <span className="block text-[9px] text-muted/50 font-normal">{loc.station}</span>}
+                </td>
+                <td className="px-3 py-2">
+                  <span className="text-ink/70">{loc.system ?? "—"}</span>
+                  {loc.orbit && <span className="block text-[9px] text-muted/40">{loc.orbit}</span>}
+                </td>
+                <td className="px-3 py-2 text-muted/60 text-[10px]">{loc.faction ?? "—"}</td>
+
+                {/* Sell price + inventory bar */}
                 <td className="px-3 py-2 text-right tabular-nums font-mono">
                   {loc.priceSell != null
                     ? <span className={topSell ? "text-quant font-bold" : "text-ink"}>
                         {loc.priceSell.toLocaleString()}
-                        {topSell && <span className="ml-1 text-[8px] opacity-50">★</span>}
+                        {topSell && <span className="ml-1 text-[8px] text-quant/50">★</span>}
                       </span>
-                    : <span className="text-muted/30">—</span>}
+                    : <span className="text-muted/25">—</span>}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums font-mono text-muted/60 text-[10px]">
-                  {loc.scuSellAvg != null
-                    ? <span title={`${fmt(loc.scuSellMin)}–${fmt(loc.scuSellMax)} SCU`}>{fmt(loc.scuSellAvg)} SCU</span>
-                    : "—"}
+                <td className="px-3 py-2">
+                  {loc.scuSellAvg != null ? (
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex-1 h-1.5 bg-hull rounded-full overflow-hidden" style={{ minWidth: 48 }}>
+                        <div className="h-full rounded-full bg-quant/50" style={{ width: `${sellPct}%` }} />
+                      </div>
+                      <span className="text-[9px] font-mono text-muted/50 tabular-nums shrink-0"
+                        title={`${fmt(loc.scuSellMin)}–${fmt(loc.scuSellMax)}`}>{fmt(loc.scuSellAvg)}</span>
+                    </div>
+                  ) : <span className="text-muted/20">—</span>}
                 </td>
+
+                {/* Buy price + inventory bar */}
                 <td className="px-3 py-2 text-right tabular-nums font-mono">
                   {loc.priceBuy != null
                     ? <span className={topBuy ? "text-amber font-bold" : "text-ink"}>
                         {loc.priceBuy.toLocaleString()}
+                        {topBuy && <span className="ml-1 text-[8px] text-amber/50">★</span>}
                       </span>
-                    : <span className="text-muted/30">—</span>}
+                    : <span className="text-muted/25">—</span>}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums font-mono text-muted/60 text-[10px]">
-                  {loc.scuBuyAvg != null
-                    ? <span title={`${fmt(loc.scuBuyMin)}–${fmt(loc.scuBuyMax)} SCU`}>{fmt(loc.scuBuyAvg)} SCU</span>
-                    : "—"}
+                <td className="px-3 py-2">
+                  {loc.scuBuyAvg != null ? (
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex-1 h-1.5 bg-hull rounded-full overflow-hidden" style={{ minWidth: 48 }}>
+                        <div className="h-full rounded-full bg-amber/50" style={{ width: `${buyPct}%` }} />
+                      </div>
+                      <span className="text-[9px] font-mono text-muted/50 tabular-nums shrink-0"
+                        title={`${fmt(loc.scuBuyMin)}–${fmt(loc.scuBuyMax)}`}>{fmt(loc.scuBuyAvg)}</span>
+                    </div>
+                  ) : <span className="text-muted/20">—</span>}
                 </td>
+
                 <td className="px-3 py-2 text-right tabular-nums font-mono">
                   {roi != null
                     ? <span className={roi >= 0 ? "text-quant" : "text-danger"}>{roi >= 0 ? "+" : ""}{roi.toFixed(1)}%</span>

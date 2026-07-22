@@ -49,45 +49,62 @@ function ServerStatusPanel() {
   );
 }
 
-// ── Active Jobs Alert ─────────────────────────────────────────────────────────
+// ── Alerts ───────────────────────────────────────────────────────────────────
 
-function ActiveJobsAlert({ jobs }: { jobs: Job[] }) {
+function Alerts({ jobs }: { jobs: Job[] }) {
   const { setPage } = usePage();
   const now = useNow();
 
-  const readyJobs    = jobs.filter(j => j.status === "done");
-  const soonJobs     = jobs.filter(j => j.status === "running" && secondsLeft(j.finishesAt, now) < 30 * 60 && secondsLeft(j.finishesAt, now) > 0);
+  const readyJobs = jobs.filter(j => j.status === "done");
+  const soonJobs  = jobs.filter(j =>
+    j.status === "running" &&
+    secondsLeft(j.finishesAt, now) < 30 * 60 &&
+    secondsLeft(j.finishesAt, now) > 0
+  );
 
-  if (readyJobs.length === 0 && soonJobs.length === 0) return null;
+  if (readyJobs.length === 0 && soonJobs.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-10 text-muted/30 text-xs font-mono">
+        No active alerts
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2">
-      {readyJobs.length > 0 && (
+      {readyJobs.map(job => (
         <button
+          key={job.id}
           onClick={() => setPage("refinery-jobs")}
           className="flex items-center gap-3 px-4 py-3 panel border-l-2 border-green-500 hover:bg-green-500/5 transition-colors text-left w-full"
         >
-          <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_2px_rgba(74,222,128,0.4)] shrink-0" />
-          <span className="text-sm font-semibold text-green-400">
-            {readyJobs.length === 1 ? "1 job ready to collect" : `${readyJobs.length} jobs ready to collect`}
-          </span>
-          <span className="ml-auto text-[10px] font-mono text-muted/50">Go to Refinery Jobs →</span>
+          <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_2px_rgba(74,222,128,0.4)] shrink-0 animate-pulse" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-green-400 leading-tight">Ready to collect</p>
+            <p className="text-[10px] font-mono text-muted/60 truncate mt-0.5">{job.stationName} · {job.materials.map(m => m.name).join(", ")}</p>
+          </div>
+          <span className="text-[10px] font-mono text-muted/40 shrink-0">Refinery Jobs →</span>
         </button>
-      )}
-      {soonJobs.length > 0 && (
-        <button
-          onClick={() => setPage("refinery-jobs")}
-          className="flex items-center gap-3 px-4 py-3 panel border-l-2 border-amber-400/70 hover:bg-amber-400/5 transition-colors text-left w-full"
-        >
-          <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-          <span className="text-sm font-semibold text-amber-400">
-            {soonJobs.length === 1
-              ? `1 job finishing in ${formatDuration(secondsLeft(soonJobs[0].finishesAt, now))}`
-              : `${soonJobs.length} jobs finishing soon`}
-          </span>
-          <span className="ml-auto text-[10px] font-mono text-muted/50">Go to Refinery Jobs →</span>
-        </button>
-      )}
+      ))}
+      {soonJobs.map(job => {
+        const left = secondsLeft(job.finishesAt, now);
+        return (
+          <button
+            key={job.id}
+            onClick={() => setPage("refinery-jobs")}
+            className="flex items-center gap-3 px-4 py-3 panel border-l-2 border-amber-400/70 hover:bg-amber-400/5 transition-colors text-left w-full"
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-amber-400 leading-tight">
+                Finishing in {formatDuration(left)}
+              </p>
+              <p className="text-[10px] font-mono text-muted/60 truncate mt-0.5">{job.stationName} · {job.materials.map(m => m.name).join(", ")}</p>
+            </div>
+            <span className="text-[10px] font-mono text-muted/40 shrink-0">Refinery Jobs →</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -209,20 +226,37 @@ export default function Dashboard() {
   useEffect(() => {
     if (!token) return;
     api.jobs.list(token).then(setJobs).catch(() => {});
+    const id = setInterval(() => {
+      api.jobs.list(token).then(setJobs).catch(() => {});
+    }, 30_000);
+    return () => clearInterval(id);
   }, [token]);
 
   return (
-    <div className="flex flex-col gap-5" style={{ height: "100%", minHeight: 0 }}>
+    <div className="flex flex-col gap-4" style={{ height: "100%", minHeight: 0 }}>
+      {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <h1 className="eyebrow">Dashboard</h1>
         <ServerStatusPanel />
       </div>
 
-      <ActiveJobsAlert jobs={jobs} />
+      {/* 2-column layout */}
+      <div className="flex gap-4 flex-1 min-h-0">
 
-      <div className="flex flex-col gap-2 flex-1 min-h-0">
-        <p className="eyebrow text-muted/50 shrink-0">Patch Notes</p>
-        <PatchNotesPanel />
+        {/* Left: Alerts */}
+        <div className="flex flex-col gap-2 min-h-0" style={{ width: 340, flexShrink: 0 }}>
+          <p className="eyebrow text-muted/50 shrink-0">Alerts</p>
+          <div className="overflow-y-auto [scrollbar-width:thin]">
+            <Alerts jobs={jobs} />
+          </div>
+        </div>
+
+        {/* Right: Patch Notes */}
+        <div className="flex flex-col gap-2 flex-1 min-h-0">
+          <p className="eyebrow text-muted/50 shrink-0">Patch Notes</p>
+          <PatchNotesPanel />
+        </div>
+
       </div>
     </div>
   );
