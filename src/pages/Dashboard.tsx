@@ -55,11 +55,13 @@ function OreTicker() {
     return () => clearInterval(id);
   }, []);
 
-  // Toggle between price and ROI % every 3 seconds
+  // Toggle between price and ROI % every 3 seconds — only once we have real change data
+  const hasRoiData = items.some(i => i.changePct != null);
   useEffect(() => {
+    if (!hasRoiData) return;
     const id = setInterval(() => setShowRoi(v => !v), 3000);
     return () => clearInterval(id);
-  }, []);
+  }, [hasRoiData]);
 
   const priced = items.filter(i => i.ore.pricePerScu != null);
   if (loading || priced.length === 0) return null;
