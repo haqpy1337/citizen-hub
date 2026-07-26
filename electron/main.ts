@@ -410,7 +410,41 @@ function registerIpc() {
       return items;
     }
 
-    // Strategy 1: RSI Hub API — filtered to patch-notes category
+    // Strategy 1: Spectrum "Patch Notes" forum (channel 190048) — the real
+    // release notes with full text. Anonymous access works with empty token.
+    const spectrumRaw = await netPost(
+      "https://robertsspaceindustries.com/api/spectrum/forum/channel/threads",
+      { channel_id: 190048, page: 1, sort: "newest", label_id: null },
+      { "x-rsi-token": "" },
+      10000
+    );
+    if (spectrumRaw) {
+      try {
+        const json = JSON.parse(spectrumRaw) as {
+          success?: number;
+          data?: { threads?: { subject?: string; slug?: string; time_created?: number }[] };
+        };
+        const threads = json.data?.threads ?? [];
+        const items: PatchItem[] = threads
+          .filter(t => t.subject && t.slug)
+          .map(t => {
+            const subject = t.subject as string;
+            const upper = subject.toUpperCase();
+            const channel =
+              upper.includes("EPTU") || upper.includes("EVOCATI") ? "EPTU" :
+              upper.includes("PTU") ? "PTU" : "LIVE";
+            return {
+              title: subject,
+              link: `https://robertsspaceindustries.com/spectrum/community/SC/forum/190048/thread/${t.slug}`,
+              date: t.time_created ? new Date(t.time_created * 1000).toISOString() : "",
+              channel,
+            };
+          });
+        if (items.length > 0) return { ok: true, items };
+      } catch { /* fall through to comm-link strategies */ }
+    }
+
+    // Strategy 2: RSI Hub API — filtered to patch-notes category
     for (const body of [
       { category: "patch-notes", startsWith: 0, limit: 40 },
       { type: "patch-notes" },
@@ -430,7 +464,7 @@ function registerIpc() {
       }
     }
 
-    // Strategy 2: scrape the listing page (works when RSI uses SSR)
+    // Strategy 3: scrape the listing page (works when RSI uses SSR)
     const listHtml = await netGet("https://robertsspaceindustries.com/comm-link/patch-notes", {}, 10000);
     if (listHtml) {
       const items = extractLinks(listHtml);
@@ -441,6 +475,34 @@ function registerIpc() {
   });
 
   ipcMain.handle("patchnote:detail", async (_e, url: string) => {
+    // Spectrum thread → JSON API returns the full post as DraftJS text blocks
+    const slugMatch = url.match(/\/thread\/([^/?#]+)/);
+    if (slugMatch) {
+      const raw = await netPost(
+        "https://robertsspaceindustries.com/api/spectrum/forum/thread/nested",
+        { slug: slugMatch[1], sort: "oldest" },
+        { "x-rsi-token": "" },
+        12000
+      );
+      if (raw) {
+        try {
+          const json = JSON.parse(raw) as {
+            data?: { content_blocks?: { data?: { blocks?: { text?: string }[] } }[] };
+          };
+          const lines: string[] = [];
+          for (const cb of json.data?.content_blocks ?? []) {
+            for (const b of cb.data?.blocks ?? []) {
+              if (typeof b.text === "string") lines.push(b.text);
+            }
+          }
+          const text = lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+          if (text) {
+            return { ok: true, content: text.length > 8000 ? text.slice(0, 8000) + "…" : text };
+          }
+        } catch { /* fall through to HTML scrape */ }
+      }
+    }
+
     const html = await netGet(url, {}, 12000);
     if (!html) return { ok: false, content: "" };
     try {
