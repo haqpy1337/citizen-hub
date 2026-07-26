@@ -293,6 +293,7 @@ function PatchNotesPanel() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [detailCache, setDetailCache] = useState<Record<string, string>>({});
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
+  const fetchedPreviews = useRef<Set<string>>(new Set());
 
   function fetchNotes() {
     setLoading(true); setError(false); setItems([]); setExpanded(null);
@@ -302,6 +303,17 @@ function PatchNotesPanel() {
       .finally(() => setLoading(false));
   }
   useEffect(() => { fetchNotes(); }, []);
+
+  // Auto-fetch content previews so each row can show a 3-line excerpt
+  useEffect(() => {
+    for (const item of items.slice(0, 12)) {
+      if (fetchedPreviews.current.has(item.link)) continue;
+      fetchedPreviews.current.add(item.link);
+      window.api.fetchPatchNoteDetail(item.link)
+        .then(res => setDetailCache(c => ({ ...c, [item.link]: res.ok ? res.content : "" })))
+        .catch(() => setDetailCache(c => ({ ...c, [item.link]: "" })));
+    }
+  }, [items]);
 
   function toggleExpand(link: string) {
     if (expanded === link) { setExpanded(null); return; }
@@ -324,7 +336,7 @@ function PatchNotesPanel() {
   };
 
   return (
-    <div className="panel flex flex-col" style={{ minHeight: 0, flex: 1 }}>
+    <div className="panel flex flex-col" style={{ minHeight: 0, maxHeight: "100%" }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-edge shrink-0">
         <p className="text-[10px] font-mono uppercase tracking-widest text-muted/60">Patch Notes</p>
@@ -358,7 +370,7 @@ function PatchNotesPanel() {
           <span className="text-xs text-muted/60">No {tab} patches found.</span>
         </div>
       ) : (
-        <div className="overflow-y-auto flex-1">
+        <div className="overflow-y-auto" style={{ minHeight: 0 }}>
           {filtered.map((item, i) => {
             const cs = channelStyle(item.channel);
             const date = fmtDate(item.date);
@@ -376,6 +388,12 @@ function PatchNotesPanel() {
                   <div className="flex-1 min-w-0">
                     <span className="text-ink/90 font-medium leading-tight block text-xs">{item.title}</span>
                     {date && <span className="text-[9px] font-mono text-muted/40 mt-0.5 block">{date}</span>}
+                    {!isOpen && content && (
+                      <p className="text-[10px] text-muted/50 leading-relaxed mt-1"
+                        style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                        {content}
+                      </p>
+                    )}
                   </div>
                   <span className="text-[10px] font-mono text-muted/30 shrink-0 mt-0.5 transition-transform"
                     style={{ transform: isOpen ? "rotate(180deg)" : undefined }}>▾</span>
