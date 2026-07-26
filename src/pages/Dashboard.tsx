@@ -4,6 +4,7 @@ import { api, Job } from "../lib/api";
 import { formatDuration, secondsLeft } from "../lib/format";
 import { getOreCommodities } from "../lib/uex/endpoints";
 import type { OreCommodity } from "../lib/uex/types";
+import { setPendingCommodity } from "../lib/navState";
 
 function useNow(intervalMs = 1000) {
   const [now, setNow] = useState(Date.now());
@@ -22,10 +23,16 @@ type Trend = "up" | "down" | "flat";
 interface TickerOre { ore: OreCommodity; trend: Trend; changePct: number | null }
 
 function OreTicker() {
+  const { setPage }           = usePage();
   const [items, setItems]     = useState<TickerOre[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRoi, setShowRoi] = useState(false);
   const prevPrices            = useRef<Map<number, number>>(new Map());
+
+  function openCommodity(ore: OreCommodity) {
+    setPendingCommodity(ore.id, ore.name);
+    setPage("commodities");
+  }
 
   function load() {
     getOreCommodities().then(data => {
@@ -118,7 +125,11 @@ function OreTicker() {
       <div className="ore-ticker-track">
         {Array.from({ length: COPIES }, (_, copy) =>
           priced.map(({ ore, trend, changePct }, i) => (
-            <span key={`${copy}-${i}`} className="flex items-center gap-2 px-5 whitespace-nowrap">
+            <button key={`${copy}-${i}`}
+              onClick={() => openCommodity(ore)}
+              title={ore.name}
+              className="flex items-center gap-2 px-5 whitespace-nowrap cursor-pointer transition-colors hover:bg-hull/60"
+              style={{ height: "100%" }}>
               {/* Ore code */}
               <span className="text-[11px] font-mono font-bold tracking-widest"
                 style={{ color: "var(--color-muted)" }}>
@@ -141,7 +152,7 @@ function OreTicker() {
                 </span>
               )}
               <span style={{ color: "var(--color-edge)", fontSize: 9, margin: "0 1px" }}>·</span>
-            </span>
+            </button>
           ))
         )}
       </div>

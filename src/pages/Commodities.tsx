@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getCommodities, getCommodityPrices } from "../lib/uex/endpoints";
 import type { CommodityLocation, CommodityWithPrices } from "../lib/uex/types";
+import { takePendingCommodity } from "../lib/navState";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -241,10 +242,26 @@ export default function Commodities() {
   const [tableMode, setTableMode] = useState<"all" | "sell" | "buy">("all");
   const fetchingRef = useRef<number>(0);
 
-  // Load commodity list once
+  // Load commodity list once; honor a pending selection from the ticker
   useEffect(() => {
     getCommodities()
-      .then(data => { setAllComm(data); if (data.length) setSelected(data[0]); })
+      .then(data => {
+        setAllComm(data);
+        const pending = takePendingCommodity();
+        let initial: CommodityWithPrices | undefined;
+        if (pending) {
+          initial = data.find(c => c.id === pending.id);
+          if (!initial) {
+            // Raw ores are not in this list — fall back to the refined
+            // commodity with the same base name ("Quantainium (Raw)" → "Quantainium")
+            const base = pending.name.replace(/\s*\((Raw|Ore)\)\s*/gi, "").trim().toLowerCase();
+            initial = data.find(c => c.name.toLowerCase() === base)
+                   ?? data.find(c => c.name.toLowerCase().includes(base));
+          }
+        }
+        if (!initial && data.length) initial = data[0];
+        if (initial) setSelected(initial);
+      })
       .finally(() => setListLoading(false));
   }, []);
 
