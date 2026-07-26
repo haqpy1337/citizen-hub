@@ -340,7 +340,8 @@ function PatchNotesPanel() {
   }
 
   const tabs: PatchTab[] = ["All", "LIVE", "PTU", "EPTU"];
-  const filtered = tab === "All" ? items : items.filter(i => i.channel === tab);
+  // Only the 3 most recent per tab — more is noise on a dashboard
+  const filtered = (tab === "All" ? items : items.filter(i => i.channel === tab)).slice(0, 3);
 
   const fmtDate = (d: string) => {
     if (!d) return null;
@@ -408,8 +409,15 @@ function PatchNotesPanel() {
                       </p>
                     )}
                   </div>
-                  <span className="text-[10px] font-mono text-muted/30 shrink-0 mt-0.5 transition-transform"
-                    style={{ transform: isOpen ? "rotate(180deg)" : undefined }}>▾</span>
+                  <span
+                    className="shrink-0 mt-0.5 flex items-center justify-center border transition-all"
+                    style={{
+                      width: 22, height: 22, fontSize: 11,
+                      color: "var(--color-quant)",
+                      borderColor: "var(--color-quant)",
+                      background: isOpen ? "var(--color-quant-dim)" : "transparent",
+                      transform: isOpen ? "rotate(180deg)" : undefined,
+                    }}>▾</span>
                 </button>
                 {/* Expanded content */}
                 {isOpen && (
