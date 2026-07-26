@@ -107,6 +107,16 @@ function OreTicker() {
         .ticker-val {
           transition: opacity 0.4s ease;
         }
+        .ore-ticker-item {
+          transition: background 0.15s ease, box-shadow 0.15s ease;
+        }
+        .ore-ticker-item:hover {
+          background: var(--color-quant-dim);
+          box-shadow: inset 0 -2px 0 var(--color-quant);
+        }
+        .ore-ticker-item:hover .ore-code {
+          color: var(--color-quant) !important;
+        }
       `}</style>
 
       <div className="pointer-events-none absolute inset-y-0 left-0 w-10 z-10"
@@ -128,11 +138,11 @@ function OreTicker() {
             <button key={`${copy}-${i}`}
               onClick={() => openCommodity(ore)}
               title={ore.name}
-              className="flex items-center gap-2 px-5 whitespace-nowrap cursor-pointer transition-colors hover:bg-hull/60"
+              className="ore-ticker-item flex items-center gap-2 px-5 whitespace-nowrap cursor-pointer"
               style={{ height: "100%" }}>
               {/* Ore code */}
-              <span className="text-[11px] font-mono font-bold tracking-widest"
-                style={{ color: "var(--color-muted)" }}>
+              <span className="ore-code text-[11px] font-mono font-bold tracking-widest"
+                style={{ color: "var(--color-muted)", transition: "color 0.15s ease" }}>
                 {shortName(ore)}
               </span>
               {/* Value — price or ROI % */}
