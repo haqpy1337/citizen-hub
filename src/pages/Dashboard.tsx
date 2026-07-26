@@ -70,17 +70,19 @@ function OreTicker() {
   const pct      = (100 / COPIES).toFixed(4);
   const duration = Math.max(25, priced.length * 3);
 
+  // Theme-driven colors: up = theme accent, down = theme danger, flat = ink.
+  // Gatac gets its alien purple, Origin its clean blue, Cockpit green, etc.
   const trendColor = (t: Trend) =>
-    t === "up"   ? "#22c55e" :   // green-500
-    t === "down" ? "#ef4444" :   // red-500
-                   "#e2e8f0";    // slate-200 — bright neutral
+    t === "up"   ? "var(--color-quant)" :
+    t === "down" ? "var(--color-danger)" :
+                   "var(--color-ink)";
 
   const shortName = (ore: OreCommodity) =>
     (ore.code ?? ore.name.replace(/\s*\((Raw|Ore)\)/i, "")).toUpperCase();
 
   return (
-    <div className="relative overflow-hidden border-y border-edge/40"
-      style={{ height: 34, background: "rgba(0,0,0,0.35)" }}>
+    <div className="relative overflow-hidden border-y"
+      style={{ height: 34, background: "var(--color-hull)", borderColor: "var(--color-edge)" }}>
       <style>{`
         @keyframes ore-scroll {
           0%   { transform: translateX(0); }
@@ -101,14 +103,14 @@ function OreTicker() {
       `}</style>
 
       <div className="pointer-events-none absolute inset-y-0 left-0 w-10 z-10"
-        style={{ background: "linear-gradient(to right, rgba(0,0,0,0.8), transparent)" }} />
+        style={{ background: "linear-gradient(to right, var(--color-hull), transparent)" }} />
       <div className="pointer-events-none absolute inset-y-0 right-0 w-10 z-10"
-        style={{ background: "linear-gradient(to left, rgba(0,0,0,0.8), transparent)" }} />
+        style={{ background: "linear-gradient(to left, var(--color-hull), transparent)" }} />
 
       {/* mode label */}
       <div className="pointer-events-none absolute inset-y-0 right-12 z-10 flex items-center">
-        <span className="text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 border border-edge/30"
-          style={{ color: "rgba(180,170,210,0.4)", background: "rgba(0,0,0,0.5)" }}>
+        <span className="text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 border"
+          style={{ color: "var(--color-muted)", background: "var(--color-panel)", borderColor: "var(--color-edge)" }}>
           {showRoi ? "ROI %" : "PRICE"}
         </span>
       </div>
@@ -117,9 +119,9 @@ function OreTicker() {
         {Array.from({ length: COPIES }, (_, copy) =>
           priced.map(({ ore, trend, changePct }, i) => (
             <span key={`${copy}-${i}`} className="flex items-center gap-2 px-5 whitespace-nowrap">
-              {/* Ore code — always bright */}
+              {/* Ore code */}
               <span className="text-[11px] font-mono font-bold tracking-widest"
-                style={{ color: "rgba(210,205,230,0.9)" }}>
+                style={{ color: "var(--color-muted)" }}>
                 {shortName(ore)}
               </span>
               {/* Value — price or ROI % */}
@@ -129,7 +131,7 @@ function OreTicker() {
                   ? changePct != null
                     ? `${changePct >= 0 ? "+" : ""}${changePct.toFixed(2)}%`
                     : "n/a"
-                  : ore.pricePerScu!.toLocaleString()
+                  : `${ore.pricePerScu!.toLocaleString()} aUEC`
                 }
               </span>
               {/* trend arrow */}
@@ -138,7 +140,7 @@ function OreTicker() {
                   {trend === "up" ? "▲" : "▼"}
                 </span>
               )}
-              <span style={{ color: "rgba(255,255,255,0.1)", fontSize: 9, margin: "0 1px" }}>·</span>
+              <span style={{ color: "var(--color-edge)", fontSize: 9, margin: "0 1px" }}>·</span>
             </span>
           ))
         )}
